@@ -2,102 +2,10 @@
 
 Transform FHIR to dataset for ML applications
 
-## Example 1
+## Examples
 
-In the `from` object, the key should be FHIR resources and the value is the name that we will use in the `select` and `where` (same as SQL `SELECT pat.id from Patient as pat`)
+Check out examples of queries and how they are transformed in call to the FHIR api!
 
-Config file
-```json
-{
-  "select": {
-    "patient": [
-      "gender",
-      "name.given"
-    ]
-  },
-  "from": {
-    "Patient": "patient"
-  },
-  "where": {
-    "patient" : {
-      "birthdate": {"ge": "2000-01-01"}
-    }
-  }
-}
-```
-
-Python syntax suggestion
-```python
-Query
-.select("patient.gender", "patient.name.given")
-.from(Patient="patient")
-.where("patient.birthdate>2000-01-01")
-```
-
-URL
-```
-/Patient?birthdate=>2000-01-01
-```
-And some local treatment to extract `patient.gender` and `patient.name.given`, using http://objectpath.org/
- 
-
-## Example 2
-
-Note that http://loinc.org|55284-4 corresponds to blood pressure.
-
-Config file
-```json
-{
-  "select": {
-    "observation": [
-      "component.valueQuantity.value"
-    ],
-    "patient": [
-      "birthdate",
-      "gender"
-    ]
-  },
-  "from": {
-    "Patient": "patient",
-    "Observation": "observation"
-  },
-  "join": {
-    "observation": {
-      "subject": "patient"
-    }
-  },
-  "where": {
-    "patient" : {
-      "birthdate": {"ge": "1970"}
-    },
-    "observation": {
-      "code": "http://loinc.org|55284-4"
-    }
-  }
-}
-```
-
-Python syntax suggestion
-```python
-Query
-.select(
-  "observation.component.valueQuantity.value",
-  "patient.birthdate",
-  "patient.gender")
-.from(Patient="patient", Observation="observation")
-.join("observation.subject=patient")
-.where(
-  "observation.code=http://loinc.org|55284-4"
-  "patient.birthdate>1970"
-)
-```
-
-URL
-```
-http://hapi.fhir.org/baseR4/Observation?subject:Patient.birthdate=gt1970&code=http://loinc.org|55284-4&_include=Observation:subject
-```
-And some local treatment to:
-- Bind in the response bundle the Patients with the Observation.subject references
-- extract `observation.component.valueQuantity.value`, `observation.subject.birthdate`, `observation.subject.gender`
-
-using http://objectpath.org/
+- [Select the gender and name for patients born after 2000](.examples/example1.md)
+- [Get the pressure measures of patients born after 1970, together with their gender and birthdate](.examples/example2.md)
+- [Get the number of patients currently in intensive care unit because of Coronavirus](.examples/example3.md)
