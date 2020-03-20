@@ -42,7 +42,8 @@ Query
 .select(
   "observation.component.valueQuantity.value",
   "patient.birthdate",
-  "patient.gender")
+  "patient.gender"
+)
 .from(Patient="patient", Observation="observation")
 .join("observation.subject=patient")
 .where(

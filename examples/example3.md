@@ -39,6 +39,7 @@ Python syntax suggestion (slightly different of ex 1 and 2, using classes)
 Query
 .select(
   count(Patient),
+)
 .from(Encounter, Patient)
 .join(Encounter.subject=Patient)
 .where(
@@ -55,3 +56,9 @@ http://hapi.fhir.org/baseR4/Encounter?type=162673000&status=in-progress&reason-c
 
 And some local treatment to:
 - count all the patients resources returned
+
+
+_Here is a similar URL but which returns some samples of data for testing_
+```
+http://hapi.fhir.org/baseR4/Encounter?type=OKI&status=in-progress&reason-code=1372004&_include=Encounter:subject
+```
