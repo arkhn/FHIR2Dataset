@@ -49,9 +49,24 @@ Query
 )
 ```
 
-URL
+URL 1
 ```
-http://hapi.fhir.org/baseR4/Encounter?type=162673000&status=in-progress&reason-code=840546002&_include=Encounter:subject
+http://hapi.fhir.org/baseR4/Patient?
+_revinclude=Encounter:subject&
+_has:Encounter:subject:type=OKI&
+_has:Encounter:subject:status=in-progress&
+_has:Encounter:subject:reason-code=1372004&
+_summary=count
+```
+And you have no extra processing to do.
+
+URL 2 (less good option)
+```
+http://hapi.fhir.org/baseR4/Encounter?
+type=OKI&
+status=in-progress&
+reason-code=1372004&
+_include=Encounter:subject
 ```
 
 And some local treatment to:
@@ -59,6 +74,22 @@ And some local treatment to:
 
 
 _Here is a similar URL but which returns some samples of data for testing_
+
+URL 1
 ```
-http://hapi.fhir.org/baseR4/Encounter?type=OKI&status=in-progress&reason-code=1372004&_include=Encounter:subject
+http://hapi.fhir.org/baseR4/Patient?
+_revinclude=Encounter:subject&
+_has:Encounter:subject:type=OKI&
+_has:Encounter:subject:status=in-progress&
+_has:Encounter:subject:reason-code=1372004&
+_summary=count
+```
+
+URL 2
+```
+http://hapi.fhir.org/baseR4/Encounter?
+type=OKI&
+status=in-progress&
+reason-code=1372004&
+_include=Encounter:subject
 ```
