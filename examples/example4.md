@@ -84,7 +84,7 @@ http://hapi.fhir.org/baseR4/Condition?
 encounter:Encounter.type=162673000&
 encounter:Encounter.reason-code=840546002&
 encounter:Encounter.status=finished&
-_include=Encounter:encounter&_include:iterate=Patient:subject
+_include=Condition:encounter&_include:iterate=Encounter:subject
 ```
 
 And some local treatment to:
@@ -100,5 +100,5 @@ http://hapi.fhir.org/baseR4/Condition?
 encounter:Encounter.type=185345009&
 encounter:Encounter.reason-code=232353008&
 encounter:Encounter.status=finished&
-_include=Encounter:encounter&_include:iterate=Patient:subject
+_include=Condition:encounter&_include:iterate=Encounter:subject
 ```
