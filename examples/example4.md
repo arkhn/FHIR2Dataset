@@ -105,13 +105,3 @@ And some local treatment to:
 - extract `condition.code.coding.system, condition.code.coding.code, condition.code.coding.display, condition.encounter.period.start, condition.encounter.period.end, condition.encounter.diagnosis, condition.encounter.patient.birthdate, condition.encounter.patient.gender, condition.encounter.patient.deceasedBoolean`
 
 _Note that because Condition also references the Patient subject, `_include:iterate` could also be replaced with `_include` and Condition would left joining directly Encounter + Patient._
-
-
-_Here is a similar URL but which returns some samples of data for testing_
-```
-http://hapi.fhir.org/baseR4/Condition?
-encounter:Encounter.type=185345009&
-encounter:Encounter.reason-code=232353008&
-encounter:Encounter.status=finished&
-_include=Condition:encounter&_include:iterate=Encounter:subject
-```
