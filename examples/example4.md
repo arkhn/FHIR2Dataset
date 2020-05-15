@@ -77,8 +77,21 @@ Query
   Encounter.status="finished"
 )
 ```
+URL 1
+```
+http://hapi.fhir.org/baseR4/Encounter?
+type=162673000&
+reason-code=840546002&
+status=finished&
+_include=Encounter:subject:Patient&
+_revinclude=Condition:encounter:Encounter
+```
 
-URL
+And some local treatment to:
+- Bind in the response bundle the Patients with the Encounter.subject references and the Encounters with the Condition.encounter references.
+- extract `condition.code.coding.system, condition.code.coding.code, condition.code.coding.display, condition.encounter.period.start, condition.encounter.period.end, condition.encounter.diagnosis, condition.encounter.patient.birthdate, condition.encounter.patient.gender, condition.encounter.patient.deceasedBoolean`
+
+URL 2
 ```
 http://hapi.fhir.org/baseR4/Condition?
 encounter:Encounter.type=162673000&

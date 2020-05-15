@@ -11,8 +11,8 @@ Config file
 ```json
 {
   "select": {
-    "count": [ # not sure about this
-      "patient",
+    "count": [
+      "patient"
     ]
   },
   "from": {
@@ -51,17 +51,6 @@ Query
 
 URL 1
 ```
-http://hapi.fhir.org/baseR4/Patient?
-_revinclude=Encounter:subject&
-_has:Encounter:subject:type=OKI&
-_has:Encounter:subject:status=in-progress&
-_has:Encounter:subject:reason-code=1372004&
-_summary=count
-```
-And you have no extra processing to do.
-
-URL 2 (less good option)
-```
 http://hapi.fhir.org/baseR4/Encounter?
 type=OKI&
 status=in-progress&
@@ -71,7 +60,6 @@ _include=Encounter:subject
 
 And some local treatment to:
 - count all the patients resources returned
-
 
 _Here is a similar URL but which returns some samples of data for testing_
 
