@@ -1,11 +1,11 @@
 ## Example 4
 
-> **Question:** Get clinical information about patients that were in intensive care unit because of Coronavirus
+> **Question:** Get clinical information about patients that had a general examination because of Coronavirus
 >
 > Here we get diagnosis codes for finished encounters. We get the period of the encounter and some information about the patient such as his age, gender and if he is alive.
 
 Note that we use the following SNOMED CT codes:
-- 309904001: Intensive care unit (environment)
+- 162673000: General examination of patient (procedure)
 - 840546002: Exposure to severe acute respiratory syndrome coronavirus 2 (event)
 - _(840539006: Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder))_
 
