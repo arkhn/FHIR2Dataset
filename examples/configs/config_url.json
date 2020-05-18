@@ -211,5 +211,42 @@
     },
     "7":{
       "comment": "add exemple with select with count dans get attributes"
+    },
+    "8":{
+      "question": "Get the blood pressure systolic and diastolic measure, along with the gender and birthdate of patients born after 1970 (include)",
+      "url":"",
+      "urls": [
+          "",
+          ""
+      ],
+      "config":
+      {
+        "select": {
+          "Observation": [
+            "component.valueQuantity.value"
+          ],
+          "Patient": [
+            "birthDate",
+            "gender"
+          ]
+        },
+        "from": {
+          "Patient": "patient",
+          "Observation": "observation"
+        },
+        "join": {
+          "Observation": {
+            "subject": "patient"
+          }
+        },
+        "where": {
+          "Patient" : {
+            "birthdate": {"ge": "1970"}
+          },
+          "Observation": {
+            "code": "http://loinc.org|55284-4"
+          }
+        }
+      }
     }
 }
