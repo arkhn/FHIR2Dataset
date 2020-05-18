@@ -7,17 +7,17 @@ class Query:
     def __init__(
         self,
         service_base_url: str,
-        CapabilityStatement_path: str = None,
+        capabilitystatement_path: str = None,
     ) -> None:
         self.base = service_base_url
         self.possible_references = self._get_rev_include_possibilitie(
-            CapabilityStatement_path
+            capabilitystatement_path
         )
         """Instantiate the class and create the query object
 
         Arguments:
             service_base_url {str} -- the Service Base URL
-            CapabilityStatement_path {str} -- path to the json file that
+            capabilitystatement_path {str} -- path to the json file that
             contains a resource of type CapabilityStatement
         """
 
@@ -312,27 +312,27 @@ class Query:
                     self.url_rev_include += url_temp
 
     def _get_rev_include_possibilitie(
-        self, CapabilityStatement_path: str = None
+        self, capabilitystatement_path: str = None
     ):
         """Builds a dictionary that will indicate for each type of 
         resource which are its mother resources (revinclude) and its 
         daughter resources (include).
 
         Arguments:
-            CapabilityStatement_path {str} -- path to the json file that
+            capabilitystatement_path {str} -- path to the json file that
             contains a resource of type CapabilityStatement
         """
-        if CapabilityStatement_path:
-            CapabilityStatement = self._get_CapabilityStatement_from_file(
-                CapabilityStatement_path
+        if capabilitystatement_path:
+            capabilitystatement = self._get_capabilitystatement_from_file(
+                capabilitystatement_path
             )
         else:
-            CapabilityStatement = (
-                self._get_CapabilityStatement_from_api()
+            capabilitystatement = (
+                self._get_capabilitystatement_from_api()
             )
 
         dict_reference = dict()
-        for ressource in CapabilityStatement["resource"]["rest"][0][
+        for ressource in capabilitystatement["resource"]["rest"][0][
             "resource"
         ]:  # check the 0 , we could have several
             type = ressource["type"]
@@ -351,23 +351,23 @@ class Query:
                 pass
         return dict_reference
 
-    def _get_CapabilityStatement_from_file(
-        self, CapabilityStatement_path: str
+    def _get_capabilitystatement_from_file(
+        self, capabilitystatement_path: str
     ) -> dict:
         """Get the CapabilityStatement from the json file
 
         Arguments:
-            CapabilityStatement_path {str} -- path to the json file that
+            capabilitystatement_path {str} -- path to the json file that
              contains a resource of type CapabilityStatement
         Returns:
             dict -- dict object containing a CapabilityStatement 
             resource
         """
-        with open(CapabilityStatement_path) as json_file:
-            CapabilityStatement = json.load(json_file)
-        return CapabilityStatement
+        with open(capabilitystatement_path) as json_file:
+            capabilitystatement = json.load(json_file)
+        return capabilitystatement
 
-    def _get_CapabilityStatement_from_api(self) -> dict:
+    def _get_capabilitystatement_from_api(self) -> dict:
         """Get the CapabilityStatement from the base
 
         Returns:
@@ -378,8 +378,8 @@ class Query:
         response = requests.get(url)
         # 0 by default but we must investigate how to chose the right
         # CapabilityStatement ?
-        CapabilityStatement = response.json()["entry"][0]
-        return CapabilityStatement
+        capabilitystatement = response.json()["entry"][0]
+        return capabilitystatement
 
     def draw_relations(self):
         """draws the possible relationships between the requested 
