@@ -2,6 +2,12 @@
 
 Transform FHIR to dataset for ML applications
 
+This repo is a POC allowing to make a query (close to SQL format) on a FHIR API and to retrieve tabular data.
+
+## Installation
+
+This project is still under development, instructions are coming soon.
+
 ## Examples
 
 Check out examples of queries and how they are transformed in call to the FHIR api!

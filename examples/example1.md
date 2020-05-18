@@ -18,7 +18,7 @@ Config file
   },
   "where": {
     "patient" : {
-      "birthdate": {"ge": "2000-01-01"}
+      "birthdate": {"gt": "2000-01-01"}
     }
   }
 }
@@ -32,8 +32,17 @@ Query
 .where("patient.birthdate>2000-01-01")
 ```
 
-URL
+URL 1
 ```
 /Patient?birthdate=>2000-01-01
 ```
 And some local treatment to extract `patient.gender` and `patient.name.given`, using http://objectpath.org/
+
+or 
+
+URL 2
+```
+Patient?birthdate=gt2000-01-01
+```
+And some local treatment to extract `patient.gender` and `patient.name.given`, using http://objectpath.org/
+
