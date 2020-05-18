@@ -136,7 +136,7 @@ class Query:
                         "searchInclude"
                     ]
                 ):
-                    attribute_url = (
+                    attribute_child = (
                         parent_rsc_attribute
                         + ":"
                         + child_rsc_type
@@ -153,7 +153,7 @@ class Query:
                     self.rscs_graph.add_edge(
                         parent_rsc_internal,
                         child_dict[parent_rsc_attribute],
-                        attribute_parent=attribute_url,
+                        attribute_child=attribute_child,
                         include=include_url,
                     )
                 if (
@@ -162,7 +162,7 @@ class Query:
                         "searchRevInclude"
                     ]
                 ):
-                    attribute_url = (
+                    attribute_parent = (
                         parent_rsc_type
                         + ":"
                         + parent_rsc_attribute
@@ -179,7 +179,7 @@ class Query:
                     self.rscs_graph.add_edge(
                         child_dict[parent_rsc_attribute],
                         parent_rsc_internal,
-                        attribute_child=attribute_url,
+                        attribute_parent=attribute_parent,
                         revinclude=revinclud_url,
                     )
                 else:
