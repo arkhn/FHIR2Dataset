@@ -98,16 +98,20 @@ class Query:
             self.base + self.rscs_type[self.main_internal_name] + "?"
         )
         if self.url_params and self.url_rev_include:
-            api_url += (
+            api_url_bis = api_url + (
                 self.url_params
                 + "&"
                 + self.url_rev_include
                 + "&_format=json"
             )
+            api_url = f"{api_url}{self.url_params}&{self.url_rev_include}&_format=json"
+            assert api_url == api_url_bis, "fstring doesn't work"
         else:
-            api_url += (
+            api_url_bis = api_url + (
                 self.url_params + self.url_rev_include + "&_format=json"
             )
+            api_url = f"{api_url}{self.url_params}{self.url_rev_include}&_format=json"
+            assert api_url == api_url_bis, "fstring doesn't work"
         return api_url
 
     def _from(self, **ressourcetype_internalname: dict):
