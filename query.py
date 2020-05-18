@@ -10,7 +10,7 @@ class Query:
         capabilitystatement_path: str = None,
     ) -> None:
         self.base = service_base_url
-        self.possible_references = self._get_rev_include_possibilitie(
+        self.possible_references = self._get_rev_include_possibilities(
             capabilitystatement_path
         )
         """Instantiate the class and create the query object
@@ -311,7 +311,7 @@ class Query:
                 else:
                     self.url_rev_include += url_temp
 
-    def _get_rev_include_possibilitie(
+    def _get_rev_include_possibilities(
         self, capabilitystatement_path: str = None
     ):
         """Builds a dictionary that will indicate for each type of 
