@@ -1,11 +1,11 @@
 ## Example 4
 
-> **Question:** Get clinical information about patients that were in intensive care unit because of Coronavirus
+> **Question:** Get clinical information about patients that had a general examination because of Coronavirus
 >
 > Here we get diagnosis codes for finished encounters. We get the period of the encounter and some information about the patient such as his age, gender and if he is alive.
 
 Note that we use the following SNOMED CT codes:
-- 309904001: Intensive care unit (environment)
+- 162673000: General examination of patient (procedure)
 - 840546002: Exposure to severe acute respiratory syndrome coronavirus 2 (event)
 - _(840539006: Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder))_
 
@@ -77,8 +77,21 @@ Query
   Encounter.status="finished"
 )
 ```
+URL 1
+```
+http://hapi.fhir.org/baseR4/Encounter?
+type=162673000&
+reason-code=840546002&
+status=finished&
+_include=Encounter:subject:Patient&
+_revinclude=Condition:encounter:Encounter
+```
 
-URL
+And some local treatment to:
+- Bind in the response bundle the Patients with the Encounter.subject references and the Encounters with the Condition.encounter references.
+- extract `condition.code.coding.system, condition.code.coding.code, condition.code.coding.display, condition.encounter.period.start, condition.encounter.period.end, condition.encounter.diagnosis, condition.encounter.patient.birthdate, condition.encounter.patient.gender, condition.encounter.patient.deceasedBoolean`
+
+URL 2
 ```
 http://hapi.fhir.org/baseR4/Condition?
 encounter:Encounter.type=162673000&
@@ -92,13 +105,3 @@ And some local treatment to:
 - extract `condition.code.coding.system, condition.code.coding.code, condition.code.coding.display, condition.encounter.period.start, condition.encounter.period.end, condition.encounter.diagnosis, condition.encounter.patient.birthdate, condition.encounter.patient.gender, condition.encounter.patient.deceasedBoolean`
 
 _Note that because Condition also references the Patient subject, `_include:iterate` could also be replaced with `_include` and Condition would left joining directly Encounter + Patient._
-
-
-_Here is a similar URL but which returns some samples of data for testing_
-```
-http://hapi.fhir.org/baseR4/Condition?
-encounter:Encounter.type=185345009&
-encounter:Encounter.reason-code=232353008&
-encounter:Encounter.status=finished&
-_include=Condition:encounter&_include:iterate=Encounter:subject
-```

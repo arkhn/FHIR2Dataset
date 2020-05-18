@@ -1,0 +1,252 @@
+{
+    "0": {
+        "question": "",
+        "comment": "",
+        "url":"",
+        "urls": [
+            "",
+            ""
+        ],
+        "config":{}
+    },
+    "1": {
+        "question": "Select the gender and name for patients born after 2000",
+        "comment": "And some local treatment to extract `patient.gender` and `patient.name.given`, using http://objectpath.org/",
+        "url":"Patient?birthdate=>2000-01-01",
+        "urls": [
+            "Patient?birthdate=>2000-01-01",
+            "Patient?birthdate=gt2000-01-01"
+        ],
+        "config":{
+            "select": {
+              "patient": [
+                "gender",
+                "name.given"
+              ]
+            },
+            "from": {
+              "Patient": "patient"
+            },
+            "where": {
+              "patient" : {
+                "birthdate": {"gt": "2000-01-01"}
+              }
+            }
+          }
+    },
+    "2": {
+        "question": "Get the pressure measures of patients born after 1970, together with their gender and birthdate",
+        "comment": "And some local treatment to:\n- Bind in the response bundle the Patients with the Observation.subject references\n- extract `observation.component.valueQuantity.value`, `observation.subject.birthdate`, `observation.subject.gender`",
+        "url":"http://hapi.fhir.org/baseR4/Observation?subject:Patient.birthdate=gt1970&code=http://loinc.org|55284-4&_include=Observation:subject",
+        "urls": [
+            "http://hapi.fhir.org/baseR4/Observation?subject:Patient.birthdate=gt1970&code=http://loinc.org|55284-4&_include=Observation:subject",
+            "http://hapi.fhir.org/baseR4/Observation?subject:Patient.birthdate=gt1970&code=http://loinc.org|55284-4&_include=Observation:subject:Patient"
+        ],
+        "config":{
+            "select": {
+              "observation": [
+                "component.valueQuantity.value"
+              ],
+              "patient": [
+                "birthdate",
+                "gender"
+              ]
+            },
+            "from": {
+              "Patient": "patient",
+              "Observation": "observation"
+            },
+            "join": {
+              "observation": {
+                "subject": "patient"
+              }
+            },
+            "where": {
+              "patient" : {
+                "birthdate": {"gt": "1970"}
+              },
+              "observation": {
+                "code": "http://loinc.org|55284-4"
+              }
+            }
+          }
+    },
+    "3": {
+        "question": "Get the number of patients currently having a Outpatient Kenacort injection because of Unicornate uterus",
+        "comment": "post-processing to count",
+        "url":"http://hapi.fhir.org/baseR4/Encounter?type=OKI&status=in-progress&reason-code=1372004&_include=Encounter:subject",
+        "urls": [
+            "http://hapi.fhir.org/baseR4/Encounter?type=OKI&status=in-progress&reason-code=1372004&_include=Encounter:subject"
+        ],
+        "config":{
+            "select": {
+              "count": [
+                "patient"
+              ]
+            },
+            "from": {
+              "Encounter": "encounter",
+              "Patient": "patient"
+            },
+            "join": {
+              "encounter": {
+                "subject": "patient"
+              }
+            },
+            "where": {
+              "encounter": {
+                "type": "OKI",
+                "reason-code": "1372004",
+                "status": "in-progress"
+              }
+            }
+          }
+    },
+    "4": {
+        "question": "Get clinical information about patients who had a general examination because of Coronavirus",
+        "comment": "And some local treatment to:\n- Bind in the response bundle the Patients with the Encounter.subject references and the Encounters with the Condition.encounter references.\n- extract `condition.code.coding.system, condition.code.coding.code, condition.code.coding.display, condition.encounter.period.start, conditi\nencounter.period.end, condition.encounter.diagnosis, condition.encounter.patient.birthdate, condition.encounter.patient.gender, conditi\nencounter.patient.deceasedBoolean`\n_Note that because Condition also references the Patient subject, `_include:iterate` could also be replaced with `_include` and Condition wouuld left joining directly Encounter + Patient._",
+        "url":"http://hapi.fhir.org/baseR4/Condition?encounter:Encounter.type=162673000&encounter:Encounter.reason-code=840546002&encounter:Encounter.status=finished&_include=Condition:encounter&_include:iterate=Encounter:subject",
+        "urls": [
+            "http://hapi.fhir.org/baseR4/Condition?encounter:Encounter.type=162673000&encounter:Encounter.reason-code=840546002&encounter:Encounter.status=finished&_include=Condition:encounter&_include:iterate=Encounter:subject"
+        ],
+        "config":{
+            "select": {
+              "patient": [
+                "birthdate",
+                "gender",
+                "deceasedBoolean"
+              ],
+              "encounter": [
+                "period.start",
+                "period.end",
+                "diagnosis"
+              ],
+              "condition": [
+                "code.coding.system",
+                "code.coding.code",
+                "code.coding.display"
+              ]
+            },
+            "from": {
+              "Condition": "condition",
+              "Encounter": "encounter",
+              "Patient": "patient"
+            },
+            "join": {
+              "condition": {
+                "encounter": "encounter"
+              },
+              "encounter": {
+                "subject": "patient"
+              }
+            },
+            "where": {
+              "encounter": {
+                "type": "162673000",
+                "reason-code": "840546002",
+                "status": "finished"
+              }
+            }
+          }
+    },
+    "5": {
+        "question": "Get the given name of patients who had a a general examination referenced by the code 162673000 of http://snomed.info/sct system",
+        "comment": "select patient.name.given",
+        "url":"Patient?_has:Encounter:subject:type=http://snomed.info/sct|162673000&_has:Encounter:subject:status=finished",
+        "urls": [
+            "Patient?_has:Encounter:subject:type=http://snomed.info/sct|162673000&_has:Encounter:subject:status=finished"
+        ],
+        "config":{
+            "select": {
+              "patient": [
+                "name.given"
+              ]
+            },
+            "from": {
+              "Encounter": "encounter",
+              "Patient": "patient"
+            },
+            "join": {
+              "encounter": {
+                "subject": "patient"
+              }
+            },
+            "where": {
+              "encounter": {
+                "type": "http://snomed.info/sct|162673000",
+                "status": "finished"
+              }
+            }
+          }
+    },
+    "6": {
+        "question": "Get the given name of patients who had a a general examination referenced by the code 162673000 ",
+        "comment": "select patient.name.given",
+        "url":"Patient?_has:Encounter:subject:type=162673000&_has:Encounter:subject:status=finished",
+        "urls": [
+            "Patient?_has:Encounter:subject:type=162673000&_has:Encounter:subject:status=finished"
+        ],
+        "config":{
+            "select": {
+              "patient": [
+                "name.given"
+              ]
+            },
+            "from": {
+              "Encounter": "encounter",
+              "Patient": "patient"
+            },
+            "join": {
+              "encounter": {
+                "subject": "patient"
+              }
+            },
+            "where": {
+              "encounter": {
+                "type": "162673000",
+                "status": "finished"
+              }
+            }
+    }
+    },
+    "7":{
+      "comment": "add exemple with select with count dans get attributes"
+    },
+    "8":{
+      "question": "Get the blood pressure systolic and diastolic measure, along with the gender and birthdate of patients born after 1970 (include)",
+      "url":"",
+      "urls": [
+          "",
+          ""
+      ],
+      "config":
+      {
+        "select": {
+          "Observation": [
+            "component.valueQuantity.value"
+          ],
+          "Patient": [
+            "birthDate",
+            "gender"
+          ]
+        },
+        "from": {
+          "Patient": "patient",
+          "Observation": "observation"
+        },
+        "join": {
+          "Observation": {
+            "subject": "patient"
+          }
+        },
+        "where": {
+          "Patient" : {
+            "birthdate": {"ge": "1970"}
+          },
+          "Observation": {
+            "code": "http://loinc.org|55284-4"
+          }
+        }
+      }
+    }
+}

@@ -52,7 +52,7 @@ Query
 )
 ```
 
-URL
+URL 1
 ```
 http://hapi.fhir.org/baseR4/Observation?subject:Patient.birthdate=gt1970&code=http://loinc.org|55284-4&_include=Observation:subject
 ```
@@ -61,3 +61,8 @@ And some local treatment to:
 - extract `observation.component.valueQuantity.value`, `observation.subject.birthdate`, `observation.subject.gender`
 
 using http://objectpath.org/
+
+variant for url 1
+```
+http://hapi.fhir.org/baseR4/Observation?subject:Patient.birthdate=gt1970&code=http://loinc.org|55284-4&_include=Observation:subject:Patient
+```
