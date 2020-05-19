@@ -326,18 +326,14 @@ class Query:
         ]:  # check the 0 , we could have several
             type = ressource["type"]
             dict_reference[type] = dict()
-            try:
+            if "searchRevInclude" in ressource:
                 dict_reference[type]["searchRevInclude"] = ressource[
                     "searchRevInclude"
                 ]
-            except:
-                pass
-            try:
+            if "searchInclude" in ressource:
                 dict_reference[type]["searchInclude"] = ressource[
                     "searchInclude"
                 ]
-            except:
-                pass
         return dict_reference
 
     def _get_capabilitystatement_from_file(
