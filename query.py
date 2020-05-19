@@ -73,18 +73,12 @@ class Query:
             config {dict} -- dictionary in the format of a configuration
             file
         """
-        rename_keys = [
-            ("from", "from_dict"),
-            ("where", "where_dict"),
-            ("select", "select_dict"),
-            ("join", "join_dict"),
-        ]
-        for old_key, new_key in rename_keys:
-            try:
-                config[new_key] = config.pop(old_key)
-            except:
-                pass
-        self.execute(**config)
+        self.execute(
+            from_dict=config.get("from",None),
+            select_dict=config.get("select",None),
+            where_dict=config.get("where",None),
+            join_dict=config.get("join",None)
+            )
 
     def _compute_url(self) -> str:
         """Generates the API request url satisfying the conditions from,
