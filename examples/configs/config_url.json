@@ -14,6 +14,10 @@
       "comment": "And some local treatment to extract `patient.gender` and `patient.name.given`, using http://objectpath.org/",
       "url": "Patient?birthdate=>2000-01-01",
       "urls": [
+          "http://hapi.fhir.org/baseR4/Patient?birthdate=gt2000-01-01&_format=json",
+          "http://hapi.fhir.org/baseR4/Patient?birthdate=gt2000-01-01",
+          "http://hapi.fhir.org/baseR4/Patient?birthdate=>2000-01-01&_format=json",
+          "http://hapi.fhir.org/baseR4/Patient?birthdate=>2000-01-01",
           "Patient?birthdate=>2000-01-01",
           "Patient?birthdate=gt2000-01-01"
       ],
