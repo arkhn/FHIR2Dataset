@@ -104,13 +104,19 @@ class Query:
                 + self.url_rev_include
                 + "&_format=json"
             )
-            api_url = f"{api_url}{self.url_params}&{self.url_rev_include}&_format=json"
+            api_url = (
+                f"{api_url}{self.url_params}&{self.url_rev_include}"
+                f"&_format=json"
+                )
             assert api_url == api_url_bis, "fstring doesn't work"
         else:
             api_url_bis = api_url + (
                 self.url_params + self.url_rev_include + "&_format=json"
             )
-            api_url = f"{api_url}{self.url_params}{self.url_rev_include}&_format=json"
+            api_url = (
+                f"{api_url}{self.url_params}{self.url_rev_include}"
+                f"&_format=json"
+                )
             assert api_url == api_url_bis, "fstring doesn't work"
         return api_url
 
@@ -140,19 +146,28 @@ class Query:
                         "searchInclude"
                     ]
                 ):
-                    attribute_child = (
+                    attribute_child_bis = (
                         parent_rsc_attribute
                         + ":"
                         + child_rsc_type
                         + "."
                     )
-                    include_url = (
+                    attribute_child = (
+                        f"{parent_rsc_attribute}:{child_rsc_type}."
+                    )
+                    assert attribute_child == attribute_child_bis, "fstring doesn't work"
+                    include_url_bis = (
                         parent_rsc_type
                         + ":"
                         + parent_rsc_attribute
                         + ":"
                         + child_rsc_type
                     )
+                    include_url = (
+                        f"{parent_rsc_type}:{parent_rsc_attribute}:"
+                        f"{child_rsc_type}"
+                    )
+                    assert include_url_bis == include_url, "fstring doesn't work"
 
                     self.rscs_graph.add_edge(
                         parent_rsc_internal,
@@ -166,19 +181,29 @@ class Query:
                         "searchRevInclude"
                     ]
                 ):
-                    attribute_parent = (
+                    attribute_parent_bis = (
                         parent_rsc_type
                         + ":"
                         + parent_rsc_attribute
                         + ":"
                     )
-                    revinclud_url = (
+                    attribute_parent = (
+                        f"{parent_rsc_type}:{parent_rsc_attribute}:"
+                    )
+                    assert attribute_parent == attribute_parent_bis, "fstring doesn't work"
+                    revinclud_url_bis = (
                         parent_rsc_type
                         + ":"
                         + parent_rsc_attribute
                         + ":"
                         + child_rsc_type
                     )
+                    revinclud_url = (
+                        f"{parent_rsc_type}:{parent_rsc_attribute}:"
+                        f"{child_rsc_type}"
+                    )
+                    assert revinclud_url_bis == revinclud_url, "fstring doesn't work"
+
 
                     self.rscs_graph.add_edge(
                         child_dict[parent_rsc_attribute],
@@ -196,7 +221,7 @@ class Query:
         """Builds the url_params that best respects the cumulative 
         conditions specified on resource attributes
         """
-        # With the current approach, adjustments must be made to remove 
+        # With the current approach, adjustments must be made to remove
         # results that do not match the conditions (due to the fact that
         # parameters chained to _has parameters are not cumulative).
         max_conditions = -1
@@ -245,14 +270,28 @@ class Query:
                     value = value_full
 
                 if url_temp != "":
-                    url_temp += (
+                    url_temp_bis = url_temp + (
                         "&" + to_rsc + search_param + "=" + value
                     )
+                    url_temp = (
+                        f"{url_temp}&{to_rsc}{search_param}={value}"
+                    )
+                    assert url_temp == url_temp_bis, "fstring doesn't work"
                 else:
-                    url_temp += to_rsc + search_param + "=" + value
+                    url_temp_bis = url_temp + (
+                        to_rsc + search_param + "=" + value
+                    )
+                    url_temp = (
+                        f"{url_temp}{to_rsc}{search_param}={value}"
+                    )
+                    assert url_temp == url_temp_bis, "fstring doesn't work"
 
             if self.url_params:
-                self.url_params += "&" + url_temp
+                url_params_bis = self.url_params + "&" + url_temp
+                self.url_params = (
+                    f"{self.url_params}&{url_temp}"
+                    )
+                assert self.url_params == url_params_bis, "fstring doesn't work"
             else:
                 self.url_params = url_temp
 
@@ -292,28 +331,44 @@ class Query:
                     ]
                     if "include" in edge:
                         if url_temp:
-                            url_temp += (
+                            url_temp_bis = url_temp + (
                                 "&"
                                 + "_include:iterate="
                                 + edge["include"]
                             )
+                            url_temp = (
+                                f'{url_temp}&_include:iterate='
+                                f'{edge["include"]}'
+                            )
+                            assert url_temp == url_temp_bis, "fstring doesn't work"
                         else:
-                            url_temp = "_include=" + edge["include"]
+                            url_temp_bis = "_include=" + edge["include"]
+                            url_temp = (
+                                f'{url_temp}_include={edge["include"]}'
+                            )
+                            assert url_temp == url_temp_bis, "fstring doesn't work"
                     elif "revinclude" in edge:
                         if url_temp:
-                            url_temp += (
+                            url_temp_bis = url_temp + (
                                 "&"
                                 + "_revinclude:iterate="
                                 + edge["revinclude"]
                             )
-                        else:
                             url_temp = (
-                                "_revinclude=" + edge["revinclude"]
+                                f'{url_temp}&_revinclude:iterate='
+                                f'{edge["revinclude"]}'
                             )
+                            assert url_temp == url_temp_bis, "fstring doesn't work"
+                        else:
+                            url_temp_bis = "_revinclude=" + edge["revinclude"]
+                            url_temp = (
+                                f'{url_temp}_revinclude={edge["revinclude"]}'
+                            )
+                            assert url_temp == url_temp_bis, "fstring doesn't work"
                 if self.url_rev_include:
-                    self.url_rev_include += "&" + url_temp
+                    self.url_rev_include = f"{self.url_rev_include}&{url_temp}"
                 else:
-                    self.url_rev_include += url_temp
+                    self.url_rev_include = url_temp
 
     def _get_rev_include_possibilities(
         self, capabilitystatement_path: str = None
