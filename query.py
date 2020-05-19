@@ -98,26 +98,15 @@ class Query:
             self.base + self.rscs_type[self.main_internal_name] + "?"
         )
         if self.url_params and self.url_rev_include:
-            api_url_bis = api_url + (
-                self.url_params
-                + "&"
-                + self.url_rev_include
-                + "&_format=json"
-            )
             api_url = (
                 f"{api_url}{self.url_params}&{self.url_rev_include}"
                 f"&_format=json"
                 )
-            assert api_url == api_url_bis, "fstring doesn't work"
         else:
-            api_url_bis = api_url + (
-                self.url_params + self.url_rev_include + "&_format=json"
-            )
             api_url = (
                 f"{api_url}{self.url_params}{self.url_rev_include}"
                 f"&_format=json"
                 )
-            assert api_url == api_url_bis, "fstring doesn't work"
         return api_url
 
     def _from(self, **ressourcetype_internalname: dict):
@@ -139,36 +128,20 @@ class Query:
                 child_rsc_type = self.rscs_type[
                     child_dict[parent_rsc_attribute]
                 ]
-                check = parent_rsc_type + "." + parent_rsc_attribute
+                check = f"{parent_rsc_type}.{parent_rsc_attribute}"
                 if (
                     check
                     in self.possible_references[parent_rsc_type][
                         "searchInclude"
                     ]
                 ):
-                    attribute_child_bis = (
-                        parent_rsc_attribute
-                        + ":"
-                        + child_rsc_type
-                        + "."
-                    )
                     attribute_child = (
                         f"{parent_rsc_attribute}:{child_rsc_type}."
-                    )
-                    assert attribute_child == attribute_child_bis, "fstring doesn't work"
-                    include_url_bis = (
-                        parent_rsc_type
-                        + ":"
-                        + parent_rsc_attribute
-                        + ":"
-                        + child_rsc_type
                     )
                     include_url = (
                         f"{parent_rsc_type}:{parent_rsc_attribute}:"
                         f"{child_rsc_type}"
                     )
-                    assert include_url_bis == include_url, "fstring doesn't work"
-
                     self.rscs_graph.add_edge(
                         parent_rsc_internal,
                         child_dict[parent_rsc_attribute],
@@ -181,30 +154,13 @@ class Query:
                         "searchRevInclude"
                     ]
                 ):
-                    attribute_parent_bis = (
-                        parent_rsc_type
-                        + ":"
-                        + parent_rsc_attribute
-                        + ":"
-                    )
                     attribute_parent = (
                         f"{parent_rsc_type}:{parent_rsc_attribute}:"
-                    )
-                    assert attribute_parent == attribute_parent_bis, "fstring doesn't work"
-                    revinclud_url_bis = (
-                        parent_rsc_type
-                        + ":"
-                        + parent_rsc_attribute
-                        + ":"
-                        + child_rsc_type
                     )
                     revinclud_url = (
                         f"{parent_rsc_type}:{parent_rsc_attribute}:"
                         f"{child_rsc_type}"
                     )
-                    assert revinclud_url_bis == revinclud_url, "fstring doesn't work"
-
-
                     self.rscs_graph.add_edge(
                         child_dict[parent_rsc_attribute],
                         parent_rsc_internal,
@@ -255,7 +211,7 @@ class Query:
                     if "attribute_child" in edge:
                         to_rsc = edge["attribute_child"]
                     elif "attribute_parent" in edge:
-                        to_rsc = "_has:" + edge["attribute_parent"]
+                        to_rsc = f'_has:{edge["attribute_parent"]}'
 
             for search_param, value_full in conditions.items():
                 # add assert search_param in CapabilityStatement
@@ -270,28 +226,18 @@ class Query:
                     value = value_full
 
                 if url_temp != "":
-                    url_temp_bis = url_temp + (
-                        "&" + to_rsc + search_param + "=" + value
-                    )
                     url_temp = (
                         f"{url_temp}&{to_rsc}{search_param}={value}"
                     )
-                    assert url_temp == url_temp_bis, "fstring doesn't work"
                 else:
-                    url_temp_bis = url_temp + (
-                        to_rsc + search_param + "=" + value
-                    )
                     url_temp = (
                         f"{url_temp}{to_rsc}{search_param}={value}"
                     )
-                    assert url_temp == url_temp_bis, "fstring doesn't work"
 
             if self.url_params:
-                url_params_bis = self.url_params + "&" + url_temp
                 self.url_params = (
                     f"{self.url_params}&{url_temp}"
                     )
-                assert self.url_params == url_params_bis, "fstring doesn't work"
             else:
                 self.url_params = url_temp
 
@@ -331,40 +277,24 @@ class Query:
                     ]
                     if "include" in edge:
                         if url_temp:
-                            url_temp_bis = url_temp + (
-                                "&"
-                                + "_include:iterate="
-                                + edge["include"]
-                            )
                             url_temp = (
                                 f'{url_temp}&_include:iterate='
                                 f'{edge["include"]}'
                             )
-                            assert url_temp == url_temp_bis, "fstring doesn't work"
                         else:
-                            url_temp_bis = "_include=" + edge["include"]
                             url_temp = (
                                 f'{url_temp}_include={edge["include"]}'
                             )
-                            assert url_temp == url_temp_bis, "fstring doesn't work"
                     elif "revinclude" in edge:
                         if url_temp:
-                            url_temp_bis = url_temp + (
-                                "&"
-                                + "_revinclude:iterate="
-                                + edge["revinclude"]
-                            )
                             url_temp = (
                                 f'{url_temp}&_revinclude:iterate='
                                 f'{edge["revinclude"]}'
                             )
-                            assert url_temp == url_temp_bis, "fstring doesn't work"
                         else:
-                            url_temp_bis = "_revinclude=" + edge["revinclude"]
                             url_temp = (
                                 f'{url_temp}_revinclude={edge["revinclude"]}'
                             )
-                            assert url_temp == url_temp_bis, "fstring doesn't work"
                 if self.url_rev_include:
                     self.url_rev_include = f"{self.url_rev_include}&{url_temp}"
                 else:
@@ -433,7 +363,7 @@ class Query:
             dict --  dict object containing a CapabilityStatement 
             resource
         """
-        url = self.base + "/" + "CapabilityStatement?"
+        url = f"{self.base}/CapabilityStatement?"
         response = requests.get(url)
         # 0 by default but we must investigate how to chose the right
         # CapabilityStatement ?
