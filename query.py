@@ -22,8 +22,8 @@ class Query:
         """
 
         # to represent the relationships (references) between resources
-        self.rscs_graph = nx.DiGraph()
-        self.rscs_type = dict()
+        self.resources_graph = nx.DiGraph()
+        self.resources_type = dict()
 
         self.main_internal_name = None
         self.url_params = ""
@@ -95,7 +95,7 @@ class Query:
         """
         # to do verify self.base finish by '/'
         api_url = (
-            self.base + self.rscs_type[self.main_internal_name] + "?"
+            self.base + self.resources_type[self.main_internal_name] + "?"
         )
         if self.url_params and self.url_rev_include:
             api_url = (
@@ -116,16 +116,16 @@ class Query:
             ressource_type,
             internal_name,
         ) in ressourcetype_internalname.items():
-            self.rscs_graph.add_node(internal_name)
-            self.rscs_type[internal_name] = ressource_type
+            self.resources_graph.add_node(internal_name)
+            self.resources_type[internal_name] = ressource_type
 
     def _join(self, **join_as):
         """Builds the links between the resources involved in the query
         """
         for parent_rsc_internal, child_dict in join_as.items():
-            parent_rsc_type = self.rscs_type[parent_rsc_internal]
+            parent_rsc_type = self.resources_type[parent_rsc_internal]
             for parent_rsc_attribute in child_dict.keys():
-                child_rsc_type = self.rscs_type[
+                child_rsc_type = self.resources_type[
                     child_dict[parent_rsc_attribute]
                 ]
                 check = f"{parent_rsc_type}.{parent_rsc_attribute}"
@@ -142,7 +142,7 @@ class Query:
                         f"{parent_rsc_type}:{parent_rsc_attribute}:"
                         f"{child_rsc_type}"
                     )
-                    self.rscs_graph.add_edge(
+                    self.resources_graph.add_edge(
                         parent_rsc_internal,
                         child_dict[parent_rsc_attribute],
                         attribute_child=attribute_child,
@@ -161,7 +161,7 @@ class Query:
                         f"{parent_rsc_type}:{parent_rsc_attribute}:"
                         f"{child_rsc_type}"
                     )
-                    self.rscs_graph.add_edge(
+                    self.resources_graph.add_edge(
                         child_dict[parent_rsc_attribute],
                         parent_rsc_internal,
                         attribute_parent=attribute_parent,
@@ -200,12 +200,12 @@ class Query:
             # resource on which the parameter(s) will be applied
             if internal_name != self.main_internal_name:
                 internal_path = nx.shortest_path(
-                    self.rscs_graph,
+                    self.resources_graph,
                     source=self.main_internal_name,
                     target=internal_name,
                 )
                 for ind in range(len(internal_path) - 1):
-                    edge = self.rscs_graph.edges[
+                    edge = self.resources_graph.edges[
                         internal_path[ind], internal_path[ind + 1]
                     ]
                     if "attribute_child" in edge:
@@ -267,12 +267,12 @@ class Query:
             if internal_name != self.main_internal_name:
                 url_temp = ""
                 internal_path = nx.shortest_path(
-                    self.rscs_graph,
+                    self.resources_graph,
                     source=self.main_internal_name,
                     target=internal_name,
                 )
                 for ind in range(len(internal_path) - 1):
-                    edge = self.rscs_graph.edges[
+                    edge = self.resources_graph.edges[
                         internal_path[ind], internal_path[ind + 1]
                     ]
                     if "include" in edge:
@@ -376,8 +376,8 @@ class Query:
         """
         import matplotlib.pyplot as plt
 
-        layout = nx.random_layout(self.rscs_graph)
-        nx.draw_networkx(self.rscs_graph, pos=layout)
-        nx.draw_networkx_labels(self.rscs_graph, pos=layout)
-        nx.draw_networkx_edge_labels(self.rscs_graph, pos=layout)
+        layout = nx.random_layout(self.resources_graph)
+        nx.draw_networkx(self.resources_graph, pos=layout)
+        nx.draw_networkx_labels(self.resources_graph, pos=layout)
+        nx.draw_networkx_edge_labels(self.resources_graph, pos=layout)
         plt.show()
