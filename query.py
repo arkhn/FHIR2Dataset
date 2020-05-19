@@ -6,17 +6,17 @@ import networkx as nx
 class Query:
     def __init__(
         self,
-        service_base_url: str,
+        fhir_api_url: str,
         capabilitystatement_path: str = None,
     ) -> None:
-        self.base = service_base_url
+        self.fhir_api_url = fhir_api_url
         self.possible_references = self._get_rev_include_possibilities(
             capabilitystatement_path
         )
         """Instantiate the class and create the query object
 
         Arguments:
-            service_base_url {str} -- the Service Base URL
+            fhir_api_url {str} -- the Service Base URL (e.g. http://hapi.fhir.org/baseR4/)
             capabilitystatement_path {str} -- path to the json file that
             contains a resource of type CapabilityStatement
         """
@@ -29,7 +29,7 @@ class Query:
         self.url_params = ""
         self.url_rev_include = ""
         self.count = None
-        self.api_url = None
+        self.search_query_url = None
 
     def execute(
         self,
@@ -59,7 +59,7 @@ class Query:
             self._where(**where_dict)
         self._select(**select_dict)
 
-        self.api_url = self._compute_url()
+        self.search_query_url = self._compute_url()
 
         # to do :
         # 1. retrieve the result of the request
@@ -93,21 +93,21 @@ class Query:
         Returns:
             str -- corresponding API request url
         """
-        # to do verify self.base finish by '/'
-        api_url = (
-            self.base + self.resources_type[self.main_internal_name] + "?"
+        # to do verify self.fhir_api_url finish by '/'
+        search_query_url = (
+            self.fhir_api_url + self.resources_type[self.main_internal_name] + "?"
         )
         if self.url_params and self.url_rev_include:
-            api_url = (
-                f"{api_url}{self.url_params}&{self.url_rev_include}"
+            search_query_url = (
+                f"{search_query_url}{self.url_params}&{self.url_rev_include}"
                 f"&_format=json"
                 )
         else:
-            api_url = (
-                f"{api_url}{self.url_params}{self.url_rev_include}"
+            search_query_url = (
+                f"{search_query_url}{self.url_params}{self.url_rev_include}"
                 f"&_format=json"
                 )
-        return api_url
+        return search_query_url
 
     def _from(self, **ressourcetype_internalname: dict):
         """Registers the resources concerned by the query
@@ -363,7 +363,7 @@ class Query:
             dict --  dict object containing a CapabilityStatement 
             resource
         """
-        url = f"{self.base}/CapabilityStatement?"
+        url = f"{self.fhir_api_url}/CapabilityStatement?"
         response = requests.get(url)
         # 0 by default but we must investigate how to chose the right
         # CapabilityStatement ?
