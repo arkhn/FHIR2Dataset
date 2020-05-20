@@ -6,30 +6,30 @@ import networkx as nx
 class Query:
     def __init__(
         self,
-        service_base_url: str,
+        fhir_api_url: str,
         capabilitystatement_path: str = None,
     ) -> None:
-        self.base = service_base_url
+        self.fhir_api_url = fhir_api_url
         self.possible_references = self._get_rev_include_possibilities(
             capabilitystatement_path
         )
         """Instantiate the class and create the query object
 
         Arguments:
-            service_base_url {str} -- the Service Base URL
+            fhir_api_url {str} -- the Service Base URL (e.g. http://hapi.fhir.org/baseR4/)
             capabilitystatement_path {str} -- path to the json file that
             contains a resource of type CapabilityStatement
         """
 
         # to represent the relationships (references) between resources
-        self.rscs_graph = nx.DiGraph()
-        self.rscs_type = dict()
+        self.resources_graph = nx.DiGraph()
+        self.resources_type = dict()
 
-        self.main_internal_name = None
+        self.main_resource_alias = None
         self.url_params = ""
         self.url_rev_include = ""
         self.count = None
-        self.api_url = None
+        self.search_query_url = None
 
     def execute(
         self,
@@ -59,7 +59,7 @@ class Query:
             self._where(**where_dict)
         self._select(**select_dict)
 
-        self.api_url = self._compute_url()
+        self.search_query_url = self._compute_url()
 
         # to do :
         # 1. retrieve the result of the request
@@ -73,18 +73,12 @@ class Query:
             config {dict} -- dictionary in the format of a configuration
             file
         """
-        rename_keys = [
-            ("from", "from_dict"),
-            ("where", "where_dict"),
-            ("select", "select_dict"),
-            ("join", "join_dict"),
-        ]
-        for old_key, new_key in rename_keys:
-            try:
-                config[new_key] = config.pop(old_key)
-            except:
-                pass
-        self.execute(**config)
+        self.execute(
+            from_dict=config.get("from",None),
+            select_dict=config.get("select",None),
+            where_dict=config.get("where",None),
+            join_dict=config.get("join",None)
+            )
 
     def _compute_url(self) -> str:
         """Generates the API request url satisfying the conditions from,
@@ -93,83 +87,83 @@ class Query:
         Returns:
             str -- corresponding API request url
         """
-        # to do verify self.base finish by '/'
-        api_url = (
-            self.base + self.rscs_type[self.main_internal_name] + "?"
+        # to do verify self.fhir_api_url finish by '/'
+        search_query_url = (
+            self.fhir_api_url + self.resources_type[self.main_resource_alias] + "?"
         )
         if self.url_params and self.url_rev_include:
-            api_url = (
-                f"{api_url}{self.url_params}&{self.url_rev_include}"
+            search_query_url = (
+                f"{search_query_url}{self.url_params}&{self.url_rev_include}"
                 f"&_format=json"
                 )
         else:
-            api_url = (
-                f"{api_url}{self.url_params}{self.url_rev_include}"
+            search_query_url = (
+                f"{search_query_url}{self.url_params}{self.url_rev_include}"
                 f"&_format=json"
                 )
-        return api_url
+        return search_query_url
 
-    def _from(self, **ressourcetype_internalname: dict):
+    def _from(self, **ressource_type_alias: dict):
         """Registers the resources concerned by the query
         """
         for (
             ressource_type,
-            internal_name,
-        ) in ressourcetype_internalname.items():
-            self.rscs_graph.add_node(internal_name)
-            self.rscs_type[internal_name] = ressource_type
+            ressource_alias,
+        ) in ressource_type_alias.items():
+            self.resources_graph.add_node(ressource_alias)
+            self.resources_type[ressource_alias] = ressource_type
 
     def _join(self, **join_as):
         """Builds the links between the resources involved in the query
         """
-        for parent_rsc_internal, child_dict in join_as.items():
-            parent_rsc_type = self.rscs_type[parent_rsc_internal]
-            for parent_rsc_attribute in child_dict.keys():
-                child_rsc_type = self.rscs_type[
-                    child_dict[parent_rsc_attribute]
+        for alias_parent_resource, child_dict in join_as.items():
+            type_parent_resource = self.resources_type[alias_parent_resource]
+            for attribute_parent_resource in child_dict.keys():
+                type_child_resource = self.resources_type[
+                    child_dict[attribute_parent_resource]
                 ]
-                check = f"{parent_rsc_type}.{parent_rsc_attribute}"
+                check = f"{type_parent_resource}.{attribute_parent_resource}"
                 if (
                     check
-                    in self.possible_references[parent_rsc_type][
+                    in self.possible_references[type_parent_resource][
                         "searchInclude"
                     ]
                 ):
                     attribute_child = (
-                        f"{parent_rsc_attribute}:{child_rsc_type}."
+                        f"{attribute_parent_resource}:{type_child_resource}."
                     )
                     include_url = (
-                        f"{parent_rsc_type}:{parent_rsc_attribute}:"
-                        f"{child_rsc_type}"
+                        f"{type_parent_resource}:{attribute_parent_resource}:"
+                        f"{type_child_resource}"
                     )
-                    self.rscs_graph.add_edge(
-                        parent_rsc_internal,
-                        child_dict[parent_rsc_attribute],
+                    self.resources_graph.add_edge(
+                        alias_parent_resource,
+                        child_dict[attribute_parent_resource],
                         attribute_child=attribute_child,
                         include=include_url,
                     )
                 if (
                     check
-                    in self.possible_references[child_rsc_type][
+                    in self.possible_references[type_child_resource][
                         "searchRevInclude"
                     ]
                 ):
                     attribute_parent = (
-                        f"{parent_rsc_type}:{parent_rsc_attribute}:"
+                        f"{type_parent_resource}:{attribute_parent_resource}:"
                     )
                     revinclud_url = (
-                        f"{parent_rsc_type}:{parent_rsc_attribute}:"
-                        f"{child_rsc_type}"
+                        f"{type_parent_resource}:{attribute_parent_resource}:"
+                        f"{type_child_resource}"
                     )
-                    self.rscs_graph.add_edge(
-                        child_dict[parent_rsc_attribute],
-                        parent_rsc_internal,
+                    self.resources_graph.add_edge(
+                        child_dict[attribute_parent_resource],
+                        alias_parent_resource,
                         attribute_parent=attribute_parent,
                         revinclude=revinclud_url,
                     )
                 else:
                     possibilities = self.possible_references[
-                        parent_rsc_type
+                        type_parent_resource
                     ]["searchInclude"]
                     print(f"{check} not in {possibilities}")
 
@@ -181,37 +175,37 @@ class Query:
         # results that do not match the conditions (due to the fact that
         # parameters chained to _has parameters are not cumulative).
         max_conditions = -1
-        for internal_name in wheres.keys():
+        for ressource_alias in wheres.keys():
             # the main resource chosen is the one with the most
             # specified parameters. Choice to be discussed, here I think
             # that it allows to make the best possible selection
             # knowing that in the chained parameters and with _has are
             # not cumulative.
-            curr_num_conditions = len(wheres[internal_name].keys())
+            curr_num_conditions = len(wheres[ressource_alias].keys())
             if curr_num_conditions > max_conditions:
                 max_conditions = curr_num_conditions
-                self.main_internal_name = internal_name
+                self.main_resource_alias = ressource_alias
 
-        for internal_name, conditions in wheres.items():
+        for ressource_alias, conditions in wheres.items():
             url_temp = ""
-            to_rsc = ""
+            to_resource = ""
 
             # Construction of the path from the main resource to the
             # resource on which the parameter(s) will be applied
-            if internal_name != self.main_internal_name:
+            if ressource_alias != self.main_resource_alias:
                 internal_path = nx.shortest_path(
-                    self.rscs_graph,
-                    source=self.main_internal_name,
-                    target=internal_name,
+                    self.resources_graph,
+                    source=self.main_resource_alias,
+                    target=ressource_alias,
                 )
                 for ind in range(len(internal_path) - 1):
-                    edge = self.rscs_graph.edges[
+                    edge = self.resources_graph.edges[
                         internal_path[ind], internal_path[ind + 1]
                     ]
                     if "attribute_child" in edge:
-                        to_rsc = edge["attribute_child"]
+                        to_resource = edge["attribute_child"]
                     elif "attribute_parent" in edge:
-                        to_rsc = f'_has:{edge["attribute_parent"]}'
+                        to_resource = f'_has:{edge["attribute_parent"]}'
 
             for search_param, value_full in conditions.items():
                 # add assert search_param in CapabilityStatement
@@ -227,11 +221,11 @@ class Query:
 
                 if url_temp != "":
                     url_temp = (
-                        f"{url_temp}&{to_rsc}{search_param}={value}"
+                        f"{url_temp}&{to_resource}{search_param}={value}"
                     )
                 else:
                     url_temp = (
-                        f"{url_temp}{to_rsc}{search_param}={value}"
+                        f"{url_temp}{to_resource}{search_param}={value}"
                     )
 
             if self.url_params:
@@ -256,23 +250,23 @@ class Query:
 
         resources_to_add = set(resources_to_add)
 
-        if not self.main_internal_name:
+        if not self.main_resource_alias:
             # if there was no where condition, default selection of the
             # main resource
-            self.main_internal_name = resources_to_add[0]
+            self.main_resource_alias = resources_to_add[0]
 
         # loop to include information about resources other than the
         # main resource
-        for internal_name in resources_to_add:
-            if internal_name != self.main_internal_name:
+        for ressource_alias in resources_to_add:
+            if ressource_alias != self.main_resource_alias:
                 url_temp = ""
                 internal_path = nx.shortest_path(
-                    self.rscs_graph,
-                    source=self.main_internal_name,
-                    target=internal_name,
+                    self.resources_graph,
+                    source=self.main_resource_alias,
+                    target=ressource_alias,
                 )
                 for ind in range(len(internal_path) - 1):
-                    edge = self.rscs_graph.edges[
+                    edge = self.resources_graph.edges[
                         internal_path[ind], internal_path[ind + 1]
                     ]
                     if "include" in edge:
@@ -326,18 +320,14 @@ class Query:
         ]:  # check the 0 , we could have several
             type = ressource["type"]
             dict_reference[type] = dict()
-            try:
+            if "searchRevInclude" in ressource:
                 dict_reference[type]["searchRevInclude"] = ressource[
                     "searchRevInclude"
                 ]
-            except:
-                pass
-            try:
+            if "searchInclude" in ressource:
                 dict_reference[type]["searchInclude"] = ressource[
                     "searchInclude"
                 ]
-            except:
-                pass
         return dict_reference
 
     def _get_capabilitystatement_from_file(
@@ -363,7 +353,7 @@ class Query:
             dict --  dict object containing a CapabilityStatement 
             resource
         """
-        url = f"{self.base}/CapabilityStatement?"
+        url = f"{self.fhir_api_url}/CapabilityStatement?"
         response = requests.get(url)
         # 0 by default but we must investigate how to chose the right
         # CapabilityStatement ?
@@ -376,8 +366,8 @@ class Query:
         """
         import matplotlib.pyplot as plt
 
-        layout = nx.random_layout(self.rscs_graph)
-        nx.draw_networkx(self.rscs_graph, pos=layout)
-        nx.draw_networkx_labels(self.rscs_graph, pos=layout)
-        nx.draw_networkx_edge_labels(self.rscs_graph, pos=layout)
+        layout = nx.random_layout(self.resources_graph)
+        nx.draw_networkx(self.resources_graph, pos=layout)
+        nx.draw_networkx_labels(self.resources_graph, pos=layout)
+        nx.draw_networkx_edge_labels(self.resources_graph, pos=layout)
         plt.show()
