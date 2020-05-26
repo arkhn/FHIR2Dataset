@@ -1,373 +1,253 @@
-import json
-import requests
-import networkx as nx
+import pandas as pd
+import logging
+
+logging.basicConfig(filename="data/log/logger.log", level=logging.DEBUG)
+
+from src.graphquery import GraphQuery
+from src.api_caller import ApiGetter
+from src.url_builder import URLBuilder
+from src.graph_outils import join_path
 
 
 class Query:
-    def __init__(
-        self,
-        fhir_api_url: str,
-        capabilitystatement_path: str = None,
-    ) -> None:
-        self.fhir_api_url = fhir_api_url
-        self.possible_references = self._get_rev_include_possibilities(
-            capabilitystatement_path
-        )
-        """Instantiate the class and create the query object
+    """Query Executor
+
+    Description:
+        This module purpose is to perform SQL-type queries whose information is 
+        filled in configuration files of the form:
+        ```
+        {
+            "from": {
+                "Resource type 1": "alias n°1",
+                "Resource type 2": "alias n°2",
+                "Resource type 3": "alias n°3"
+            },
+            "select": {
+                "alias n°1": [
+                    "expression of attribute a of resource type 1",
+                    "expression of attribute b of resource type 1",
+                    "expression of attribute c of resource type 1"
+                ],
+                "alias n°2": [
+                    "expression of attribute a of resource type 2"
+                ]
+            },
+            "join": {
+                "alias n°1": {
+                    "searchparam of attribute d, which is of type Reference, of resource type 1": "alias n°2"
+                },
+                "alias n°2": {
+                    "searchparam of attribute b, which is of type Reference, of resource type 2": "alias n°3"
+                }
+            },
+            "where": {
+                "alias n°2": {
+                    "searchparam of attribute c of resource type 2": "value 1",
+                    "searchparam of attribute d of resource type 2": "value 2"
+                },
+                "alias n°3": {
+                    "searchparam of attribute a of resource type 2": "value 3",
+                    "searchparam of attribute b of resource type 2": "value 4"
+                }
+            }
+        }
+        ```
+        for the next associated SQL query:
+        ```
+        SELECT (alias n°1).a, (alias n°1).b, (alias n°1).c, (alias n°2).a FROM (Resource type 1) as (alias n°1)
+        INNER JOIN (Resource type 2) as (alias n°2) 
+        ON (alias n°1).d = (alias n°2) 
+        INNER JOIN (Resource type 3) as (alias n°3) 
+        ON (alias n°2).b = (alias n°3) WHERE (alias n°2).c = "value 1"  
+        AND (alias n°2).d = "value 2"  
+        AND (alias n°3).a = "value 3"  
+        AND (alias n°3).b = "value 4"
+    ```
+    
+    Attributes:
+        config {dict} -- dictionary storing the initial request
+        graph_query {type(GraphQuery)} -- instance of a GraphQuery object that gives a graphical representation of the query
+        dataframes {dict} -- dictionary storing for each alias the resources requested on the api in tabular format
+        main_dataframe {DataFrame} -- pandas dataframe storing the final result table
+    """
+
+    def __init__(self, fhir_api_url: str, path_rules: str = None):
+        """Requestor's initialisation 
 
         Arguments:
-            fhir_api_url {str} -- the Service Base URL (e.g. http://hapi.fhir.org/baseR4/)
-            capabilitystatement_path {str} -- path to the json file that
-            contains a resource of type CapabilityStatement
-        """
-
-        # to represent the relationships (references) between resources
-        self.resources_graph = nx.DiGraph()
-        self.resources_type = dict()
-
-        self.main_resource_alias = None
-        self.url_params = ""
-        self.url_rev_include = ""
-        self.count = None
-        self.search_query_url = None
-
-    def execute(
-        self,
-        select_dict: dict,
-        from_dict: dict,
-        join_dict: dict = None,
-        where_dict: dict = None,
-    ):
-        """Executes the query and returns (not defined yet?)
-
-        Arguments:
-            select_dict {dict} -- dictionary containing the attributes 
-            to be selected from the different resources
-            from_dict {dict} -- dictionary containing all requested 
-            resources
+            fhir_api_url {str} -- The Service Base URL (e.g. http://hapi.fhir.org/baseR4/)
 
         Keyword Arguments:
-            join_dict {dict} -- dictionary containing the inner join 
-            rules between resources (default: {None})
-            where_dict {dict} -- dictionary containing the (cumulative) 
-            conditions to be met by the resources (default: {None})
+            path_rules {str} -- path to the folder containing the CapabilityStatement and SearchParameters file (default: {None})
         """
-        self._from(**from_dict)
-        if join_dict:
-            self._join(**join_dict)
-        if where_dict:
-            self._where(**where_dict)
-        self._select(**select_dict)
+        self.fhir_api_url = fhir_api_url
+        self.path_rules = path_rules
 
-        self.search_query_url = self._compute_url()
-
-        # to do :
-        # 1. retrieve the result of the request
-        # 2. Do all post-treatments
+        self.config = None
+        self.graph_query = None
+        self.dataframes = dict()
+        self.main_dataframe = None
 
     def from_config(self, config: dict):
-        """executes the query from a dictionary in the format of a 
-        configuration file
+        """Executes the query from a dictionary in the format of a configuration file
 
         Arguments:
-            config {dict} -- dictionary in the format of a configuration
-            file
+            config {dict} -- dictionary in the format of a configuration file
         """
-        self.execute(
-            from_dict=config.get("from",None),
-            select_dict=config.get("select",None),
-            where_dict=config.get("where",None),
-            join_dict=config.get("join",None)
-            )
+        self.config = {
+            "from_dict": config.get("from", None),
+            "select_dict": config.get("select", None),
+            "where_dict": config.get("where", None),
+            "join_dict": config.get("join", None),
+        }
 
-    def _compute_url(self) -> str:
-        """Generates the API request url satisfying the conditions from,
-        join, where and select
+    def execute(self):
+        """Executes the complete query
 
-        Returns:
-            str -- corresponding API request url
+        1. constructs a GraphQuery object to store the query as a graph
+        2. builds the url of the requests to send to the API
+        3. retrieves the answers from the api and puts them as tables in the dataframes attribute
+        4. executes joins to return the result table in the main_dataframe attribute
+
+        Coming soon: cleaning unrequested columns
         """
-        # to do verify self.fhir_api_url finish by '/'
-        search_query_url = (
-            self.fhir_api_url + self.resources_type[self.main_resource_alias] + "?"
+        self.graph_query = GraphQuery(
+            fhir_api_url=self.fhir_api_url, path=self.path_rules
         )
-        if self.url_params and self.url_rev_include:
-            search_query_url = (
-                f"{search_query_url}{self.url_params}&{self.url_rev_include}"
-                f"&_format=json"
-                )
-        else:
-            search_query_url = (
-                f"{search_query_url}{self.url_params}{self.url_rev_include}"
-                f"&_format=json"
-                )
-        return search_query_url
-
-    def _from(self, **ressource_type_alias: dict):
-        """Registers the resources concerned by the query
-        """
+        self.graph_query.execute(**self.config)
         for (
-            ressource_type,
-            ressource_alias,
-        ) in ressource_type_alias.items():
-            self.resources_graph.add_node(ressource_alias)
-            self.resources_type[ressource_alias] = ressource_type
+            resource_alias
+        ) in self.graph_query.resources_alias_info.keys():
+            elements = self.graph_query.resources_alias_info[
+                resource_alias
+            ]["elements"]
 
-    def _join(self, **join_as):
-        """Builds the links between the resources involved in the query
+            url_builder = URLBuilder(
+                fhir_api_url=self.fhir_api_url,
+                query_graph=self.graph_query,
+                main_resource_alias=resource_alias,
+            )
+
+            url = url_builder.search_query_url
+            call = ApiGetter(
+                url=url,
+                elements=elements,
+                main_resource_alias=resource_alias,
+            )
+            call.get_all()
+            self.dataframes[resource_alias] = call.display_data()
+        self._clean_columns()
+        self.main_dataframe = self._inner_join()
+        # to do check where
+        # clean to keep only wanted column
+
+    def _inner_join(self) -> pd.DataFrame:
+        """executes the joins one after the other in the order specified by the join_path function.
+
+        Returns:
+            pd.DataFrame -- dataframe containing all joined resources
         """
-        for alias_parent_resource, child_dict in join_as.items():
-            type_parent_resource = self.resources_type[alias_parent_resource]
-            for attribute_parent_resource in child_dict.keys():
-                type_child_resource = self.resources_type[
-                    child_dict[attribute_parent_resource]
-                ]
-                check = f"{type_parent_resource}.{attribute_parent_resource}"
-                if (
-                    check
-                    in self.possible_references[type_parent_resource][
-                        "searchInclude"
-                    ]
-                ):
-                    attribute_child = (
-                        f"{attribute_parent_resource}:{type_child_resource}."
-                    )
-                    include_url = (
-                        f"{type_parent_resource}:{attribute_parent_resource}:"
-                        f"{type_child_resource}"
-                    )
-                    self.resources_graph.add_edge(
-                        alias_parent_resource,
-                        child_dict[attribute_parent_resource],
-                        attribute_child=attribute_child,
-                        include=include_url,
-                    )
-                if (
-                    check
-                    in self.possible_references[type_child_resource][
-                        "searchRevInclude"
-                    ]
-                ):
-                    attribute_parent = (
-                        f"{type_parent_resource}:{attribute_parent_resource}:"
-                    )
-                    revinclud_url = (
-                        f"{type_parent_resource}:{attribute_parent_resource}:"
-                        f"{type_child_resource}"
-                    )
-                    self.resources_graph.add_edge(
-                        child_dict[attribute_parent_resource],
-                        alias_parent_resource,
-                        attribute_parent=attribute_parent,
-                        revinclude=revinclud_url,
-                    )
-                else:
-                    possibilities = self.possible_references[
-                        type_parent_resource
-                    ]["searchInclude"]
-                    print(f"{check} not in {possibilities}")
+        main_alias_join = self._get_main_alias_join()
+        main_df = self.dataframes[main_alias_join]
+        list_join = join_path(
+            self.graph_query.resources_alias_graph, main_alias_join
+        )
+        for alias_1, alias_2 in list_join:
+            df_1 = main_df
+            df_2 = self.dataframes[alias_2]
+            main_df = self._inner_join_2_df(alias_1, alias_2, df_1, df_2)
+        return main_df
 
-    def _where(self, **wheres):
-        """Builds the url_params that best respects the cumulative 
-        conditions specified on resource attributes
-        """
-        # With the current approach, adjustments must be made to remove
-        # results that do not match the conditions (due to the fact that
-        # parameters chained to _has parameters are not cumulative).
-        max_conditions = -1
-        for ressource_alias in wheres.keys():
-            # the main resource chosen is the one with the most
-            # specified parameters. Choice to be discussed, here I think
-            # that it allows to make the best possible selection
-            # knowing that in the chained parameters and with _has are
-            # not cumulative.
-            curr_num_conditions = len(wheres[ressource_alias].keys())
-            if curr_num_conditions > max_conditions:
-                max_conditions = curr_num_conditions
-                self.main_resource_alias = ressource_alias
+    def _inner_join_2_df(
+        self,
+        alias_1: str,
+        alias_2: str,
+        df_1: pd.DataFrame,
+        df_2: pd.DataFrame,
+    ) -> pd.DataFrame:
+        """Executes the inner join between two dataframes
+        
+        The join key is the id of the child resource.
+        This id is contained in :
+            * in the column child_alias:id of the child resource table named child_alias (e.g. parent:id for a parent dataframe)
+            * in the alias_parent:element_join column of the parent resource table named alias_parent (e.g. condition:subject.reference for a condition dataframe)
 
-        for ressource_alias, conditions in wheres.items():
-            url_temp = ""
-            to_resource = ""
-
-            # Construction of the path from the main resource to the
-            # resource on which the parameter(s) will be applied
-            if ressource_alias != self.main_resource_alias:
-                internal_path = nx.shortest_path(
-                    self.resources_graph,
-                    source=self.main_resource_alias,
-                    target=ressource_alias,
-                )
-                for ind in range(len(internal_path) - 1):
-                    edge = self.resources_graph.edges[
-                        internal_path[ind], internal_path[ind + 1]
-                    ]
-                    if "attribute_child" in edge:
-                        to_resource = edge["attribute_child"]
-                    elif "attribute_parent" in edge:
-                        to_resource = f'_has:{edge["attribute_parent"]}'
-
-            for search_param, value_full in conditions.items():
-                # add assert search_param in CapabilityStatement
-                value = ""
-
-                # handles the case where a prefix has been specified
-                # value_full={"ge": "1970"}
-                if type(value_full) is dict:
-                    for k, v in value_full.items():
-                        value += k + v
-                else:
-                    value = value_full
-
-                if url_temp != "":
-                    url_temp = (
-                        f"{url_temp}&{to_resource}{search_param}={value}"
-                    )
-                else:
-                    url_temp = (
-                        f"{url_temp}{to_resource}{search_param}={value}"
-                    )
-
-            if self.url_params:
-                self.url_params = (
-                    f"{self.url_params}&{url_temp}"
-                    )
-            else:
-                self.url_params = url_temp
-
-    def _select(self, **selects):
-        """constructs the include url that allows to retrieve 
-        information from resources neighboring the main resource when 
-        its attributes are requested in the select
-        """
-        resources_to_add = list(selects.keys())
-
-        # handles the case of count
-        if "count" in selects.keys():
-            self.count = selects["count"]
-            resources_to_add += selects["count"]
-            resources_to_add.remove("count")
-
-        resources_to_add = set(resources_to_add)
-
-        if not self.main_resource_alias:
-            # if there was no where condition, default selection of the
-            # main resource
-            self.main_resource_alias = resources_to_add[0]
-
-        # loop to include information about resources other than the
-        # main resource
-        for ressource_alias in resources_to_add:
-            if ressource_alias != self.main_resource_alias:
-                url_temp = ""
-                internal_path = nx.shortest_path(
-                    self.resources_graph,
-                    source=self.main_resource_alias,
-                    target=ressource_alias,
-                )
-                for ind in range(len(internal_path) - 1):
-                    edge = self.resources_graph.edges[
-                        internal_path[ind], internal_path[ind + 1]
-                    ]
-                    if "include" in edge:
-                        if url_temp:
-                            url_temp = (
-                                f'{url_temp}&_include:iterate='
-                                f'{edge["include"]}'
-                            )
-                        else:
-                            url_temp = (
-                                f'{url_temp}_include={edge["include"]}'
-                            )
-                    elif "revinclude" in edge:
-                        if url_temp:
-                            url_temp = (
-                                f'{url_temp}&_revinclude:iterate='
-                                f'{edge["revinclude"]}'
-                            )
-                        else:
-                            url_temp = (
-                                f'{url_temp}_revinclude={edge["revinclude"]}'
-                            )
-                if self.url_rev_include:
-                    self.url_rev_include = f"{self.url_rev_include}&{url_temp}"
-                else:
-                    self.url_rev_include = url_temp
-
-    def _get_rev_include_possibilities(
-        self, capabilitystatement_path: str = None
-    ):
-        """Builds a dictionary that will indicate for each type of 
-        resource which are its mother resources (revinclude) and its 
-        daughter resources (include).
+        The function is in charge of finding out who is the mother resource and who is the daughter resource.
 
         Arguments:
-            capabilitystatement_path {str} -- path to the json file that
-            contains a resource of type CapabilityStatement
+            alias_1 {str} -- df_1 alias
+            alias_2 {str} -- df_2 alias
+            df_1 {pd.DataFrame} -- dataframe containing the elements of a resource
+            df_2 {pd.DataFrame} -- dataframe containing the elements of a resource
+        Returns:
+            pd.DataFrame -- dataframe containing the elements of the 2 resources according to an inner join
         """
-        if capabilitystatement_path:
-            capabilitystatement = self._get_capabilitystatement_from_file(
-                capabilitystatement_path
+        edge_info = self.graph_query.resources_alias_graph.edges[
+            alias_1, alias_2
+        ]
+        alias_parent = edge_info["parent"]
+        alias_child = edge_info["child"]
+
+        element_join = edge_info["element_join"]
+
+        parent_on = f"{alias_parent}:{element_join}"
+        child_on = f"{alias_child}:id"
+
+        if alias_1 == alias_parent:
+            df_merged_inner = pd.merge(
+                left=df_1,
+                right=df_2,
+                left_on=parent_on,
+                right_on=child_on,
             )
         else:
-            capabilitystatement = (
-                self._get_capabilitystatement_from_api()
+            df_merged_inner = pd.merge(
+                left=df_1,
+                right=df_2,
+                left_on=child_on,
+                right_on=parent_on,
+            )
+        return df_merged_inner
+
+    def _get_main_alias_join(self) -> str:
+        """returns the alias being involved in the maximum number of joins
+
+        Returns:
+            str -- an alias
+        """
+        main_alias = None
+        max_join = -1
+        for (
+            alias,
+            infos,
+        ) in self.graph_query.resources_alias_info.items():
+            num_join = len(infos["elements"]["join"])
+            if max_join < num_join:
+                main_alias = alias
+                max_join = num_join
+        return main_alias
+
+    def _clean_columns(self):
+        """performs preprocessing on all dataframes harvested in the dataframe attribute:
+            * adds the resource type in front of an element id so that the resource id matches the references of its parent resource references
+            * adds the table alias as a prefix to each column name
+        """
+        for resource_alias, df in self.dataframes.items():
+            resource_type = self.graph_query.resources_alias_info[
+                resource_alias
+            ]["resource_type"]
+
+            df = df.pipe(
+                Query._add_resource_type_to_id,
+                resource_type=resource_type,
             )
 
-        dict_reference = dict()
-        for ressource in capabilitystatement["resource"]["rest"][0][
-            "resource"
-        ]:  # check the 0 , we could have several
-            type = ressource["type"]
-            dict_reference[type] = dict()
-            if "searchRevInclude" in ressource:
-                dict_reference[type]["searchRevInclude"] = ressource[
-                    "searchRevInclude"
-                ]
-            if "searchInclude" in ressource:
-                dict_reference[type]["searchInclude"] = ressource[
-                    "searchInclude"
-                ]
-        return dict_reference
+            self.dataframes[resource_alias] = df.add_prefix(
+                f"{resource_alias}:"
+            )
 
-    def _get_capabilitystatement_from_file(
-        self, capabilitystatement_path: str
-    ) -> dict:
-        """Get the CapabilityStatement from the json file
+    @staticmethod
+    def _add_resource_type_to_id(df, resource_type: str):
+        df["id"] = f"{resource_type}/" + df["id"]
+        return df
 
-        Arguments:
-            capabilitystatement_path {str} -- path to the json file that
-             contains a resource of type CapabilityStatement
-        Returns:
-            dict -- dict object containing a CapabilityStatement 
-            resource
-        """
-        with open(capabilitystatement_path) as json_file:
-            capabilitystatement = json.load(json_file)
-        return capabilitystatement
-
-    def _get_capabilitystatement_from_api(self) -> dict:
-        """Get the CapabilityStatement from the base
-
-        Returns:
-            dict --  dict object containing a CapabilityStatement 
-            resource
-        """
-        url = f"{self.fhir_api_url}/CapabilityStatement?"
-        response = requests.get(url)
-        # 0 by default but we must investigate how to chose the right
-        # CapabilityStatement ?
-        capabilitystatement = response.json()["entry"][0]
-        return capabilitystatement
-
-    def draw_relations(self):
-        """draws the possible relationships between the requested 
-        resources
-        """
-        import matplotlib.pyplot as plt
-
-        layout = nx.random_layout(self.resources_graph)
-        nx.draw_networkx(self.resources_graph, pos=layout)
-        nx.draw_networkx_labels(self.resources_graph, pos=layout)
-        nx.draw_networkx_edge_labels(self.resources_graph, pos=layout)
-        plt.show()
