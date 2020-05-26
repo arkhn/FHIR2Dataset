@@ -51,7 +51,7 @@ class CallApi:
 
 
 class ApiGetter(CallApi):
-    """generic class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
+    """class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
     """
     def __init__(self, url: str, elements:dict, main_resource_alias:str):
         CallApi.__init__(self, url)
