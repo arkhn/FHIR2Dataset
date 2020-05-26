@@ -2,11 +2,35 @@
 
 Transform FHIR to dataset for ML applications
 
+## FHIR2Dataset in Detail
+
+This project is still under development.
+
 This repo is a POC allowing to make a query (close to SQL format) on a FHIR API and to retrieve tabular data.
+
+The request that FHIR2Dataset performs on a FHIR API is specified in a configuration file of this [form](examples/config_template.json).
+The purpose of this file is to perform a query whose result will be identical to the next SQL query:
+```
+SELECT (alias n°1).a, (alias n°1).b, (alias n°1).c, (alias n°2).a FROM (Resource type 1) as (alias n°1)
+INNER JOIN (Resource type 2) as (alias n°2) 
+ON (alias n°1).d = (alias n°2) 
+INNER JOIN (Resource type 3) as (alias n°3) 
+ON (alias n°2).b = (alias n°3) WHERE (alias n°2).c = "value 1"  
+AND (alias n°2).d = "value 2"  
+AND (alias n°3).a = "value 3"  
+AND (alias n°3).b = "value 4"
+```
+
 
 ## Installation
 
-This project is still under development, instructions are coming soon.
+After cloning this repository, you can install the required dependencies
+
+```
+pip install -r requirements.txt
+```
+
+For usage, refer to [Jupyer Notebook](example/examples.ipynb)
 
 ## Examples
 
