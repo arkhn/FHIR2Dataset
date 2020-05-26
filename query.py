@@ -147,11 +147,11 @@ class Query:
         Returns:
             pd.DataFrame -- dataframe containing all joined resources
         """
-        main_alias_join = self._get_main_alias_join()
-        main_df = self.dataframes[main_alias_join]
         list_join = join_path(
-            self.graph_query.resources_alias_graph, main_alias_join
+            self.graph_query.resources_alias_graph
         )
+        main_alias_join = list_join[0][0]
+        main_df = self.dataframes[main_alias_join]
         for alias_1, alias_2 in list_join:
             df_1 = main_df
             df_2 = self.dataframes[alias_2]
