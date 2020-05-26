@@ -30,7 +30,7 @@ After cloning this repository, you can install the required dependencies
 pip install -r requirements.txt
 ```
 
-For usage, refer to [Jupyer Notebook](example/examples.ipynb)
+For usage, refer to [Jupyer Notebook](examples/example.ipynb)
 
 ## Examples
 
