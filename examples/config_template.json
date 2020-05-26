@@ -1,0 +1,35 @@
+{
+    "from": {
+        "Resource type 1": "alias n°1",
+        "Resource type 2": "alias n°2",
+        "Resource type 3": "alias n°3"
+    },
+    "select": {
+        "alias n°1": [
+            "expression of attribute a of resource type 1",
+            "expression of attribute b of resource type 1",
+            "expression of attribute c of resource type 1"
+        ],
+        "alias n°2": [
+            "expression of attribute a of resource type 2"
+        ]
+    },
+    "join": {
+        "alias n°1": {
+            "searchparam of attribute d, which is of type Reference, of resource type 1": "alias n°2"
+        },
+        "alias n°2": {
+            "searchparam of attribute b, which is of type Reference, of resource type 2": "alias n°3"
+        }
+    },
+    "where": {
+        "alias n°2": {
+            "searchparam of attribute c of resource type 2": "value 1",
+            "searchparam of attribute d of resource type 2": "value 2"
+        },
+        "alias n°3": {
+            "searchparam of attribute a of resource type 2": "value 3",
+            "searchparam of attribute b of resource type 2": "value 4"
+        }
+    }
+}
