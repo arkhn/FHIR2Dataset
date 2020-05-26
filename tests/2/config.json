@@ -1,0 +1,30 @@
+{
+    "select": {
+        "observation": [
+            "component.valueQuantity.value"
+        ],
+        "patient": [
+            "birthdate",
+            "gender"
+        ]
+    },
+    "from": {
+        "patient": "Patient",
+        "observation": "Observation"
+    },
+    "join": {
+        "observation": {
+            "subject": "patient"
+        }
+    },
+    "where": {
+        "patient": {
+            "birthdate": {
+                "gt": "1970"
+            }
+        },
+        "observation": {
+            "code": "http://loinc.org|85354-9"
+        }
+    }
+}
