@@ -1,8 +1,8 @@
 {
     "from": {
-        "Resource type 1": "alias n°1",
-        "Resource type 2": "alias n°2",
-        "Resource type 3": "alias n°3"
+        "alias n°1": "Resource type 1",
+        "alias n°2": "Resource type 2",
+        "alias n°3": "Resource type 3"
     },
     "select": {
         "alias n°1": [
