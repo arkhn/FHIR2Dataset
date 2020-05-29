@@ -32,6 +32,20 @@ def test_3():
 
     test_resources_in_dataframe(dirname, fhir_api_url, path_rules)
 
+def test_4():
+    dirname = "tests/4"
+    fhir_api_url = "http://hapi.fhir.org/baseR4/"
+    path_rules = "data"
+
+    test_resources_in_dataframe(dirname, fhir_api_url, path_rules)
+
+def test_5():
+    dirname = "tests/5"
+    fhir_api_url = "http://hapi.fhir.org/baseR4/"
+    path_rules = "data"
+
+    test_resources_in_dataframe(dirname, fhir_api_url, path_rules)
+
 if __name__ == "__main__":
     os.chdir(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,3 +53,5 @@ if __name__ == "__main__":
     test_1()
     test_2()
     test_3()
+    test_4()
+    test_5()
