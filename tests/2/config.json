@@ -4,7 +4,7 @@
             "component.valueQuantity.value"
         ],
         "patient": [
-            "birthdate",
+            "birthDate",
             "gender"
         ]
     },
