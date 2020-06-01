@@ -30,7 +30,7 @@ After cloning this repository, you can install the required dependencies
 pip install -r requirements.txt
 ```
 
-For usage, refer to [Jupyer Notebook](examples/example.ipynb)
+For usage, refer to this [turorial](https://htmlpreview.github.io/?https://github.com/arkhn/FHIR2Dataset/blob/query_tests/examples/tutorial.html) and then this [Jupyer Notebook](examples/example.ipynb)
 
 ## Examples
 
