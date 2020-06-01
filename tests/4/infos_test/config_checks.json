@@ -1,0 +1,5 @@
+{
+    "line": [
+        [["patient", "patient_1.json"], ["observation","observation_1.json"]]
+    ]
+}
