@@ -1,12 +1,11 @@
 import pandas as pd
 import logging
+import os
 
-logging.basicConfig(filename="data/log/logger.log", level=logging.DEBUG)
-
-from src.graphquery import GraphQuery
-from src.api_caller import ApiGetter
-from src.url_builder import URLBuilder
-from src.graph_outils import join_path
+from .src.graphquery import GraphQuery
+from .src.api_caller import ApiGetter
+from .src.url_builder import URLBuilder
+from .src.graph_outils import join_path
 
 
 class Query:
@@ -71,7 +70,7 @@ class Query:
         main_dataframe {DataFrame} -- pandas dataframe storing the final result table
     """
 
-    def __init__(self, fhir_api_url: str, path_rules: str = None):
+    def __init__(self, fhir_api_url: str, path_rules: str = "data"):
         """Requestor's initialisation 
 
         Arguments:
@@ -101,7 +100,7 @@ class Query:
             "join_dict": config.get("join", None),
         }
 
-    def execute(self):
+    def execute(self, debug: bool = False):
         """Executes the complete query
 
         1. constructs a GraphQuery object to store the query as a graph
@@ -109,18 +108,26 @@ class Query:
         3. retrieves the answers from the api and puts them as tables in the dataframes attribute
         4. executes joins to return the result table in the main_dataframe attribute
 
-        Coming soon: cleaning unrequested columns
+        Keyword Arguments::
+            debug {bool} -- if debug is true then the columns needed for internal processing are kept in the final dataframe. Otherwise only the columns of the select are kept in the final dataframe. (default: {False})
         """
         self.graph_query = GraphQuery(
-            fhir_api_url=self.fhir_api_url, path=self.path_rules
+            fhir_api_url=self.fhir_api_url,
+            path=os.path.join(
+                os.path.dirname(__file__), self.path_rules
+            ),
         )
         self.graph_query.execute(**self.config)
         for (
             resource_alias
         ) in self.graph_query.resources_alias_info.keys():
-            elements = self.graph_query.resources_alias_info[
+            resource_alias_info = self.graph_query.resources_alias_info[
                 resource_alias
-            ]["elements"]
+            ]
+            elements = resource_alias_info["elements"]
+            elements_concat_type = resource_alias_info[
+                "elements_concat_type"
+            ]
 
             url_builder = URLBuilder(
                 fhir_api_url=self.fhir_api_url,
@@ -132,40 +139,59 @@ class Query:
             call = ApiGetter(
                 url=url,
                 elements=elements,
+                elements_concat_type=elements_concat_type,
                 main_resource_alias=resource_alias,
             )
             call.get_all()
             self.dataframes[resource_alias] = call.display_data()
         self._clean_columns()
-        self.main_dataframe = self._inner_join()
+        self.main_dataframe = self._join()
+        if not debug:
+            self._select_columns()
         # to do check where
-        # clean to keep only wanted column
 
-    def _inner_join(self) -> pd.DataFrame:
+    def _select_columns(self):
+        """Clean the final dataframe to keep only the columns of the select
+        """
+        final_columns = []
+        for (
+            resource_alias
+        ) in self.graph_query.resources_alias_info.keys():
+            resource_alias_info = self.graph_query.resources_alias_info[
+                resource_alias
+            ]
+            elements_select = resource_alias_info["elements"]["select"]
+            final_columns.extend(
+                [
+                    f"{resource_alias}:{element}"
+                    for element in elements_select
+                ]
+            )
+        self.main_dataframe = self.main_dataframe[final_columns]
+
+    def _join(self) -> pd.DataFrame:
         """executes the joins one after the other in the order specified by the join_path function.
 
         Returns:
             pd.DataFrame -- dataframe containing all joined resources
         """
-        list_join = join_path(
-            self.graph_query.resources_alias_graph
-        )
+        list_join = join_path(self.graph_query.resources_alias_graph)
         main_alias_join = list_join[0][0]
         main_df = self.dataframes[main_alias_join]
         for alias_1, alias_2 in list_join:
             df_1 = main_df
             df_2 = self.dataframes[alias_2]
-            main_df = self._inner_join_2_df(alias_1, alias_2, df_1, df_2)
+            main_df = self._join_2_df(alias_1, alias_2, df_1, df_2)
         return main_df
 
-    def _inner_join_2_df(
+    def _join_2_df(
         self,
         alias_1: str,
         alias_2: str,
         df_1: pd.DataFrame,
         df_2: pd.DataFrame,
     ) -> pd.DataFrame:
-        """Executes the inner join between two dataframes
+        """Executes the join between two dataframes
         
         The join key is the id of the child resource.
         This id is contained in :
@@ -188,10 +214,18 @@ class Query:
         alias_parent = edge_info["parent"]
         alias_child = edge_info["child"]
 
+        how = edge_info["join_how"]
         element_join = edge_info["element_join"]
 
         parent_on = f"{alias_parent}:{element_join}"
         child_on = f"{alias_child}:id"
+
+        if how == "child":
+            how = "right"
+        elif how == "parent":
+            how = "left"
+        elif how != "inner":
+            how = "inner"
 
         if alias_1 == alias_parent:
             df_merged_inner = pd.merge(
@@ -199,13 +233,15 @@ class Query:
                 right=df_2,
                 left_on=parent_on,
                 right_on=child_on,
+                how=how,
             )
         else:
             df_merged_inner = pd.merge(
-                left=df_1,
-                right=df_2,
-                left_on=child_on,
-                right_on=parent_on,
+                left=df_2,
+                right=df_1,
+                left_on=parent_on,
+                right_on=child_on,
+                how=how,
             )
         return df_merged_inner
 
@@ -248,6 +284,6 @@ class Query:
 
     @staticmethod
     def _add_resource_type_to_id(df, resource_type: str):
+        # add assert to check that there is only one id in list
         df["id"] = f"{resource_type}/" + df["id"]
         return df
-
