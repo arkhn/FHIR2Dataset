@@ -5,7 +5,7 @@ import logging
 
 sys.path.append(".")
 
-from outils import test_resources_in_dataframe
+from tools import test_resources_in_dataframe
 
 log_format = "[%(asctime)s] [%(levelname)s] - %(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
