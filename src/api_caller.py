@@ -105,7 +105,7 @@ class ApiGetter(CallApi):
         Returns:
             dict -- dictionary containing these objectpath.Tree
         """
-        dico_ressources = dict()
+        dico_ressources = defaultdict(list)
         for rsc in self.results:
             rsc = objectpath.Tree(rsc)
             # type_resource = rsc.execute("$.resource.resourceType")
