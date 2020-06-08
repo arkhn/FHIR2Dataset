@@ -4,7 +4,7 @@ import requests
 import json
 import types
 import logging
-
+from collections import defaultdict
 
 class CallApi:
     """generic class that manages the sending and receiving of a url request to a FHIR API.
