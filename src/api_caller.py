@@ -110,10 +110,7 @@ class ApiGetter(CallApi):
             rsc = objectpath.Tree(rsc)
             # type_resource = rsc.execute("$.resource.resourceType")
             # assert type_resource == self.graph.resources_alias_info[self.main_resource_alias]["resource_type"]
-            if self.main_resource_alias in dico_ressources:
-                dico_ressources[self.main_resource_alias].append(rsc)
-            else:
-                dico_ressources[self.main_resource_alias] = [rsc]
+            dico_ressources[self.main_resource_alias].append(rsc)
         return dico_ressources
 
     def _init_data(self) -> dict:
