@@ -90,11 +90,11 @@ class ApiGetter(CallApi):
     def _get_data(self):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
         """
-        dico_ressources = self._resources_to_tree()
-        for ressource_tree in dico_ressources[self.main_resource_alias]:
+        dico_resources = self._resources_to_tree()
+        for resource_tree in dico_resources[self.main_resource_alias]:
             for element, search in self.expressions.items():
                 # logging.info(f"search: {search}")
-                item = ressource_tree.execute(search)
+                item = resource_tree.execute(search)
                 if isinstance(item, types.GeneratorType):
                     item = list(item)
                 self.data[element].append(item)
@@ -105,13 +105,13 @@ class ApiGetter(CallApi):
         Returns:
             dict -- dictionary containing these objectpath.Tree
         """
-        dico_ressources = defaultdict(list)
+        dico_resources = defaultdict(list)
         for rsc in self.results:
             rsc = objectpath.Tree(rsc)
             # type_resource = rsc.execute("$.resource.resourceType")
             # assert type_resource == self.graph.resources_alias_info[self.main_resource_alias]["resource_type"]
-            dico_ressources[self.main_resource_alias].append(rsc)
-        return dico_ressources
+            dico_resources[self.main_resource_alias].append(rsc)
+        return dico_resources
 
     def _init_data(self) -> dict:
         """generation of a dictionary whose keys correspond to expressions (column name) and the value to an empty list
@@ -135,7 +135,7 @@ class ApiGetter(CallApi):
         """transforms the element to be retrieved at the resource level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
         """
         elements_after_resource = (
-            self.elements["additional_ressource"]
+            self.elements["additional_resource"]
             + self.elements["select"]
             + self.elements["where"]
             + self.elements["join"]

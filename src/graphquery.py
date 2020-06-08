@@ -83,10 +83,10 @@ class GraphQuery:
         Keyword Arguments:
             **resource_type_alias: the key corresponds to the alias and the value to the type of the resource.
         """
-        for (ressource_alias, resource_type,) in resource_type_alias.items():
+        for (resource_alias, resource_type,) in resource_type_alias.items():
             dict_elements = {
                 "select": [],
-                "additional_ressource": ["id"],
+                "additional_resource": ["id"],
                 # "additional_root" : ["fullUrl"],
                 "additional_root": [],
                 "where": [],
@@ -94,9 +94,9 @@ class GraphQuery:
             }
             dict_search_parameters = dict()
 
-            self.resources_alias_graph.add_node(ressource_alias)
+            self.resources_alias_graph.add_node(resource_alias)
 
-            self.resources_alias_info[ressource_alias] = {
+            self.resources_alias_info[resource_alias] = {
                 "resource_type": resource_type,
                 "elements": dict_elements,
                 "search_parameters": dict_search_parameters,
@@ -117,7 +117,7 @@ class GraphQuery:
             for (searchparam_parent, alias_child,) in searchparam_dict.items():
 
                 # Update element to have in table
-                element_join = self.fhir_rules.ressourcetype_searchparam_to_element(
+                element_join = self.fhir_rules.resourcetype_searchparam_to_element(
                     resource_type=type_parent, search_param=searchparam_parent,
                 )
                 element_join = f"{element_join}.reference"
@@ -176,7 +176,7 @@ class GraphQuery:
         Keyword Arguments:
             **wheres: the key is an alias, the value is a dictionary containing itself keys which are searchparams and whose values must be respected by the associated search params.
         """
-        for ressource_alias, conditions in wheres.items():
+        for resource_alias, conditions in wheres.items():
             for search_param, value_full in conditions.items():
                 # add assert search_param in CapabilityStatement
 
@@ -190,15 +190,15 @@ class GraphQuery:
                     prefix = None
                     value = value_full
                 # to do verify we don't delete something
-                self.resources_alias_info[ressource_alias]["search_parameters"][search_param] = {
+                self.resources_alias_info[resource_alias]["search_parameters"][search_param] = {
                     "prefix": prefix,
                     "value": value,
                 }
-                element = self.fhir_rules.ressourcetype_searchparam_to_element(
-                    resource_type=self.resources_alias_info[ressource_alias]["resource_type"],
+                element = self.fhir_rules.resourcetype_searchparam_to_element(
+                    resource_type=self.resources_alias_info[resource_alias]["resource_type"],
                     search_param=search_param,
                 )
-                self.resources_alias_info[ressource_alias]["elements"]["where"].append(element)
+                self.resources_alias_info[resource_alias]["elements"]["where"].append(element)
 
     def _select(self, **selects):
         """updates the resources_alias_info attribute with the elements that must be retrieved for each alias
@@ -209,8 +209,8 @@ class GraphQuery:
         for resource_alias in selects.keys():
             # handles the case of count
             if "count" == resource_alias:
-                for ressource_alias_count in selects["count"]:
-                    self.resources_alias_info[ressource_alias_count]["count"] = True
+                for resource_alias_count in selects["count"]:
+                    self.resources_alias_info[resource_alias_count]["count"] = True
             self.resources_alias_info[resource_alias]["elements"]["select"] += selects[
                 resource_alias
             ]

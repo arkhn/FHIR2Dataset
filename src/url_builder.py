@@ -47,12 +47,12 @@ class URLBuilder:
     def _get_url_params(self):
         """retrieves the portions of the url that specify search parameters
         """
-        for ressource_alias in self._query_graph.resources_alias_info.keys():
+        for resource_alias in self._query_graph.resources_alias_info.keys():
             url_temp = None
-            to_resource, reliable = self._chained_params(ressource_alias)
+            to_resource, reliable = self._chained_params(resource_alias)
 
             if reliable:
-                infos_alias = self._query_graph.resources_alias_info[ressource_alias]
+                infos_alias = self._query_graph.resources_alias_info[resource_alias]
                 infos_search_param = infos_alias["search_parameters"]
                 for search_param, values in infos_search_param.items():
                     # add assert search_param in CapabilityStatement
@@ -65,11 +65,11 @@ class URLBuilder:
                 # logging.info(f"url_params: {self._url_params}")
 
     # To change because it's useless to go through dijstra for the moment knowing that we only do chain parameters of length 1.
-    def _chained_params(self, ressource_alias: str) -> tuple:
+    def _chained_params(self, resource_alias: str) -> tuple:
         """gives the prefix (in the first element of the output tuple) to make a chained parameter from the main resource to the resource given as argument. If the resource given as argument is not a neighbor of the main resource, the second element of the output tuple is set to false
 
         Arguments:
-            ressource_alias {str} -- alias of a resource
+            resource_alias {str} -- alias of a resource
 
         Returns:
             tuple -- (prefix, boolean)
@@ -78,11 +78,11 @@ class URLBuilder:
         reliable = True
         # Construction of the path from the main resource to the
         # resource on which the parameter(s) will be applied
-        if ressource_alias != self.main_resource_alias:
+        if resource_alias != self.main_resource_alias:
             internal_path = nx.shortest_path(
                 self._query_graph.resources_alias_graph,
                 source=self.main_resource_alias,
-                target=ressource_alias,
+                target=resource_alias,
             )
             # because we are not sure about chaining
             if len(internal_path) <= 2:

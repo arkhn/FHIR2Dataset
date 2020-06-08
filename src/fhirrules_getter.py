@@ -35,7 +35,7 @@ class FHIRRules:
         self.possible_references = self._get_rev_include_possibilities()
         self.searchparam_to_element = self._get_searchparam_to_element()
 
-    def ressourcetype_searchparam_to_element(self, resource_type: str, search_param: str):
+    def resourcetype_searchparam_to_element(self, resource_type: str, search_param: str):
         """retrieves the expression that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
 
         Arguments:
