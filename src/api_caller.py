@@ -27,9 +27,9 @@ class CallApi:
         self.status_code = response.status_code
         try:
             self.results = response.json()["entry"]
-        except:
+        except KeyError as e:
             # add things to understand why
-            logging.info("There is no matching resources")
+            logging.info(f"Got a KeyError - There's no {e} key in the json data we received.")
         try:
             next_bool = False
             for relation in response.json()["link"]:
@@ -38,9 +38,9 @@ class CallApi:
                     next_bool = True
             if not next_bool:
                 self.next_url = None
-        except:
+        except KeyError as e:
             # add things to understand why
-            logging.info("There is no matching resources")
+            logging.info(f"Got a KeyError - There's no {e} key in the json data we received.")
 
     def get_next(self):
         """retrieves the responses contained in the following pages
