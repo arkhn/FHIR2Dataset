@@ -13,11 +13,9 @@ class URLBuilder:
         main_resource_alias: alias given to a set of fhir resources of a certain type which are the subject of the api query
         search_query_url: url which will make it possible to recover the resources of the type of main_alias respecting as well as possible the conditions where on itself and on its neighbors.
     """
+
     def __init__(
-        self,
-        fhir_api_url: str,
-        query_graph: type(GraphQuery),
-        main_resource_alias: str
+        self, fhir_api_url: str, query_graph: type(GraphQuery), main_resource_alias: str
     ) -> None:
         """
         Arguments:
@@ -93,11 +91,9 @@ class URLBuilder:
                     edge = self._query_graph.resources_alias_graph.edges[
                         internal_path[ind], internal_path[ind + 1]
                     ]
-                    #logging.info(f"edge:{edge}")
+                    # logging.info(f"edge:{edge}")
                     searchparam_prefix = edge[internal_path[ind]]["searchparam_prefix"]
-                    to_resource = (
-                            f"{to_resource or ''}{searchparam_prefix}"
-                        )
+                    to_resource = f"{to_resource or ''}{searchparam_prefix}"
             else:
                 reliable = False
         return to_resource, reliable
