@@ -75,11 +75,15 @@ class CallApi:
 class ApiGetter(CallApi):
     """class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
     """
-    def __init__(self, url: str, elements:dict, main_resource_alias:str):
+
+    def __init__(
+        self, url: str, elements: dict, elements_concat_type: dict, main_resource_alias: str
+    ):
         CallApi.__init__(self, url)
         self.main_resource_alias = main_resource_alias
         self.elements = elements
-        self.expressions = dict()
+        self.elements_concat_type = elements_concat_type
+        self.expressions = {"exact": {}, "to_test": {}}
         self._get_element_at_root()
         self._get_element_after_resource()
         self.data = self._init_data()
@@ -112,31 +116,61 @@ class ApiGetter(CallApi):
     def _get_data(self):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
         """
-        dico_ressources = self._resources_to_tree()
-        for ressource_tree in dico_ressources[self.main_resource_alias]:
-            for element, search in self.expressions.items():
-                # logging.info(f"search: {search}")
-                item = ressource_tree.execute(search)
-                if isinstance(item, types.GeneratorType):
-                    item = list(item)
-                self.data[element].append(item)
+        data = pd.DataFrame(self.data)
+        for json_resource in self.results:
+            lines = self._get_match_search(json_resource)
+            df = self._flatten_item_results(lines)
+            data = pd.concat([data, df])
+        self.data = data
 
-    def _resources_to_tree(self) -> dict:
-        """transforms json instances of recovered resources into an objectpath.Tree
+    def _flatten_item_results(self, lines):
+        infos = self.elements_concat_type
+        cols = list(lines.keys())
+        final_cols = []
 
-        Returns:
-            dict -- dictionary containing these objectpath.Tree
-        """
-        dico_ressources = dict()
-        for rsc in self.results:
-            rsc = objectpath.Tree(rsc)
-            # type_resource = rsc.execute("$.resource.resourceType")
-            # assert type_resource == self.graph.resources_alias_info[self.main_resource_alias]["resource_type"]
-            if self.main_resource_alias in dico_ressources:
-                dico_ressources[self.main_resource_alias].append(rsc)
+        originDataset = []
+        for col in cols:
+            if infos[col] == "cell":
+                originDataset.append([lines[col]])
+                final_cols.append(col)
+            elif infos[col] == "col":
+                for i in range(len(lines[col])):
+                    originDataset.append([lines[col][i]])
+                    final_cols.append(f"{col}_{i}")
             else:
-                dico_ressources[self.main_resource_alias] = [rsc]
-        return dico_ressources
+                originDataset.append(lines[col])
+                final_cols.append(col)
+
+        df2 = pd.DataFrame(list(product(*originDataset)), columns=final_cols)
+        return df2
+
+    def _get_match_search(self, json_resource) -> dict:
+        lines = self._init_data()
+        for element, search in self.expressions["exact"].items():
+            item = self._search(search, json_resource)
+            lines[element].extend(item)
+        for element, search in self.expressions["to_test"].items():
+            search_elems = search.split(".")
+            search_exp = ".".join(search_elems[:4])
+            search_elems = search_elems[4:]
+            for search_elem in search_elems:
+                item_temp = self._search(search_exp, json_resource)
+                if isinstance(item_temp, list):
+                    search_exp = f"{search_exp}[*]"
+                search_exp = f"{search_exp}.{search_elem}"
+            if search_exp not in self.expressions["exact"].values():
+                item = self._search(search_exp, json_resource)
+                lines[element].extend(item)
+        return lines
+
+    def _search(self, search, json_resource):
+        jsonpath_expr = parse(search)
+        if jsonpath_expr.find(json_resource):
+            # item = [match.value for match in jsonpath_expr.find(json_resource)]
+            item = [match.value for match in jsonpath_expr.find(json_resource)]
+        else:
+            item = [None]
+        return item
 
     def _init_data(self) -> dict:
         """generation of a dictionary whose keys correspond to expressions (column name) and the value to an empty list
@@ -145,7 +179,9 @@ class ApiGetter(CallApi):
             dict -- dictionary described above
         """
         data = dict()
-        for elem in self.expressions.keys():
+        for elem in list(self.expressions["exact"].keys()) + list(
+            self.expressions["to_test"].keys()
+        ):
             data[elem] = []
         return data
 
@@ -154,16 +190,17 @@ class ApiGetter(CallApi):
         """
         elements_at_root = self.elements["aditionnal_root"]
         for element in elements_at_root:
-            self.expressions[element] = f"$.{element}"
+            self.expressions[element]["exact"] = f"$.{element}"
 
     def _get_element_after_resource(self):
         """transforms the element to be retrieved at the resource level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
         """
-        elements_after_resource = (
-            self.elements["aditionnal_ressource"]
-            + self.elements["select"]
-            + self.elements["where"]
-            + self.elements["join"]
+        elements_after_resource_exact = (
+            self.elements["aditionnal_ressource"] + self.elements["select"]
         )
-        for element in elements_after_resource:
-            self.expressions[element] = f"$.resource.{element}"
+        elements_after_resource_to_test = self.elements["where"] + self.elements["join"]
+        for element in elements_after_resource_exact:
+            self.expressions["exact"][element] = f"$.resource.{element}"
+        for element in elements_after_resource_to_test:
+            self.expressions["to_test"][element] = f"$.resource.{element}"
+
