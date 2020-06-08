@@ -2,7 +2,7 @@ import json
 import requests
 import networkx as nx
 
-from src.graphquery import GraphQuery
+from .graphquery import GraphQuery
 
 
 class URLBuilder:
