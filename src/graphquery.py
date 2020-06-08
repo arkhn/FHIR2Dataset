@@ -71,10 +71,10 @@ class GraphQuery:
             config {dict} -- dictionary in the format of a configuration file
         """
         self.execute(
-            from_dict=config.get("from", None),
-            select_dict=config.get("select", None),
-            where_dict=config.get("where", None),
-            join_dict=config.get("join", None),
+            from_dict=config.get("from"),
+            select_dict=config.get("select"),
+            where_dict=config.get("where"),
+            join_dict=config.get("join"),
         )
 
     def _from(self, **resource_type_alias):
