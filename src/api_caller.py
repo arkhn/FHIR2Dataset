@@ -31,13 +31,11 @@ class CallApi:
             # add things to understand why
             logging.info(f"Got a KeyError - There's no {e} key in the json data we received.")
         try:
-            next_bool = False
+            self.next_url = None
             for relation in response.json()["link"]:
                 if relation["relation"] == "next":
                     self.next_url = relation["url"]
-                    next_bool = True
-            if not next_bool:
-                self.next_url = None
+                    break
         except KeyError as e:
             # add things to understand why
             logging.info(f"Got a KeyError - There's no {e} key in the json data we received.")
