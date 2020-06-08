@@ -6,6 +6,7 @@ import networkx as nx
 import itertools
 import types
 
+
 def join_path(graph: nx.Graph) -> list:
     """transforms the query graph into an Eulerian graph in order to be able to find an Eulerian path in it.
 
@@ -22,6 +23,7 @@ def join_path(graph: nx.Graph) -> list:
     euler_path = list(nx.eulerian_path(euler_graph))
     path = clean_euler_path(euler_path)
     return path
+
 
 def clean_euler_path(eulerian_path: list) -> list:
     """Cleans a Eulerian path so that each edge (not directed) appears only once in the list. If a edge appears more than once, only the first occurrence is kept.
