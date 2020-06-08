@@ -26,7 +26,7 @@ class URLBuilder:
         self.fhir_api_url = fhir_api_url
         self.main_resource_alias = main_resource_alias
         self._query_graph = query_graph
-        
+
         self._url_params = None
         self._get_url_params()
         self.search_query_url = self._compute_url()
@@ -40,7 +40,7 @@ class URLBuilder:
         # to do verify self.fhir_api_url finish by '/'
         search_query_url = (
             f"{self.fhir_api_url}{self._query_graph.resources_alias_info[self.main_resource_alias]['resource_type']}?"
-            f"{self._url_params or ''}&_format=json"
+            f"{self._url_params or ''}"
         )
         return search_query_url
 
@@ -49,24 +49,40 @@ class URLBuilder:
         """
         for ressource_alias in self._query_graph.resources_alias_info.keys():
             url_temp = None
-            to_resource, reliable = self._chained_params(ressource_alias)
+            to_resource, reliable = self._light_chained_params(ressource_alias)
 
             if reliable:
                 for search_param, values in self._query_graph.resources_alias_info[ressource_alias][
-                    "search_parameters"].items():
+                    "search_parameters"
+                ].items():
                     # add assert search_param in CapabilityStatement
                     value = f"{values['prefix'] or ''}{values['value']}"
-                    url_temp = (
-                            f"{f'{url_temp}&' if url_temp else ''}{to_resource or ''}{search_param}={value}"
-                        )
+                    url_temp = f"{f'{url_temp}&' if url_temp else ''}{to_resource or ''}{search_param}={value}"
 
                 self._url_params = (
-                        f"{f'{self._url_params}&' if self._url_params else ''}{url_temp or ''}"
-                        )
+                    f"{f'{self._url_params}&' if self._url_params else ''}{url_temp or ''}"
+                )
                 # logging.info(f"url_params: {self._url_params}")
 
     # To change because it's useless to go through dijstra for the moment knowing that we only do chain parameters of length 1.
-    def _chained_params(self, ressource_alias:str) -> tuple:
+    def _light_chained_params(self, ressource_alias: str) -> tuple:
+        """gives the prefix (in the first element of the output tuple) to make a chained parameter from the main resource to the resource given as argument. If the resource given as argument is not a neighbor of the main resource, the second element of the output tuple is set to false
+
+        Arguments:
+            ressource_alias {str} -- alias of a resource
+
+        Returns:
+            tuple -- (prefix, boolean)
+        """
+        to_resource = None
+        reliable = True
+        # Construction of the path from the main resource to the
+        # resource on which the parameter(s) will be applied
+        if ressource_alias != self.main_resource_alias:
+            reliable = False
+        return to_resource, reliable
+
+    def _chained_params(self, ressource_alias: str) -> tuple:
         """gives the prefix (in the first element of the output tuple) to make a chained parameter from the main resource to the resource given as argument. If the resource given as argument is not a neighbor of the main resource, the second element of the output tuple is set to false
 
         Arguments:
