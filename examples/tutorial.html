@@ -13636,8 +13636,8 @@ AND condition.code = &#34;http://snomed.info/sct|386661006&#34;
 
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>{&#39;allergy&#39;: {&#39;count&#39;: False,
-             &#39;elements&#39;: {&#39;aditionnal_ressource&#39;: [&#39;id&#39;],
-                          &#39;aditionnal_root&#39;: [],
+             &#39;elements&#39;: {&#39;additional_ressource&#39;: [&#39;id&#39;],
+                          &#39;additional_root&#39;: [],
                           &#39;join&#39;: [&#39;patient.reference&#39;, &#39;asserter.reference&#39;],
                           &#39;select&#39;: [&#39;code.display&#39;],
                           &#39;where&#39;: [&#39;reaction.substance&#39;]},
@@ -13645,8 +13645,8 @@ AND condition.code = &#34;http://snomed.info/sct|386661006&#34;
              &#39;search_parameters&#39;: {&#39;code&#39;: {&#39;prefix&#39;: None,
                                             &#39;value&#39;: &#39;http://snomed.info/sct|22749300&#39;}}},
  &#39;condition&#39;: {&#39;count&#39;: False,
-               &#39;elements&#39;: {&#39;aditionnal_ressource&#39;: [&#39;id&#39;],
-                            &#39;aditionnal_root&#39;: [],
+               &#39;elements&#39;: {&#39;additional_ressource&#39;: [&#39;id&#39;],
+                            &#39;additional_root&#39;: [],
                             &#39;join&#39;: [&#39;subject.reference&#39;],
                             &#39;select&#39;: [&#39;code.coding.display&#39;,
                                        &#39;severity.coding.display&#39;],
@@ -13655,8 +13655,8 @@ AND condition.code = &#34;http://snomed.info/sct|386661006&#34;
                &#39;search_parameters&#39;: {&#39;code&#39;: {&#39;prefix&#39;: None,
                                               &#39;value&#39;: &#39;http://snomed.info/sct|386661006&#39;}}},
  &#39;patient&#39;: {&#39;count&#39;: False,
-             &#39;elements&#39;: {&#39;aditionnal_ressource&#39;: [&#39;id&#39;],
-                          &#39;aditionnal_root&#39;: [],
+             &#39;elements&#39;: {&#39;additional_ressource&#39;: [&#39;id&#39;],
+                          &#39;additional_root&#39;: [],
                           &#39;join&#39;: [],
                           &#39;select&#39;: [&#39;name.family&#39;, &#39;birthDate&#39;],
                           &#39;where&#39;: [&#39;birthDate&#39;]},
@@ -13664,8 +13664,8 @@ AND condition.code = &#34;http://snomed.info/sct|386661006&#34;
              &#39;search_parameters&#39;: {&#39;birthdate&#39;: {&#39;prefix&#39;: &#39;gt&#39;,
                                                  &#39;value&#39;: &#39;1970&#39;}}},
  &#39;practitioner&#39;: {&#39;count&#39;: False,
-                  &#39;elements&#39;: {&#39;aditionnal_ressource&#39;: [&#39;id&#39;],
-                               &#39;aditionnal_root&#39;: [],
+                  &#39;elements&#39;: {&#39;additional_ressource&#39;: [&#39;id&#39;],
+                               &#39;additional_root&#39;: [],
                                &#39;join&#39;: [],
                                &#39;select&#39;: [&#39;name.family&#39;, &#39;address&#39;],
                                &#39;where&#39;: [&#39;address.city&#39;]},
@@ -13693,7 +13693,7 @@ AND condition.code = &#34;http://snomed.info/sct|386661006&#34;
 
 
 <div class="output_markdown rendered_html output_subarea output_execute_result">
-<p>For example, node <em>allergy</em> contains the following information: <br> - the <strong>type of the associated resource</strong>: <em>AllergyIntolerance</em><br> - the <strong>expressions leading to the elements</strong> to be retrieved in the json format of the instances corresponding to the query: <em>{'select': ['code.display'], 'aditionnal_ressource': ['id'], 'aditionnal_root': [], 'where': ['reaction.substance'], 'join': ['patient.reference', 'asserter.reference']}</em><br> - the <strong>search parameters under constraints</strong> for this alias: <em>{'code': {'prefix': None, 'value': '<a href="http://snomed.info/sct|22749300&#39;}}">http://snomed.info/sct|22749300&#39;}}</a></em><br></p>
+<p>For example, node <em>allergy</em> contains the following information: <br> - the <strong>type of the associated resource</strong>: <em>AllergyIntolerance</em><br> - the <strong>expressions leading to the elements</strong> to be retrieved in the json format of the instances corresponding to the query: <em>{'select': ['code.display'], 'additional_ressource': ['id'], 'additional_root': [], 'where': ['reaction.substance'], 'join': ['patient.reference', 'asserter.reference']}</em><br> - the <strong>search parameters under constraints</strong> for this alias: <em>{'code': {'prefix': None, 'value': '<a href="http://snomed.info/sct|22749300&#39;}}">http://snomed.info/sct|22749300&#39;}}</a></em><br></p>
 
 </div>
 

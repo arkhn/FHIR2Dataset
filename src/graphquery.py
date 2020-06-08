@@ -86,9 +86,9 @@ class GraphQuery:
         for (ressource_alias, resource_type,) in resource_type_alias.items():
             dict_elements = {
                 "select": [],
-                "aditionnal_ressource": ["id"],
-                # "aditionnal_root" : ["fullUrl"],
-                "aditionnal_root": [],
+                "additional_ressource": ["id"],
+                # "additional_root" : ["fullUrl"],
+                "additional_root": [],
                 "where": [],
                 "join": [],
             }
