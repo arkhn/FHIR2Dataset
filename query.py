@@ -111,16 +111,10 @@ class Query:
 
         Coming soon: cleaning unrequested columns
         """
-        self.graph_query = GraphQuery(
-            fhir_api_url=self.fhir_api_url, path=self.path_rules
-        )
+        self.graph_query = GraphQuery(fhir_api_url=self.fhir_api_url, path=self.path_rules)
         self.graph_query.execute(**self.config)
-        for (
-            resource_alias
-        ) in self.graph_query.resources_alias_info.keys():
-            elements = self.graph_query.resources_alias_info[
-                resource_alias
-            ]["elements"]
+        for resource_alias in self.graph_query.resources_alias_info.keys():
+            elements = self.graph_query.resources_alias_info[resource_alias]["elements"]
 
             url_builder = URLBuilder(
                 fhir_api_url=self.fhir_api_url,
@@ -129,11 +123,7 @@ class Query:
             )
 
             url = url_builder.search_query_url
-            call = ApiGetter(
-                url=url,
-                elements=elements,
-                main_resource_alias=resource_alias,
-            )
+            call = ApiGetter(url=url, elements=elements, main_resource_alias=resource_alias,)
             call.get_all()
             self.dataframes[resource_alias] = call.display_data()
         self._clean_columns()
@@ -147,9 +137,7 @@ class Query:
         Returns:
             pd.DataFrame -- dataframe containing all joined resources
         """
-        list_join = join_path(
-            self.graph_query.resources_alias_graph
-        )
+        list_join = join_path(self.graph_query.resources_alias_graph)
         main_alias_join = list_join[0][0]
         main_df = self.dataframes[main_alias_join]
         for alias_1, alias_2 in list_join:
@@ -159,11 +147,7 @@ class Query:
         return main_df
 
     def _inner_join_2_df(
-        self,
-        alias_1: str,
-        alias_2: str,
-        df_1: pd.DataFrame,
-        df_2: pd.DataFrame,
+        self, alias_1: str, alias_2: str, df_1: pd.DataFrame, df_2: pd.DataFrame,
     ) -> pd.DataFrame:
         """Executes the inner join between two dataframes
         
@@ -182,9 +166,7 @@ class Query:
         Returns:
             pd.DataFrame -- dataframe containing the elements of the 2 resources according to an inner join
         """
-        edge_info = self.graph_query.resources_alias_graph.edges[
-            alias_1, alias_2
-        ]
+        edge_info = self.graph_query.resources_alias_graph.edges[alias_1, alias_2]
         alias_parent = edge_info["parent"]
         alias_child = edge_info["child"]
 
@@ -194,19 +176,9 @@ class Query:
         child_on = f"{alias_child}:id"
 
         if alias_1 == alias_parent:
-            df_merged_inner = pd.merge(
-                left=df_1,
-                right=df_2,
-                left_on=parent_on,
-                right_on=child_on,
-            )
+            df_merged_inner = pd.merge(left=df_1, right=df_2, left_on=parent_on, right_on=child_on,)
         else:
-            df_merged_inner = pd.merge(
-                left=df_1,
-                right=df_2,
-                left_on=child_on,
-                right_on=parent_on,
-            )
+            df_merged_inner = pd.merge(left=df_1, right=df_2, left_on=child_on, right_on=parent_on,)
         return df_merged_inner
 
     def _get_main_alias_join(self) -> str:
@@ -217,10 +189,7 @@ class Query:
         """
         main_alias = None
         max_join = -1
-        for (
-            alias,
-            infos,
-        ) in self.graph_query.resources_alias_info.items():
+        for (alias, infos,) in self.graph_query.resources_alias_info.items():
             num_join = len(infos["elements"]["join"])
             if max_join < num_join:
                 main_alias = alias
@@ -233,21 +202,13 @@ class Query:
             * adds the table alias as a prefix to each column name
         """
         for resource_alias, df in self.dataframes.items():
-            resource_type = self.graph_query.resources_alias_info[
-                resource_alias
-            ]["resource_type"]
+            resource_type = self.graph_query.resources_alias_info[resource_alias]["resource_type"]
 
-            df = df.pipe(
-                Query._add_resource_type_to_id,
-                resource_type=resource_type,
-            )
+            df = df.pipe(Query._add_resource_type_to_id, resource_type=resource_type,)
 
-            self.dataframes[resource_alias] = df.add_prefix(
-                f"{resource_alias}:"
-            )
+            self.dataframes[resource_alias] = df.add_prefix(f"{resource_alias}:")
 
     @staticmethod
     def _add_resource_type_to_id(df, resource_type: str):
         df["id"] = f"{resource_type}/" + df["id"]
         return df
-

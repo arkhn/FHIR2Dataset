@@ -9,6 +9,7 @@ import logging
 class CallApi:
     """generic class that manages the sending and receiving of a url request to a FHIR API.
     """
+
     def __init__(self, url: str):
         self.url = url
         self.status_code = None
@@ -16,7 +17,7 @@ class CallApi:
         self.next_url = None
         self.get_response(self.url)
 
-    def get_response(self, url:str):
+    def get_response(self, url: str):
         """sends the request and stores the elements of the response
 
         Arguments:
@@ -53,7 +54,8 @@ class CallApi:
 class ApiGetter(CallApi):
     """class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
     """
-    def __init__(self, url: str, elements:dict, main_resource_alias:str):
+
+    def __init__(self, url: str, elements: dict, main_resource_alias: str):
         CallApi.__init__(self, url)
         self.main_resource_alias = main_resource_alias
         self.elements = elements

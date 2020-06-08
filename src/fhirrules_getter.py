@@ -3,7 +3,8 @@ import json
 import objectpath
 import logging
 
-class FHIRRules():
+
+class FHIRRules:
     """Class storing rules specific to the FHIR syntax and/or the FHIR API used
 
     Attributes:
@@ -12,12 +13,13 @@ class FHIRRules():
         capabilitystatement {dict} -- an instance json of a CapabilityStatement resource
         searchparameters {dict} -- an instance json of a SearchParameters resource
     """
+
     def __init__(
         self,
         path: str = None,
         capabilitystatement_filename="CapabilityStatement.json",
-        searchparameters_filename="SearchParameters.json"
-        ):
+        searchparameters_filename="SearchParameters.json",
+    ):
         """
         Keyword Arguments:
             path {str} -- path to the folder containing capabilitystatement_filename and searchparameters_filename files (default: {None})
@@ -26,18 +28,14 @@ class FHIRRules():
         """
 
         self.capabilitystatement = self._get_from_file(
-            path=path,
-            filename=capabilitystatement_filename
+            path=path, filename=capabilitystatement_filename
         )
-        self.searchparameters = self._get_from_file(
-            path=path,
-            filename=searchparameters_filename
-        )
+        self.searchparameters = self._get_from_file(path=path, filename=searchparameters_filename)
 
         self.possible_references = self._get_rev_include_possibilities()
         self.searchparam_to_element = self._get_searchparam_to_element()
 
-    def ressourcetype_searchparam_to_element(self, resource_type:str , search_param:str ):
+    def ressourcetype_searchparam_to_element(self, resource_type: str, search_param: str):
         """retrieves the expression that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
 
         Arguments:
@@ -83,19 +81,20 @@ class FHIRRules():
                             expression = exp_split.split(" ")[0]
                             logging.info(f"\nexpression: {expression}\n")
                     if not find:
-                        logging.info(f"\nNot found"
-                        f"\nresource_type: {resource_type}"
-                        f"\nname_search_param: {name_search_param}"
-                        f"\nlist_expression: \n{list_expression}"
-                        f"\nresource_tree:\n {resource}\n")
+                        logging.info(
+                            f"\nNot found"
+                            f"\nresource_type: {resource_type}"
+                            f"\nname_search_param: {name_search_param}"
+                            f"\nlist_expression: \n{list_expression}"
+                            f"\nresource_tree:\n {resource}\n"
+                        )
                     dict_searchparam[resource_type][name_search_param] = {
-                        "expression":expression,
+                        "expression": expression,
                     }
                 except:
                     logging.info(f"resource_tree:\n {resource}\n")
-                
-        return dict_searchparam
 
+        return dict_searchparam
 
     def _get_rev_include_possibilities(self) -> dict:
         """Builds a dictionary that will indicate for each type of resource which are its mother resources (revinclude) and its daughter resources (include).
@@ -110,18 +109,12 @@ class FHIRRules():
             type = resource["type"]
             dict_reference[type] = dict()
             if "searchRevInclude" in resource:
-                dict_reference[type]["searchRevInclude"] = resource[
-                    "searchRevInclude"
-                ]
+                dict_reference[type]["searchRevInclude"] = resource["searchRevInclude"]
             if "searchInclude" in resource:
-                dict_reference[type]["searchInclude"] = resource[
-                    "searchInclude"
-                ]
+                dict_reference[type]["searchInclude"] = resource["searchInclude"]
         return dict_reference
 
-    def _get_from_file(
-        self, path: str, filename: str
-    ) -> dict:
+    def _get_from_file(self, path: str, filename: str) -> dict:
         """Get a json (dict) from a file
 
         Arguments:
@@ -139,7 +132,7 @@ class FHIRRules():
     #     """Get the CapabilityStatement from the base
 
     #     Returns:
-    #         dict --  dict object containing a CapabilityStatement 
+    #         dict --  dict object containing a CapabilityStatement
     #         resource
     #     """
     #     url = f"{self.fhir_api_url}/CapabilityStatement?"
@@ -148,5 +141,3 @@ class FHIRRules():
     #     # CapabilityStatement ?
     #     capabilitystatement = response.json()["entry"][0]
     #     return capabilitystatement
-    
-    

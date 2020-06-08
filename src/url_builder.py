@@ -13,11 +13,9 @@ class URLBuilder:
         main_resource_alias: alias given to a set of fhir resources of a certain type which are the subject of the api query
         search_query_url: url which will make it possible to recover the resources of the type of main_alias respecting as well as possible the conditions where on itself and on its neighbors.
     """
+
     def __init__(
-        self,
-        fhir_api_url: str,
-        query_graph: type(GraphQuery),
-        main_resource_alias: str
+        self, fhir_api_url: str, query_graph: type(GraphQuery), main_resource_alias: str
     ) -> None:
         """
         Arguments:
@@ -28,7 +26,7 @@ class URLBuilder:
         self.fhir_api_url = fhir_api_url
         self.main_resource_alias = main_resource_alias
         self._query_graph = query_graph
-        
+
         self._url_params = None
         self._get_url_params()
         self.search_query_url = self._compute_url()
@@ -55,20 +53,19 @@ class URLBuilder:
 
             if reliable:
                 for search_param, values in self._query_graph.resources_alias_info[ressource_alias][
-                    "search_parameters"].items():
+                    "search_parameters"
+                ].items():
                     # add assert search_param in CapabilityStatement
                     value = f"{values['prefix'] or ''}{values['value']}"
-                    url_temp = (
-                            f"{f'{url_temp}&' if url_temp else ''}{to_resource or ''}{search_param}={value}"
-                        )
+                    url_temp = f"{f'{url_temp}&' if url_temp else ''}{to_resource or ''}{search_param}={value}"
 
                 self._url_params = (
-                        f"{f'{self._url_params}&' if self._url_params else ''}{url_temp or ''}"
-                        )
+                    f"{f'{self._url_params}&' if self._url_params else ''}{url_temp or ''}"
+                )
                 # logging.info(f"url_params: {self._url_params}")
 
     # To change because it's useless to go through dijstra for the moment knowing that we only do chain parameters of length 1.
-    def _chained_params(self, ressource_alias:str) -> tuple:
+    def _chained_params(self, ressource_alias: str) -> tuple:
         """gives the prefix (in the first element of the output tuple) to make a chained parameter from the main resource to the resource given as argument. If the resource given as argument is not a neighbor of the main resource, the second element of the output tuple is set to false
 
         Arguments:
@@ -93,11 +90,9 @@ class URLBuilder:
                     edge = self._query_graph.resources_alias_graph.edges[
                         internal_path[ind], internal_path[ind + 1]
                     ]
-                    #logging.info(f"edge:{edge}")
+                    # logging.info(f"edge:{edge}")
                     searchparam_prefix = edge[internal_path[ind]]["searchparam_prefix"]
-                    to_resource = (
-                            f"{to_resource or ''}{searchparam_prefix}"
-                        )
+                    to_resource = f"{to_resource or ''}{searchparam_prefix}"
             else:
                 reliable = False
         return to_resource, reliable

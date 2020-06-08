@@ -45,11 +45,7 @@ class GraphQuery:
         self.resources_alias_info = dict()
 
     def execute(
-        self,
-        select_dict: dict,
-        from_dict: dict,
-        join_dict: dict = None,
-        where_dict: dict = None,
+        self, select_dict: dict, from_dict: dict, join_dict: dict = None, where_dict: dict = None,
     ):
         """Populates the attributes resources_alias_graph and resources_alias_info according to the information filled in 
 
@@ -87,10 +83,7 @@ class GraphQuery:
         Keyword Arguments:
             **resource_type_alias: the key corresponds to the alias and the value to the type of the resource.
         """
-        for (
-            ressource_alias,
-            resource_type,
-        ) in resource_type_alias.items():
+        for (ressource_alias, resource_type,) in resource_type_alias.items():
             dict_elements = {
                 "select": [],
                 "aditionnal_ressource": ["id"],
@@ -120,43 +113,23 @@ class GraphQuery:
         """
         # to do : change to check in searchParameters // review naming : element not very precise
         for alias_parent, searchparam_dict in join_as.items():
-            type_parent = self.resources_alias_info[alias_parent][
-                "resource_type"
-            ]
-            for (
-                searchparam_parent,
-                alias_child,
-            ) in searchparam_dict.items():
+            type_parent = self.resources_alias_info[alias_parent]["resource_type"]
+            for (searchparam_parent, alias_child,) in searchparam_dict.items():
 
                 # Update element to have in table
                 element_join = self.fhir_rules.ressourcetype_searchparam_to_element(
-                    resource_type=type_parent,
-                    search_param=searchparam_parent,
+                    resource_type=type_parent, search_param=searchparam_parent,
                 )
                 element_join = f"{element_join}.reference"
-                self.resources_alias_info[alias_parent]["elements"][
-                    "join"
-                ].append(element_join)
+                self.resources_alias_info[alias_parent]["elements"]["join"].append(element_join)
 
                 # Udpade Graph
-                type_child = self.resources_alias_info[alias_child][
-                    "resource_type"
-                ]
+                type_child = self.resources_alias_info[alias_child]["resource_type"]
 
-                searchparam_parent_to_child = (
-                    f"{searchparam_parent}:{type_child}."
-                )
-                include = (
-                    f"{type_parent}:{searchparam_parent}:"
-                    f"{type_child}"
-                )
-                searchparam_child_to_parent = (
-                    f"_has:{type_parent}:{searchparam_parent}:"
-                )
-                revinclude = (
-                    f"{type_parent}:{searchparam_parent}:"
-                    f"{type_child}"
-                )
+                searchparam_parent_to_child = f"{searchparam_parent}:{type_child}."
+                include = f"{type_parent}:{searchparam_parent}:" f"{type_child}"
+                searchparam_child_to_parent = f"_has:{type_parent}:{searchparam_parent}:"
+                revinclude = f"{type_parent}:{searchparam_parent}:" f"{type_child}"
                 url_data = {
                     alias_parent: {
                         "searchparam_prefix": searchparam_parent_to_child,
@@ -176,9 +149,7 @@ class GraphQuery:
                     element_join=element_join,
                 )
 
-                self.resources_alias_graph[alias_parent][
-                    alias_child
-                ].update(url_data)
+                self.resources_alias_graph[alias_parent][alias_child].update(url_data)
 
                 # To do: make assert
                 # check = f"{type_parent}.{searchparam_parent}"
@@ -219,18 +190,15 @@ class GraphQuery:
                     prefix = None
                     value = value_full
                 # to do verify we don't delete something
-                self.resources_alias_info[ressource_alias][
-                    "search_parameters"
-                ][search_param] = {"prefix": prefix, "value": value}
+                self.resources_alias_info[ressource_alias]["search_parameters"][search_param] = {
+                    "prefix": prefix,
+                    "value": value,
+                }
                 element = self.fhir_rules.ressourcetype_searchparam_to_element(
-                    resource_type=self.resources_alias_info[
-                        ressource_alias
-                    ]["resource_type"],
+                    resource_type=self.resources_alias_info[ressource_alias]["resource_type"],
                     search_param=search_param,
                 )
-                self.resources_alias_info[ressource_alias]["elements"][
-                    "where"
-                ].append(element)
+                self.resources_alias_info[ressource_alias]["elements"]["where"].append(element)
 
     def _select(self, **selects):
         """updates the resources_alias_info attribute with the elements that must be retrieved for each alias
@@ -242,13 +210,9 @@ class GraphQuery:
             # handles the case of count
             if "count" == resource_alias:
                 for ressource_alias_count in selects["count"]:
-                    self.resources_alias_info[ressource_alias_count][
-                        "count"
-                    ] = True
+                    self.resources_alias_info[ressource_alias_count]["count"] = True
             for element in selects[resource_alias]:
-                self.resources_alias_info[resource_alias]["elements"][
-                    "select"
-                ].append(element)
+                self.resources_alias_info[resource_alias]["elements"]["select"].append(element)
 
     def draw_relations(self):
         """draws the resources_alias_graph attribute
@@ -262,9 +226,7 @@ class GraphQuery:
                 if isinstance(infos, dict):
                     for key_2, infos_2 in infos.items():
                         if value:
-                            value = (
-                                f"{value}\n{key}: {key_2}: {infos_2}"
-                            )
+                            value = f"{value}\n{key}: {key_2}: {infos_2}"
                         else:
                             value = f"{key}: {key_2}: {infos_2}"
                 else:
@@ -279,9 +241,6 @@ class GraphQuery:
         nx.draw_networkx(self.resources_alias_graph, pos=layout)
         nx.draw_networkx_labels(self.resources_alias_graph, pos=layout)
         nx.draw_networkx_edge_labels(
-            self.resources_alias_graph,
-            pos=layout,
-            edge_labels=edge_labels,
-            font_size=10,
+            self.resources_alias_graph, pos=layout, edge_labels=edge_labels, font_size=10,
         )
         plt.show()
