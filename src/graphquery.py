@@ -211,8 +211,9 @@ class GraphQuery:
             if "count" == resource_alias:
                 for ressource_alias_count in selects["count"]:
                     self.resources_alias_info[ressource_alias_count]["count"] = True
-            for element in selects[resource_alias]:
-                self.resources_alias_info[resource_alias]["elements"]["select"].append(element)
+            self.resources_alias_info[resource_alias]["elements"]["select"] += selects[
+                resource_alias
+            ]
 
     def draw_relations(self):
         """draws the resources_alias_graph attribute
