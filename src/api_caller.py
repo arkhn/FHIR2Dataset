@@ -1,14 +1,18 @@
-import objectpath
 import pandas as pd
 import requests
 import json
 import types
 import logging
+import random
+from itertools import product
+
+from jsonpath_ng import jsonpath, parse
 
 
 class CallApi:
     """generic class that manages the sending and receiving of a url request to a FHIR API.
     """
+
     def __init__(self, url: str):
         self.url = url
         self.status_code = None
@@ -16,12 +20,30 @@ class CallApi:
         self.next_url = None
         self.get_response(self.url)
 
-    def get_response(self, url:str):
+    def get_response(self, url: str):
         """sends the request and stores the elements of the response
 
         Arguments:
             url {str} -- url of the request
         """
+        # the retrieval of the number of results is not necessary if the FHIR api supports pagination
+        # -> to be deleted
+        if url[-1] == "?":
+            url_number = f"{url}_summary=count"
+        else:
+            url_number = f"{url}&_summary=count"
+        # r = requests.get(url_number)
+        # print(url_number)
+        # print()
+        # print(r)
+        # print(r.raw)
+        # print(r.content)
+        count = min(requests.get(url_number).json()["total"], 10000)
+        if url[-1] == "?":
+            url = f"{url}_count={count}"
+        else:
+            url = f"{url}&_count={count}"
+        print(url)
         response = requests.get(url)
         self.status_code = response.status_code
         try:
