@@ -19,7 +19,6 @@ class FHIRRules:
         self,
         path: str = None,
         fhir_api_url: str = None,
-        capabilitystatement_filename="CapabilityStatement.json",
         searchparameters_filename="SearchParameters.json",
     ):
         """
@@ -30,15 +29,10 @@ class FHIRRules:
             searchparameters_filename {str} -- filename of a json that contains a resource of type SearchParameters  (default: {"SearchParameters.json"})
         """
         self.fhir_api_url = fhir_api_url
-        self.capabilitystatement = self._get_from_file(
-            path=path, filename=capabilitystatement_filename
-        )
         self.searchparameters = self._get_from_file(path=path, filename=searchparameters_filename)
-
-        self.possible_references = self._get_rev_include_possibilities()
         self.searchparam_to_element = self._get_searchparam_to_element()
 
-    def ressourcetype_searchparam_to_element(self, resource_type: str, search_param: str):
+    def resourcetype_searchparam_to_element(self, resource_type: str, search_param: str):
         """retrieves the expression that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
 
         Arguments:
@@ -99,24 +93,6 @@ class FHIRRules:
 
         return dict_searchparam
 
-    def _get_rev_include_possibilities(self) -> dict:
-        """Builds a dictionary that will indicate for each type of resource which are its mother resources (revinclude) and its daughter resources (include).
-        
-        Returns:
-            dict -- a dictionary as described above
-        """
-        dict_reference = dict()
-        for resource in self.capabilitystatement["resource"]["rest"][0][
-            "resource"
-        ]:  # check the 0 , we could have several
-            type = resource["type"]
-            dict_reference[type] = dict()
-            if "searchRevInclude" in resource:
-                dict_reference[type]["searchRevInclude"] = resource["searchRevInclude"]
-            if "searchInclude" in resource:
-                dict_reference[type]["searchInclude"] = resource["searchInclude"]
-        return dict_reference
-
     def _get_from_file(self, path: str, filename: str) -> dict:
         """Get a json (dict) from a file
 
@@ -130,17 +106,3 @@ class FHIRRules:
         with open(os.path.join(path, filename)) as json_file:
             file_dict = json.load(json_file)
         return file_dict
-
-    # def _get_capabilitystatement_from_api(self) -> dict:
-    #     """Get the CapabilityStatement from the base
-
-    #     Returns:
-    #         dict --  dict object containing a CapabilityStatement
-    #         resource
-    #     """
-    #     url = f"{self.fhir_api_url}/CapabilityStatement?"
-    #     response = requests.get(url)
-    #     # 0 by default but we must investigate how to chose the right
-    #     # CapabilityStatement ?
-    #     capabilitystatement = response.json()["entry"][0]
-    #     return capabilitystatement
