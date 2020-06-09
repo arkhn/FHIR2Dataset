@@ -188,7 +188,7 @@ class ApiGetter(CallApi):
     def _get_element_at_root(self):
         """transforms the element to be retrieved at the root level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
         """
-        elements_at_root = self.elements["aditionnal_root"]
+        elements_at_root = self.elements["additional_root"]
         for element in elements_at_root:
             self.expressions[element]["exact"] = f"$.{element}"
 
@@ -196,11 +196,10 @@ class ApiGetter(CallApi):
         """transforms the element to be retrieved at the resource level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
         """
         elements_after_resource_exact = (
-            self.elements["aditionnal_ressource"] + self.elements["select"]
+            self.elements["additional_resource"] + self.elements["select"]
         )
         elements_after_resource_to_test = self.elements["where"] + self.elements["join"]
         for element in elements_after_resource_exact:
             self.expressions["exact"][element] = f"$.resource.{element}"
         for element in elements_after_resource_to_test:
             self.expressions["to_test"][element] = f"$.resource.{element}"
-

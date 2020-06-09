@@ -65,11 +65,11 @@ class URLBuilder:
                 # logging.info(f"url_params: {self._url_params}")
 
     # To change because it's useless to go through dijstra for the moment knowing that we only do chain parameters of length 1.
-    def _light_chained_params(self, ressource_alias: str) -> tuple:
+    def _light_chained_params(self, resource_alias: str) -> tuple:
         """gives the prefix (in the first element of the output tuple) to make a chained parameter from the main resource to the resource given as argument. If the resource given as argument is not a neighbor of the main resource, the second element of the output tuple is set to false
 
         Arguments:
-            ressource_alias {str} -- alias of a resource
+            resource_alias {str} -- alias of a resource
 
         Returns:
             tuple -- (prefix, boolean)
@@ -78,15 +78,15 @@ class URLBuilder:
         reliable = True
         # Construction of the path from the main resource to the
         # resource on which the parameter(s) will be applied
-        if ressource_alias != self.main_resource_alias:
+        if resource_alias != self.main_resource_alias:
             reliable = False
         return to_resource, reliable
 
-    def _chained_params(self, ressource_alias: str) -> tuple:
+    def _chained_params(self, resource_alias: str) -> tuple:
         """gives the prefix (in the first element of the output tuple) to make a chained parameter from the main resource to the resource given as argument. If the resource given as argument is not a neighbor of the main resource, the second element of the output tuple is set to false
 
         Arguments:
-            ressource_alias {str} -- alias of a resource
+            resource_alias {str} -- alias of a resource
 
         Returns:
             tuple -- (prefix, boolean)
@@ -95,11 +95,11 @@ class URLBuilder:
         reliable = True
         # Construction of the path from the main resource to the
         # resource on which the parameter(s) will be applied
-        if ressource_alias != self.main_resource_alias:
+        if resource_alias != self.main_resource_alias:
             internal_path = nx.shortest_path(
                 self._query_graph.resources_alias_graph,
                 source=self.main_resource_alias,
-                target=ressource_alias,
+                target=resource_alias,
             )
             # because we are not sure about chaining
             if len(internal_path) <= 2:

@@ -72,15 +72,15 @@ class GraphQuery:
         self._complete_element_concat_type_dict(default_element_concat_type)
 
     def _complete_element_concat_type_dict(self, default_element_concat_type):
-        for ressource_alias in self.resources_alias_info.keys():
+        for resource_alias in self.resources_alias_info.keys():
             elements = []
-            for value in self.resources_alias_info[ressource_alias]["elements"].values():
+            for value in self.resources_alias_info[resource_alias]["elements"].values():
                 elements.extend(value)
             for element in elements:
                 if element not in list(
-                    self.resources_alias_info[ressource_alias]["elements_concat_type"].keys()
+                    self.resources_alias_info[resource_alias]["elements_concat_type"].keys()
                 ):
-                    self.resources_alias_info[ressource_alias]["elements_concat_type"][
+                    self.resources_alias_info[resource_alias]["elements_concat_type"][
                         element
                     ] = default_element_concat_type
 
@@ -91,10 +91,10 @@ class GraphQuery:
             config {dict} -- dictionary in the format of a configuration file
         """
         self.execute(
-            from_dict=config.get("from", None),
-            select_dict=config.get("select", None),
-            where_dict=config.get("where", None),
-            join_dict=config.get("join", None),
+            from_dict=config.get("from"),
+            select_dict=config.get("select"),
+            where_dict=config.get("where"),
+            join_dict=config.get("join"),
         )
 
     def _from(self, **resource_type_alias):
@@ -103,21 +103,21 @@ class GraphQuery:
         Keyword Arguments:
             **resource_type_alias: the key corresponds to the alias and the value to the type of the resource.
         """
-        for (ressource_alias, resource_type,) in resource_type_alias.items():
+        for (resource_alias, resource_type,) in resource_type_alias.items():
             dict_elements = {
                 "select": [],
-                "aditionnal_ressource": ["id"],
-                # "aditionnal_root" : ["fullUrl"],
-                "aditionnal_root": [],
+                "additional_resource": ["id"],
+                # "additional_root" : ["fullUrl"],
+                "additional_root": [],
                 "where": [],
                 "join": [],
             }
             dict_elem_concat_type = {"id": "row"}
             dict_search_parameters = dict()
 
-            self.resources_alias_graph.add_node(ressource_alias)
+            self.resources_alias_graph.add_node(resource_alias)
 
-            self.resources_alias_info[ressource_alias] = {
+            self.resources_alias_info[resource_alias] = {
                 "resource_type": resource_type,
                 "elements": dict_elements,
                 "search_parameters": dict_search_parameters,
@@ -142,7 +142,7 @@ class GraphQuery:
                 for (searchparam_parent, alias_child,) in searchparam_dict.items():
 
                     # Update element to have in table
-                    element_join = self.fhir_rules.ressourcetype_searchparam_to_element(
+                    element_join = self.fhir_rules.resourcetype_searchparam_to_element(
                         resource_type=type_parent, search_param=searchparam_parent,
                     )
                     element_join = f"{element_join}.reference"
@@ -204,7 +204,7 @@ class GraphQuery:
         Keyword Arguments:
             **wheres: the key is an alias, the value is a dictionary containing itself keys which are searchparams and whose values must be respected by the associated search params.
         """
-        for ressource_alias, conditions in wheres.items():
+        for resource_alias, conditions in wheres.items():
             for search_param, value_full in conditions.items():
                 # add assert search_param in CapabilityStatement
 

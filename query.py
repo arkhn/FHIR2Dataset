@@ -5,7 +5,7 @@ import os
 from .src.graphquery import GraphQuery
 from .src.api_caller import ApiGetter
 from .src.url_builder import URLBuilder
-from .src.graph_outils import join_path
+from .src.graph_tools import join_path
 
 
 class Query:
