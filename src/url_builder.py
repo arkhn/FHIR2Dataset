@@ -47,14 +47,14 @@ class URLBuilder:
     def _get_url_params(self):
         """retrieves the portions of the url that specify search parameters
         """
-        for ressource_alias in self._query_graph.resources_alias_info.keys():
+        for resource_alias in self._query_graph.resources_alias_info.keys():
             url_temp = None
-            to_resource, reliable = self._light_chained_params(ressource_alias)
+            to_resource, reliable = self._light_chained_params(resource_alias)
 
             if reliable:
-                for search_param, values in self._query_graph.resources_alias_info[ressource_alias][
-                    "search_parameters"
-                ].items():
+                infos_alias = self._query_graph.resources_alias_info[resource_alias]
+                infos_search_param = infos_alias["search_parameters"]
+                for search_param, values in infos_search_param.items():
                     # add assert search_param in CapabilityStatement
                     value = f"{values['prefix'] or ''}{values['value']}"
                     url_temp = f"{f'{url_temp}&' if url_temp else ''}{to_resource or ''}{search_param}={value}"
