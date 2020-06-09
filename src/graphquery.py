@@ -8,6 +8,17 @@ from .fhirrules_getter import FHIRRules
 
 logging.basicConfig(filename="data/log/logger.log", level=logging.DEBUG)
 
+MODIFIERS_POSS = [
+    "missing",
+    "exact",
+    "contains",
+    "text",
+    "in",
+    "below",
+    "above",
+    "not-in"
+]
+
 
 class GraphQuery:
     """Class for storing query information in the form of a graph.
@@ -219,23 +230,28 @@ class GraphQuery:
                     value = value_full
                 # to do verify we don't delete something
                 # print(
-                #     self.resources_alias_info[ressource_alias][
+                #     self.resources_alias_info[resource_alias][
                 #         "search_parameters"
                 #     ]
                 # )
-                self.resources_alias_info[ressource_alias]["search_parameters"][search_param] = {
+                self.resources_alias_info[resource_alias]["search_parameters"][search_param] = {
                     "prefix": prefix,
                     "value": value,
                 }
-                resource_type = self.resources_alias_info[ressource_alias]["resource_type"]
-                searchparam_to_element = self.fhir_rules.ressourcetype_searchparam_to_element(
+                resource_type = self.resources_alias_info[resource_alias]["resource_type"]
+                searchparam_to_element = self.fhir_rules.resourcetype_searchparam_to_element(
                     resource_type=resource_type, search_param=search_param,
                 )
                 if searchparam_to_element:
                     element = searchparam_to_element
                 else:
                     element = search_param
-                self.resources_alias_info[ressource_alias]["elements"]["where"].append(element)
+                print(f"element: {element}")
+                modifier = element.split(":")[-1]
+                if modifier in MODIFIERS_POSS:
+                    element = ":".join(element.split(":")[:-1])
+                    print(f"element modified: {element}")
+                self.resources_alias_info[resource_alias]["elements"]["where"].append(element)
 
     def _select(self, **selects):
         """updates the resources_alias_info attribute with the elements that must be retrieved for each alias
