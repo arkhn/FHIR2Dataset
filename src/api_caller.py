@@ -13,11 +13,12 @@ class CallApi:
     """generic class that manages the sending and receiving of a url request to a FHIR API.
     """
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, token: str = None):
         self.url = url
         self.status_code = None
         self.results = None
         self.next_url = None
+        self.auth = BearerAuth(token)
         self.get_response(self.url)
 
     def get_response(self, url: str):
@@ -32,36 +33,34 @@ class CallApi:
             url_number = f"{url}_summary=count"
         else:
             url_number = f"{url}&_summary=count"
-        # r = requests.get(url_number)
-        # print(url_number)
-        # print()
-        # print(r)
-        # print(r.raw)
-        # print(r.content)
-        count = min(requests.get(url_number).json()["total"], 10000)
+        r = requests.get(url_number, auth=self.auth)
+        print(url_number)
+        print()
+        print(r)
+        print(r.raw)
+        print(r.content)
+        count = min(requests.get(url_number, auth=self.auth).json()["total"], 10000)
         if url[-1] == "?":
             url = f"{url}_count={count}"
         else:
             url = f"{url}&_count={count}"
         print(url)
-        response = requests.get(url)
+        response = requests.get(url, auth=self.auth)
         self.status_code = response.status_code
         try:
             self.results = response.json()["entry"]
-        except:
+        except KeyError as e:
             # add things to understand why
-            logging.info("There is no matching resources")
+            logging.info(f"Got a KeyError - There's no {e} key in the json data we received.")
         try:
-            next_bool = False
+            self.next_url = None
             for relation in response.json()["link"]:
                 if relation["relation"] == "next":
                     self.next_url = relation["url"]
-                    next_bool = True
-            if not next_bool:
-                self.next_url = None
-        except:
+                    break
+        except KeyError as e:
             # add things to understand why
-            logging.info("There is no matching resources")
+            logging.info(f"Got a KeyError - There's no {e} key in the json data we received.")
 
     def get_next(self):
         """retrieves the responses contained in the following pages
@@ -72,14 +71,29 @@ class CallApi:
             logging.info("There is no more pages")
 
 
+class BearerAuth(requests.auth.AuthBase):
+    def __init__(self, token):
+        self.token = token
+
+    def __call__(self, r):
+        if self.token:
+            r.headers["authorization"] = "Bearer " + self.token
+        return r
+
+
 class ApiGetter(CallApi):
     """class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
     """
 
     def __init__(
-        self, url: str, elements: dict, elements_concat_type: dict, main_resource_alias: str
+        self,
+        url: str,
+        elements: dict,
+        elements_concat_type: dict,
+        main_resource_alias: str,
+        token: str = None,
     ):
-        CallApi.__init__(self, url)
+        CallApi.__init__(self, url, token)
         self.main_resource_alias = main_resource_alias
         self.elements = elements
         self.elements_concat_type = elements_concat_type
@@ -146,19 +160,23 @@ class ApiGetter(CallApi):
 
     def _get_match_search(self, json_resource) -> dict:
         lines = self._init_data()
+        # print(f"expressions: {self.expressions}")
         for element, search in self.expressions["exact"].items():
             item = self._search(search, json_resource)
             lines[element].extend(item)
         for element, search in self.expressions["to_test"].items():
+            # print(f"search: {search}")
             search_elems = search.split(".")
             search_exp = ".".join(search_elems[:4])
             search_elems = search_elems[4:]
             for search_elem in search_elems:
+                # print(f"search_exp: {search_exp}")
                 item_temp = self._search(search_exp, json_resource)
                 if isinstance(item_temp, list):
                     search_exp = f"{search_exp}[*]"
                 search_exp = f"{search_exp}.{search_elem}"
             if search_exp not in self.expressions["exact"].values():
+                # print(f"search_exp: {search_exp}")
                 item = self._search(search_exp, json_resource)
                 lines[element].extend(item)
         return lines
