@@ -70,7 +70,7 @@ class Query:
         main_dataframe {DataFrame} -- pandas dataframe storing the final result table
     """
 
-    def __init__(self, fhir_api_url: str, path_rules: str = "data"):
+    def __init__(self, fhir_api_url: str, path_rules: str = "data", token:str = None):
         """Requestor's initialisation 
 
         Arguments:
@@ -78,9 +78,11 @@ class Query:
 
         Keyword Arguments:
             path_rules {str} -- path to the folder containing the CapabilityStatement and SearchParameters file (default: {None})
+            token {str} -- bearer token authentication if necessary (default: {None})
         """
         self.fhir_api_url = fhir_api_url
         self.path_rules = path_rules
+        self.token = token
 
         self.config = None
         self.graph_query = None
@@ -141,6 +143,7 @@ class Query:
                 elements=elements,
                 elements_concat_type=elements_concat_type,
                 main_resource_alias=resource_alias,
+                token=self.token
             )
             call.get_all()
             self.dataframes[resource_alias] = call.display_data()
