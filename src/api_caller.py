@@ -34,11 +34,11 @@ class CallApi:
         else:
             url_number = f"{url}&_summary=count"
         r = requests.get(url_number, auth=self.auth)
-        print(url_number)
-        print()
-        print(r)
-        print(r.raw)
-        print(r.content)
+        # print(url_number)
+        # print()
+        # print(r)
+        # print(r.raw)
+        # print(r.content)
         count = min(requests.get(url_number, auth=self.auth).json()["total"], 10000)
         if url[-1] == "?":
             url = f"{url}_count={count}"
@@ -112,6 +112,15 @@ class ApiGetter(CallApi):
         df = pd.DataFrame(self.data)
         return df
 
+    def _concatenate(self, column):
+        result = []
+        for list_cell in column:
+            if isinstance(list_cell, list):
+                result.extend([value for value in list_cell ])
+            else:
+                result.append(list_cell)
+        return result
+    
     def get_all(self):
         """collects all the data corresponding to the initial url request by calling the following pages
         """

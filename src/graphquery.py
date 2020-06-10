@@ -35,9 +35,7 @@ class GraphQuery:
     def __init__(
         self,
         fhir_api_url: str,
-        path: str = None,
-        capabilitystatement_filename: str = "CapabilityStatement.json",
-        searchparameters_filename: str = "SearchParameters.json",
+        fhir_rules: type(FHIRRules) = None
     ) -> None:
         """Instantiate the class and create the query object
 
@@ -45,11 +43,12 @@ class GraphQuery:
             fhir_api_url {str} -- the Service Base URL (e.g. http://hapi.fhir.org/baseR4/)
 
         Keyword Arguments:
-            path {str} -- path to the folder containing capabilitystatement_filename and searchparameters_filename files (default: {None})
-            capabilitystatement_filename {str} -- filename of a json that contains a resource of type CapabilityStatement (default: {"CapabilityStatement.json"})
-            searchparameters_filename {str} -- filename of a json that contains a resource of type SearchParameters  (default: {"SearchParameters.json"})
+            fhir_rules {type(FHIRRules)} -- an instance of a FHIRRules-type object. If the instance is not filled a default version will be used. (default: {None})
         """
-        self.fhir_rules = FHIRRules(path=path)
+        self.fhir_api_url = fhir_api_url
+        if not fhir_rules:
+            fhir_rules = FHIRRules(fhir_api_url=self.fhir_api_url)
+        self.fhir_rules = fhir_rules
 
         # to represent the relationships (references) between resources
         self.resources_alias_graph = nx.Graph()

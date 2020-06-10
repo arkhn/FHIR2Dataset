@@ -4,6 +4,7 @@ import objectpath
 import logging
 import requests
 
+DEFAULT_METADATA_DIR = 'metadata'
 
 class FHIRRules:
     """Class storing rules specific to the FHIR syntax and/or the FHIR API used
@@ -19,16 +20,17 @@ class FHIRRules:
         self,
         path: str = None,
         fhir_api_url: str = None,
-        searchparameters_filename="SearchParameters.json",
+        searchparameters_filename:str ="SearchParameters.json",
     ):
         """
         Keyword Arguments:
             fhir_api_url {str} -- The Service Base URL (e.g. http://hapi.fhir.org/baseR4/) (default: {None})
             path {str} -- path to the folder containing capabilitystatement_filename and searchparameters_filename files (default: {None})
-            capabilitystatement_filename {str} -- filename of a json that contains a resource of type CapabilityStatement (default: {"CapabilityStatement.json"})
             searchparameters_filename {str} -- filename of a json that contains a resource of type SearchParameters  (default: {"SearchParameters.json"})
         """
         self.fhir_api_url = fhir_api_url
+        if not path:
+            path = os.path.join(os.path.dirname(__file__), DEFAULT_METADATA_DIR)
         self.searchparameters = self._get_from_file(path=path, filename=searchparameters_filename)
         self.searchparam_to_element = self._get_searchparam_to_element()
 

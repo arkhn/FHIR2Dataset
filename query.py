@@ -3,6 +3,7 @@ import logging
 import os
 
 from .src.graphquery import GraphQuery
+from .src.fhirrules_getter import FHIRRules
 from .src.api_caller import ApiGetter
 from .src.url_builder import URLBuilder
 from .src.graph_tools import join_path
@@ -70,18 +71,20 @@ class Query:
         main_dataframe {DataFrame} -- pandas dataframe storing the final result table
     """
 
-    def __init__(self, fhir_api_url: str, path_rules: str = "data", token:str = None):
+    def __init__(self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None, token: str = None):
         """Requestor's initialisation 
 
         Arguments:
             fhir_api_url {str} -- The Service Base URL (e.g. http://hapi.fhir.org/baseR4/)
 
         Keyword Arguments:
-            path_rules {str} -- path to the folder containing the CapabilityStatement and SearchParameters file (default: {None})
+            fhir_rules {type(FHIRRules)} -- an instance of a FHIRRules-type object. If the instance is not filled a default version will be used. (default: {None})
             token {str} -- bearer token authentication if necessary (default: {None})
         """
         self.fhir_api_url = fhir_api_url
-        self.path_rules = path_rules
+        if not fhir_rules:
+            fhir_rules = FHIRRules(fhir_api_url=self.fhir_api_url)
+        self.fhir_rules = fhir_rules
         self.token = token
 
         self.config = None
@@ -115,21 +118,12 @@ class Query:
         """
         self.graph_query = GraphQuery(
             fhir_api_url=self.fhir_api_url,
-            path=os.path.join(
-                os.path.dirname(__file__), self.path_rules
-            ),
-        )
+            fhir_rules=self.fhir_rules)
         self.graph_query.execute(**self.config)
-        for (
-            resource_alias
-        ) in self.graph_query.resources_alias_info.keys():
-            resource_alias_info = self.graph_query.resources_alias_info[
-                resource_alias
-            ]
+        for resource_alias in self.graph_query.resources_alias_info.keys():
+            resource_alias_info = self.graph_query.resources_alias_info[resource_alias]
             elements = resource_alias_info["elements"]
-            elements_concat_type = resource_alias_info[
-                "elements_concat_type"
-            ]
+            elements_concat_type = resource_alias_info["elements_concat_type"]
 
             url_builder = URLBuilder(
                 fhir_api_url=self.fhir_api_url,
@@ -143,10 +137,12 @@ class Query:
                 elements=elements,
                 elements_concat_type=elements_concat_type,
                 main_resource_alias=resource_alias,
-                token=self.token
+                token=self.token,
             )
             call.get_all()
             self.dataframes[resource_alias] = call.display_data()
+            display(self.dataframes[resource_alias])
+            print(elements)
         self._clean_columns()
         self.main_dataframe = self._join()
         if not debug:
@@ -157,19 +153,10 @@ class Query:
         """Clean the final dataframe to keep only the columns of the select
         """
         final_columns = []
-        for (
-            resource_alias
-        ) in self.graph_query.resources_alias_info.keys():
-            resource_alias_info = self.graph_query.resources_alias_info[
-                resource_alias
-            ]
+        for resource_alias in self.graph_query.resources_alias_info.keys():
+            resource_alias_info = self.graph_query.resources_alias_info[resource_alias]
             elements_select = resource_alias_info["elements"]["select"]
-            final_columns.extend(
-                [
-                    f"{resource_alias}:{element}"
-                    for element in elements_select
-                ]
-            )
+            final_columns.extend([f"{resource_alias}:{element}" for element in elements_select])
         self.main_dataframe = self.main_dataframe[final_columns]
 
     def _join(self) -> pd.DataFrame:
@@ -184,15 +171,32 @@ class Query:
         for alias_1, alias_2 in list_join:
             df_1 = main_df
             df_2 = self.dataframes[alias_2]
-            main_df = self._join_2_df(alias_1, alias_2, df_1, df_2)
+            main_df = self._join_2_df(alias_1, alias_2, df_1, df_2)                
         return main_df
+    
+    def _group_lines(self, df, col_name):
+        if not df.empty:
+            cols_group = [col_name]
+            if cols_group:
+                # cols_group += self.elements['additional_resource']
+                cols = df.columns.to_list()
+                cols_list = [col_name for col_name in cols if col_name not in cols_group ]
+                dict_cols_list = {col:self._concatenate for col in cols_list}
+                df = df.groupby(cols_group).agg(dict_cols_list)
+                df.reset_index(inplace=True)
+        return df
+    
+    def _concatenate(self, column):
+        result = []
+        for list_cell in column:
+            if isinstance(list_cell, list):
+                result.extend([value for value in list_cell ])
+            else:
+                result.append(list_cell)
+        return result
 
     def _join_2_df(
-        self,
-        alias_1: str,
-        alias_2: str,
-        df_1: pd.DataFrame,
-        df_2: pd.DataFrame,
+        self, alias_1: str, alias_2: str, df_1: pd.DataFrame, df_2: pd.DataFrame,
     ) -> pd.DataFrame:
         """Executes the join between two dataframes
         
@@ -211,9 +215,7 @@ class Query:
         Returns:
             pd.DataFrame -- dataframe containing the elements of the 2 resources according to an inner join
         """
-        edge_info = self.graph_query.resources_alias_graph.edges[
-            alias_1, alias_2
-        ]
+        edge_info = self.graph_query.resources_alias_graph.edges[alias_1, alias_2]
         alias_parent = edge_info["parent"]
         alias_child = edge_info["child"]
 
@@ -231,20 +233,24 @@ class Query:
             how = "inner"
 
         if alias_1 == alias_parent:
+            ### to delete after ??
+            if alias_1 == 'patient':
+                df_2 = self._group_lines(df_2, child_on)
+            elif alias_2 == 'patient':
+                df_1 = self._group_lines(df_1, parent_on)
+            ###################################################
             df_merged_inner = pd.merge(
-                left=df_1,
-                right=df_2,
-                left_on=parent_on,
-                right_on=child_on,
-                how=how,
+                left=df_1, right=df_2, left_on=parent_on, right_on=child_on, how=how,
             )
         else:
+            ### to delete after ??
+            if alias_1 == 'patient':
+                df_2 = self._group_lines(df_2, parent_on)
+            elif alias_2 == 'patient':
+                df_1 = self._group_lines(df_1, child_on)
+            ###################################################
             df_merged_inner = pd.merge(
-                left=df_2,
-                right=df_1,
-                left_on=parent_on,
-                right_on=child_on,
-                how=how,
+                left=df_2, right=df_1, left_on=parent_on, right_on=child_on, how=how,
             )
         return df_merged_inner
 
@@ -256,10 +262,7 @@ class Query:
         """
         main_alias = None
         max_join = -1
-        for (
-            alias,
-            infos,
-        ) in self.graph_query.resources_alias_info.items():
+        for (alias, infos,) in self.graph_query.resources_alias_info.items():
             num_join = len(infos["elements"]["join"])
             if max_join < num_join:
                 main_alias = alias
@@ -272,18 +275,11 @@ class Query:
             * adds the table alias as a prefix to each column name
         """
         for resource_alias, df in self.dataframes.items():
-            resource_type = self.graph_query.resources_alias_info[
-                resource_alias
-            ]["resource_type"]
+            resource_type = self.graph_query.resources_alias_info[resource_alias]["resource_type"]
 
-            df = df.pipe(
-                Query._add_resource_type_to_id,
-                resource_type=resource_type,
-            )
+            df = df.pipe(Query._add_resource_type_to_id, resource_type=resource_type,)
 
-            self.dataframes[resource_alias] = df.add_prefix(
-                f"{resource_alias}:"
-            )
+            self.dataframes[resource_alias] = df.add_prefix(f"{resource_alias}:")
 
     @staticmethod
     def _add_resource_type_to_id(df, resource_type: str):
