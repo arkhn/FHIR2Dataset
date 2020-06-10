@@ -2,11 +2,11 @@ import pandas as pd
 import logging
 import os
 
-from .src.graphquery import GraphQuery
-from .src.fhirrules_getter import FHIRRules
-from .src.api_caller import ApiGetter
-from .src.url_builder import URLBuilder
-from .src.graph_tools import join_path
+from fhir2dataset.graphquery import GraphQuery
+from fhir2dataset.fhirrules_getter import FHIRRules
+from fhir2dataset.api_caller import ApiGetter
+from fhir2dataset.url_builder import URLBuilder
+from fhir2dataset.graph_tools import join_path
 
 
 class Query:
@@ -141,7 +141,6 @@ class Query:
             )
             call.get_all()
             self.dataframes[resource_alias] = call.display_data()
-            display(self.dataframes[resource_alias])
             print(elements)
         self._clean_columns()
         self.main_dataframe = self._join()
