@@ -6,18 +6,9 @@ from typing import Type
 
 from .fhirrules_getter import FHIRRules
 
-logging.basicConfig(filename="data/log/logger.log", level=logging.DEBUG)
+logging.basicConfig(filename="fhir2dataset.log", level=logging.DEBUG)
 
-MODIFIERS_POSS = [
-    "missing",
-    "exact",
-    "contains",
-    "text",
-    "in",
-    "below",
-    "above",
-    "not-in"
-]
+MODIFIERS_POSS = ["missing", "exact", "contains", "text", "in", "below", "above", "not-in"]
 
 
 class GraphQuery:
@@ -32,11 +23,7 @@ class GraphQuery:
         fhir_rules {Type(FHIRRules)} -- an instance of an FHIRRules object which contains information specific to the FHIR standard and the API used (for example the expressions associated with the search param of a resource).
     """
 
-    def __init__(
-        self,
-        fhir_api_url: str,
-        fhir_rules: type(FHIRRules) = None
-    ) -> None:
+    def __init__(self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None) -> None:
         """Instantiate the class and create the query object
 
         Arguments:
