@@ -44,7 +44,7 @@ class CallApi:
             url = f"{url}_count={count}"
         else:
             url = f"{url}&_count={count}"
-        print(url)
+        # print(url)
         response = requests.get(url, auth=self.auth)
         self.status_code = response.status_code
         try:

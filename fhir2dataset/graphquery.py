@@ -245,11 +245,11 @@ class GraphQuery:
                     element = searchparam_to_element
                 else:
                     element = search_param
-                print(f"element: {element}")
+                # print(f"element: {element}")
                 modifier = element.split(":")[-1]
                 if modifier in MODIFIERS_POSS:
                     element = ":".join(element.split(":")[:-1])
-                    print(f"element modified: {element}")
+                    # print(f"element modified: {element}")
                 self.resources_alias_info[resource_alias]["elements"]["where"].append(element)
 
     def _select(self, **selects):
