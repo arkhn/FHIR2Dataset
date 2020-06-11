@@ -6,7 +6,8 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_METADATA_DIR = 'metadata'
+DEFAULT_METADATA_DIR = "metadata"
+
 
 class FHIRRules:
     """Class storing rules specific to the FHIR syntax and/or the FHIR API used
@@ -22,7 +23,7 @@ class FHIRRules:
         self,
         path: str = None,
         fhir_api_url: str = None,
-        searchparameters_filename:str ="SearchParameters.json",
+        searchparameters_filename: str = "SearchParameters.json",
     ):
         """
         Keyword Arguments:
@@ -33,10 +34,14 @@ class FHIRRules:
         self.fhir_api_url = fhir_api_url
         if not path:
             path = os.path.join(os.path.dirname(__file__), DEFAULT_METADATA_DIR)
-        self.searchparameters = self._get_from_file(path=path, filename=searchparameters_filename)
+        self.searchparameters = self._get_from_file(
+            path=path, filename=searchparameters_filename
+        )
         self.searchparam_to_element = self._get_searchparam_to_element()
 
-    def resourcetype_searchparam_to_element(self, resource_type: str, search_param: str):
+    def resourcetype_searchparam_to_element(
+        self, resource_type: str, search_param: str
+    ):
         """retrieves the expression that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
 
         Arguments:
@@ -47,9 +52,13 @@ class FHIRRules:
             str -- the expression for retrieving the element that is the subject of the searchparam (e.g. 'address.postalCode')
         """
         try:
-            return self.searchparam_to_element[resource_type][search_param]["expression"]
+            return self.searchparam_to_element[resource_type][search_param][
+                "expression"
+            ]
         except:
-            logger.warning(f"The searchparam '{search_param}' doesn't exist in the rules")
+            logger.warning(
+                f"The searchparam '{search_param}' doesn't exist in the rules"
+            )
             return None
 
     def _get_searchparam_to_element(self) -> dict:
@@ -80,7 +89,9 @@ class FHIRRules:
                             find = True
                             exp_split = ".".join(exp_split[1:])
                             expression = exp_split.split(" ")[0]
-                            logger.debug(f"\nthe searchpram '{name_search_param} is associated with this FHIRpath '{expression}'\n")
+                            logger.debug(
+                                f"\nthe searchpram '{name_search_param} is associated with this FHIRpath '{expression}'\n"
+                            )
                     if not find:
                         logger.warning(
                             f"\nthe fhirpath associated to the instance of SearchParamater "
@@ -96,7 +107,9 @@ class FHIRRules:
                         "expression": expression,
                     }
                 else:
-                    logger.warning(f"\nthe instance of SearchParamater named '{name_search_param}' has no expression associated")
+                    logger.warning(
+                        f"\nthe instance of SearchParamater named '{name_search_param}' has no expression associated"
+                    )
                     logger.debug(f"{resource}\n")
         return dict_searchparam
 

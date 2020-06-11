@@ -56,7 +56,9 @@ class CallApi:
             self.results = response.json()["entry"]
         except KeyError as e:
             # add things to understand why
-            logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
+            logger.info(
+                f"Got a KeyError - There's no {e} key in the json data we received."
+            )
         try:
             self.next_url = None
             for relation in response.json()["link"]:
@@ -65,7 +67,9 @@ class CallApi:
                     break
         except KeyError as e:
             # add things to understand why
-            logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
+            logger.info(
+                f"Got a KeyError - There's no {e} key in the json data we received."
+            )
 
     def get_next(self):
         """retrieves the responses contained in the following pages
@@ -115,7 +119,9 @@ class ApiGetter(CallApi):
             pd.DataFrame -- collected data into a dataframe
         """
         df = pd.DataFrame(self.data)
-        logger.debug(f"{self.main_resource_alias} dataframe builded head - \n{df.to_string()}")
+        logger.debug(
+            f"{self.main_resource_alias} dataframe builded head - \n{df.to_string()}"
+        )
         return df
 
     def _concatenate(self, column):
