@@ -175,7 +175,12 @@ class Query:
             logger.debug(
                 f"{resource_alias} dataframe builded head - \n{dataframe.to_string()}"
             )
-        self.main_dataframe = self._join()
+        # We check if there is more than 1 alias of resource
+        if len(self.dataframes) > 1:
+            self.main_dataframe = self._join()
+        else:
+            self.main_dataframe = list(self.dataframes.values())[0]
+
         logger.debug(
             f"Main dataframe builded head before columns selection-"
             f"\n{self.main_dataframe.to_string()}"
