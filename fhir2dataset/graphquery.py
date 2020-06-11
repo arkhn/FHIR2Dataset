@@ -2,11 +2,12 @@ import json
 import requests
 import networkx as nx
 import logging
+from pprint import pformat
 from typing import Type
 
 from .fhirrules_getter import FHIRRules
 
-logging.basicConfig(filename="fhir2dataset.log", level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 MODIFIERS_POSS = ["missing", "exact", "contains", "text", "in", "below", "above", "not-in"]
 
@@ -67,6 +68,11 @@ class GraphQuery:
             self._where(**where_dict)
         self._select(**select_dict)
         self._complete_element_concat_type_dict(default_element_concat_type)
+        logger.info(f"The nodes are:{self.resources_alias_graph.nodes()}")
+        logger.info(f"The edges are:")
+        logger.info(pformat(list(self.resources_alias_graph.edges(data=True))))
+        logger.info(f"The information gathered for each node is:")
+        logger.info(pformat(self.resources_alias_info))
 
     def _complete_element_concat_type_dict(self, default_element_concat_type):
         for resource_alias in self.resources_alias_info.keys():
