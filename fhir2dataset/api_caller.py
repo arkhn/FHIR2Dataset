@@ -5,8 +5,9 @@ import types
 import logging
 import random
 from itertools import product
-
 from jsonpath_ng import jsonpath, parse
+
+logger = logging.getLogger(__name__)
 
 
 class CallApi:
@@ -33,25 +34,29 @@ class CallApi:
             url_number = f"{url}_summary=count"
         else:
             url_number = f"{url}&_summary=count"
-        r = requests.get(url_number, auth=self.auth)
+        response = requests.get(url_number, auth=self.auth)
+        logger.info(f"Get {url_number}")
         # print(url_number)
         # print()
         # print(r)
         # print(r.raw)
         # print(r.content)
-        count = min(requests.get(url_number, auth=self.auth).json()["total"], 10000)
+        count = min(response.json()["total"], 10000)
+        if count == 0:
+            logger.warning(f"there is 0 matching resources for {url}")
         if url[-1] == "?":
             url = f"{url}_count={count}"
         else:
             url = f"{url}&_count={count}"
         # print(url)
+        logger.info(f"Get {url}")
         response = requests.get(url, auth=self.auth)
         self.status_code = response.status_code
         try:
             self.results = response.json()["entry"]
         except KeyError as e:
             # add things to understand why
-            logging.info(f"Got a KeyError - There's no {e} key in the json data we received.")
+            logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
         try:
             self.next_url = None
             for relation in response.json()["link"]:
@@ -60,7 +65,7 @@ class CallApi:
                     break
         except KeyError as e:
             # add things to understand why
-            logging.info(f"Got a KeyError - There's no {e} key in the json data we received.")
+            logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
 
     def get_next(self):
         """retrieves the responses contained in the following pages
@@ -68,7 +73,7 @@ class CallApi:
         if self.next_url:
             self.get_response(self.next_url)
         else:
-            logging.info("There is no more pages")
+            logger.info("There is no more pages")
 
 
 class BearerAuth(requests.auth.AuthBase):
@@ -110,17 +115,18 @@ class ApiGetter(CallApi):
             pd.DataFrame -- collected data into a dataframe
         """
         df = pd.DataFrame(self.data)
+        logger.debug(f"{self.main_resource_alias} dataframe builded head - \n{df.to_string()}")
         return df
 
     def _concatenate(self, column):
         result = []
         for list_cell in column:
             if isinstance(list_cell, list):
-                result.extend([value for value in list_cell ])
+                result.extend([value for value in list_cell])
             else:
                 result.append(list_cell)
         return result
-    
+
     def get_all(self):
         """collects all the data corresponding to the initial url request by calling the following pages
         """
@@ -134,7 +140,7 @@ class ApiGetter(CallApi):
             self.get_response(self.next_url)
             self._get_data()
         else:
-            logging.info("There is no more pages")
+            logger.info("There is no more pages")
 
     def _get_data(self):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
