@@ -5,6 +5,10 @@
 import networkx as nx
 import itertools
 import types
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def join_path(graph: nx.Graph) -> list:
