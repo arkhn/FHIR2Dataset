@@ -1,8 +1,12 @@
 import json
 import requests
+import logging
 import networkx as nx
 
 from .graphquery import GraphQuery
+
+
+logger = logging.getLogger(__name__)
 
 
 class URLBuilder:
@@ -42,6 +46,7 @@ class URLBuilder:
             f"{self.fhir_api_url}{self._query_graph.resources_alias_info[self.main_resource_alias]['resource_type']}?"
             f"{self._url_params or ''}"
         )
+        logger.info(f"the computed url is {search_query_url}")
         return search_query_url
 
     def _get_url_params(self):
@@ -62,7 +67,7 @@ class URLBuilder:
                 self._url_params = (
                     f"{f'{self._url_params}&' if self._url_params else ''}{url_temp or ''}"
                 )
-                # logging.info(f"url_params: {self._url_params}")
+                logger.debug(f"the part of the url for the params is: {self._url_params}")
 
     # To change because it's useless to go through dijstra for the moment knowing that we only do chain parameters of length 1.
     def _light_chained_params(self, resource_alias: str) -> tuple:
