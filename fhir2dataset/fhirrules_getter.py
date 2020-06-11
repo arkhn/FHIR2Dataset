@@ -4,6 +4,8 @@ import objectpath
 import logging
 import requests
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_METADATA_DIR = 'metadata'
 
 class FHIRRules:
@@ -47,7 +49,7 @@ class FHIRRules:
         try:
             return self.searchparam_to_element[resource_type][search_param]["expression"]
         except:
-            logging.info(f"There is no such searchparam")
+            logger.warning(f"The searchparam '{search_param}' doesn't exist in the rules")
             return None
 
     def _get_searchparam_to_element(self) -> dict:
@@ -65,7 +67,7 @@ class FHIRRules:
             for resource_type in resource_tree.execute("$.resource.base"):
                 if resource_type not in dict_searchparam:
                     dict_searchparam[resource_type] = dict()
-                try:
+                if expression_search_param:
                     list_expression = expression_search_param.split(" | ")
                     find = False
                     for exp in list_expression:
@@ -74,25 +76,28 @@ class FHIRRules:
                             find = True
                             expression = ".".join(exp_split[1:])
                         elif resource_type in exp_split[0]:
-                            # speacial cases : CodeableConcept, Quantity etc
+                            # special cases : CodeableConcept, Quantity etc
                             find = True
                             exp_split = ".".join(exp_split[1:])
                             expression = exp_split.split(" ")[0]
-                            logging.info(f"\nexpression: {expression}\n")
+                            logger.debug(f"\nthe searchpram '{name_search_param} is associated with this FHIRpath '{expression}'\n")
                     if not find:
-                        logging.info(
-                            f"\nNot found"
-                            f"\nresource_type: {resource_type}"
-                            f"\nname_search_param: {name_search_param}"
-                            f"\nlist_expression: \n{list_expression}"
-                            f"\nresource_tree:\n {resource}\n"
+                        logger.warning(
+                            f"\nthe fhirpath associated to the instance of SearchParamater "
+                            f"named '{name_search_param}' wasn't found for the resource_type "
+                            f"'{resource_type}''"
+                        )
+                        logger.debug(
+                            f"the list of firpath associated with this SearchParamater is "
+                            f"{list_expression}"
+                            f"the json associated is :\n {resource}\n"
                         )
                     dict_searchparam[resource_type][name_search_param] = {
                         "expression": expression,
                     }
-                except:
-                    logging.info(f"resource_tree:\n {resource}\n")
-
+                else:
+                    logger.warning(f"\nthe instance of SearchParamater named '{name_search_param}' has no expression associated")
+                    logger.debug(f"{resource}\n")
         return dict_searchparam
 
     def _get_from_file(self, path: str, filename: str) -> dict:
