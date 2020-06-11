@@ -18,7 +18,7 @@ setup(
     name="fhir2dataset",
     packages=find_packages(),
     include_package_data=True,
-    version="0.0.3",
+    version="0.0.4",
     license="Apache License 2.0",
     description="Transform FHIR to Dataset",
     long_description=long_description,
