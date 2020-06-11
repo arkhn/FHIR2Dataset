@@ -9,6 +9,9 @@ from fhir2dataset.url_builder import URLBuilder
 from fhir2dataset.graph_tools import join_path
 
 
+logger = logging.getLogger(__name__)
+
+
 class Query:
     """Query Executor
 
@@ -20,7 +23,8 @@ class Query:
             "from": {
                 "alias n°1": "Resource type 1",
                 "alias n°2": "Resource type 2",
-                "alias n°3": "Resource type 3"
+                "alias n°3": "Resource type 3",
+                ...
             },
             "select": {
                 "alias n°1": [
@@ -29,15 +33,26 @@ class Query:
                     "expression of attribute c of resource type 1"
                 ],
                 "alias n°2": [
-                    "expression of attribute a of resource type 2"
-                ]
+                    "expression of attribute a of resource type 2",
+                    ...
+                ],
+                ...
             },
             "join": {
-                "alias n°1": {
-                    "searchparam of attribute d, which is of type Reference, of resource type 1": "alias n°2"
+                "inner": {
+                    "alias n°1": {
+                        "searchparam of attribute d, which is of type Reference, of resource type 1": "alias n°2"
+                    },
+                    ...
                 },
-                "alias n°2": {
-                    "searchparam of attribute b, which is of type Reference, of resource type 2": "alias n°3"
+                "child": {
+                    "alias n°2": {
+                        "searchparam of attribute b, which is of type Reference, of resource type 2": "alias n°3"
+                    },
+                    ...
+                },
+                "parent": {
+                    ...
                 }
             },
             "where": {
@@ -48,7 +63,8 @@ class Query:
                 "alias n°3": {
                     "searchparam of attribute a of resource type 2": "value 3",
                     "searchparam of attribute b of resource type 2": "value 4"
-                }
+                },
+                ...
             }
         }
         ```
@@ -69,6 +85,16 @@ class Query:
         graph_query {type(GraphQuery)} -- instance of a GraphQuery object that gives a graphical representation of the query
         dataframes {dict} -- dictionary storing for each alias the resources requested on the api in tabular format
         main_dataframe {DataFrame} -- pandas dataframe storing the final result table
+    
+    Example:
+        import fhir2dataset
+        import logging
+
+        logging.basicConfig(level=logging.INFO)
+        query = Query(fhir_api_url=fhir_api_url, fhir_rules=fhir_rules, token=token)
+        query.from_config(config)
+        query.execute()
+        df = query.main_dataframe
     """
 
     def __init__(self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None, token: str = None):
@@ -116,9 +142,7 @@ class Query:
         Keyword Arguments::
             debug {bool} -- if debug is true then the columns needed for internal processing are kept in the final dataframe. Otherwise only the columns of the select are kept in the final dataframe. (default: {False})
         """
-        self.graph_query = GraphQuery(
-            fhir_api_url=self.fhir_api_url,
-            fhir_rules=self.fhir_rules)
+        self.graph_query = GraphQuery(fhir_api_url=self.fhir_api_url, fhir_rules=self.fhir_rules)
         self.graph_query.execute(**self.config)
         for resource_alias in self.graph_query.resources_alias_info.keys():
             resource_alias_info = self.graph_query.resources_alias_info[resource_alias]
@@ -141,9 +165,15 @@ class Query:
             )
             call.get_all()
             self.dataframes[resource_alias] = call.display_data()
-            print(elements)
+            # print(elements)
         self._clean_columns()
+        for resource_alias, dataframe in self.dataframes.items():
+            logger.debug(f"{resource_alias} dataframe builded head - \n{dataframe.to_string()}")
         self.main_dataframe = self._join()
+        logger.debug(
+            f"Main dataframe builded head before columns selection-"
+            f"\n{self.main_dataframe.to_string()}"
+        )
         if not debug:
             self._select_columns()
         # to do check where
@@ -170,26 +200,28 @@ class Query:
         for alias_1, alias_2 in list_join:
             df_1 = main_df
             df_2 = self.dataframes[alias_2]
-            main_df = self._join_2_df(alias_1, alias_2, df_1, df_2)                
+            main_df = self._join_2_df(alias_1, alias_2, df_1, df_2)
         return main_df
-    
+
     def _group_lines(self, df, col_name):
+        logger.debug(f"dataframe before being grouped \n{df.to_string()}")
         if not df.empty:
             cols_group = [col_name]
             if cols_group:
                 # cols_group += self.elements['additional_resource']
                 cols = df.columns.to_list()
-                cols_list = [col_name for col_name in cols if col_name not in cols_group ]
-                dict_cols_list = {col:self._concatenate for col in cols_list}
+                cols_list = [col_name for col_name in cols if col_name not in cols_group]
+                dict_cols_list = {col: self._concatenate for col in cols_list}
                 df = df.groupby(cols_group).agg(dict_cols_list)
                 df.reset_index(inplace=True)
+            logger.debug(f"dataframe after being grouped on {cols_group}:\n{df.to_string()}")
         return df
-    
+
     def _concatenate(self, column):
         result = []
         for list_cell in column:
             if isinstance(list_cell, list):
-                result.extend([value for value in list_cell ])
+                result.extend([value for value in list_cell])
             else:
                 result.append(list_cell)
         return result
@@ -233,9 +265,9 @@ class Query:
 
         if alias_1 == alias_parent:
             ### to delete after ??
-            if alias_1 == 'patient':
+            if alias_1 == "patient":
                 df_2 = self._group_lines(df_2, child_on)
-            elif alias_2 == 'patient':
+            elif alias_2 == "patient":
                 df_1 = self._group_lines(df_1, parent_on)
             ###################################################
             df_merged_inner = pd.merge(
@@ -243,9 +275,9 @@ class Query:
             )
         else:
             ### to delete after ??
-            if alias_1 == 'patient':
+            if alias_1 == "patient":
                 df_2 = self._group_lines(df_2, parent_on)
-            elif alias_2 == 'patient':
+            elif alias_2 == "patient":
                 df_1 = self._group_lines(df_1, child_on)
             ###################################################
             df_merged_inner = pd.merge(
