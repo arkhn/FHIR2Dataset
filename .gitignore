@@ -1,3 +1,8 @@
+# confidential data in examples
+examples/CapabilityStatement/*
+perso/
+tests/
+
 .DS_Store
 .idea/*
 
@@ -105,3 +110,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+#vscode stuff
+.vscode/*

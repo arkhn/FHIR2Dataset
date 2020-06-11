@@ -1,0 +1,1 @@
+Get the pressure measures of patients born after 1970, together with their gender and birthdate

@@ -1,0 +1,1 @@
+Get information on patients with last name "Smith" and a condition confirmed by a practitioner with last name "van den broek"

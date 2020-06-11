@@ -1,0 +1,37 @@
+{
+    "select": {
+        "patient": [
+        "gender",
+        "name.given",
+        "birthDate"
+        ],
+        "condition": [
+            "verificationStatus"
+        ],
+        "practitioner": [
+            "name"
+        ]
+    },
+    "from": {
+        "patient": "Patient",
+        "practitioner": "Practitioner",
+        "condition": "Condition"
+    },
+    "join": {
+        "condition": {
+        "asserter": "practitioner",
+        "subject": "patient"
+        }
+    },
+    "where": {
+        "practitioner": {
+        "family": "van den broek"
+        },
+        "patient":{
+            "family": "Smith"
+        },
+        "condition": {
+        "verification-status": "confirmed"
+        }
+    }
+}
