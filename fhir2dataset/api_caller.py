@@ -41,7 +41,6 @@ class CallApi:
         # print(r)
         # print(r.raw)
         # print(r.content)
-        count = min(response.json()["total"], 10000)
         try:
             count = min(response.json()["total"], 10000)
         except KeyError as e:
@@ -65,6 +64,8 @@ class CallApi:
             logger.info(
                 f"Got a KeyError - There's no {e} key in the json data we received."
             )
+            logger.debug(f"status code of KeyError response:\n{response.status_code}")
+            logger.debug(f"content of the KeyError response:\n{response.content}")
         try:
             self.next_url = None
             for relation in response.json()["link"]:
@@ -76,6 +77,8 @@ class CallApi:
             logger.info(
                 f"Got a KeyError - There's no {e} key in the json data we received."
             )
+            logger.debug(f"status code of KeyError response:\n{response.status_code}")
+            logger.debug(f"content of the KeyError response:\n{response.content}")
 
     def get_next(self):
         """retrieves the responses contained in the following pages
