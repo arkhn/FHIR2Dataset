@@ -42,6 +42,12 @@ class CallApi:
         # print(r.raw)
         # print(r.content)
         count = min(response.json()["total"], 10000)
+        try:
+            count = min(response.json()["total"], 10000)
+        except KeyError as e:
+            logger.warning(f"status code of failing response:\n{response.status_code}")
+            logger.warning(f"content of the failing response:\n{response.content}")
+            raise
         if count == 0:
             logger.warning(f"there is 0 matching resources for {url}")
         if url[-1] == "?":
