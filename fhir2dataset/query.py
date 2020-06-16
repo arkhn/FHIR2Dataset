@@ -7,6 +7,7 @@ from fhir2dataset.fhirrules_getter import FHIRRules
 from fhir2dataset.api_caller import ApiGetter
 from fhir2dataset.url_builder import URLBuilder
 from fhir2dataset.graph_tools import join_path
+from fhir2dataset.timer import timing
 
 
 logger = logging.getLogger(__name__)
@@ -96,7 +97,7 @@ class Query:
         query.execute()
         df = query.main_dataframe
     """
-
+    @timing
     def __init__(
         self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None, token: str = None
     ):
@@ -120,6 +121,7 @@ class Query:
         self.dataframes = dict()
         self.main_dataframe = None
 
+    @timing
     def from_config(self, config: dict):
         """Executes the query from a dictionary in the format of a configuration file
 
@@ -133,6 +135,7 @@ class Query:
             "join_dict": config.get("join", None),
         }
 
+    @timing
     def execute(self, debug: bool = False):
         """Executes the complete query
 
@@ -189,6 +192,7 @@ class Query:
             self._select_columns()
         # to do check where
 
+    @timing
     def _select_columns(self):
         """Clean the final dataframe to keep only the columns of the select
         """
@@ -201,6 +205,7 @@ class Query:
             )
         self.main_dataframe = self.main_dataframe[final_columns]
 
+    @timing
     def _join(self) -> pd.DataFrame:
         """executes the joins one after the other in the order specified by the join_path function.
 
@@ -216,6 +221,7 @@ class Query:
             main_df = self._join_2_df(alias_1, alias_2, df_1, df_2)
         return main_df
 
+    @timing
     def _group_lines(self, df, col_name):
         logger.debug(f"dataframe before being grouped \n{df.to_string()}")
         if not df.empty:
@@ -234,6 +240,7 @@ class Query:
             )
         return df
 
+    @timing
     def _concatenate(self, column):
         result = []
         for list_cell in column:
@@ -243,6 +250,7 @@ class Query:
                 result.append(list_cell)
         return result
 
+    @timing
     def _join_2_df(
         self, alias_1: str, alias_2: str, df_1: pd.DataFrame, df_2: pd.DataFrame,
     ) -> pd.DataFrame:
@@ -302,6 +310,7 @@ class Query:
             )
         return df_merged_inner
 
+    @timing
     def _get_main_alias_join(self) -> str:
         """returns the alias being involved in the maximum number of joins
 
@@ -317,6 +326,7 @@ class Query:
                 max_join = num_join
         return main_alias
 
+    @timing
     def _clean_columns(self):
         """performs preprocessing on all dataframes harvested in the dataframe attribute:
             * adds the resource type in front of an element id so that the resource id matches the references of its parent resource references
@@ -327,12 +337,11 @@ class Query:
                 "resource_type"
             ]
 
-            df = df.pipe(Query._add_resource_type_to_id, resource_type=resource_type,)
+            df = df.pipe(_add_resource_type_to_id, resource_type=resource_type)
 
             self.dataframes[resource_alias] = df.add_prefix(f"{resource_alias}:")
 
-    @staticmethod
-    def _add_resource_type_to_id(df, resource_type: str):
-        # add assert to check that there is only one id in list
-        df["id"] = f"{resource_type}/" + df["id"]
-        return df
+def _add_resource_type_to_id(df, resource_type: str):
+    # add assert to check that there is only one id in list
+    df["id"] = f"{resource_type}/" + df["id"]
+    return df
