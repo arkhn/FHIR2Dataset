@@ -5,6 +5,8 @@ from itertools import product
 
 from fhir2dataset.timer import timing
 
+from fhir2dataset.timer import timing
+
 logger = logging.getLogger(__name__)
 
 
