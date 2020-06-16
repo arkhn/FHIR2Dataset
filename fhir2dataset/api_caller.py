@@ -212,20 +212,25 @@ class ApiGetter(CallApi):
             lines[element].extend(item)
         for element, search in self.expressions["to_test"].items():
             # print(f"search: {search}")
-            search_elems = search.split(".")
-            search_exp = ".".join(search_elems[:4])
-            search_elems = search_elems[4:]
-            for search_elem in search_elems:
-                # print(f"search_exp: {search_exp}")
-                item_temp = self._search(search_exp, json_resource)
-                if isinstance(item_temp, list):
-                    search_exp = f"{search_exp}[*]"
-                search_exp = f"{search_exp}.{search_elem}"
+            search_exp = self._get_search_exp(search, json_resource)
             if search_exp not in self.expressions["exact"].values():
                 # print(f"search_exp: {search_exp}")
                 item = self._search(search_exp, json_resource)
                 lines[element].extend(item)
         return lines
+        
+    @timing
+    def _get_search_exp(self, search, json_resource):
+        search_elems = search.split(".")
+        search_exp = ".".join(search_elems[:4])
+        search_elems = search_elems[4:]
+        for search_elem in search_elems:
+            # print(f"search_exp: {search_exp}")
+            item_temp = self._search(search_exp, json_resource)
+            if isinstance(item_temp, list):
+                search_exp = f"{search_exp}[*]"
+            search_exp = f"{search_exp}.{search_elem}"
+        return search_exp
 
     @timing
     def _search(self, search, json_resource):
