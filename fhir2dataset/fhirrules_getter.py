@@ -4,6 +4,9 @@ import objectpath
 import logging
 import requests
 
+from fhir2dataset.timer import timing
+from functools import lru_cache
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_METADATA_DIR = "metadata"
@@ -18,7 +21,7 @@ class FHIRRules:
         capabilitystatement {dict} -- an instance json of a CapabilityStatement resource
         searchparameters {dict} -- an instance json of a SearchParameters resource
     """
-
+    @timing
     def __init__(
         self,
         path: str = None,
@@ -39,6 +42,8 @@ class FHIRRules:
         )
         self.searchparam_to_element = self._get_searchparam_to_element()
 
+    @timing
+    @lru_cache(maxsize=200)
     def resourcetype_searchparam_to_element(
         self, resource_type: str, search_param: str
     ):
@@ -61,6 +66,7 @@ class FHIRRules:
             )
             return None
 
+    @timing
     def _get_searchparam_to_element(self) -> dict:
         """builds a dictionary storing for each resource the expression corresponding to each searchparameter (e.g. {'Organization': {'address-postalcode': {'expression': 'address.postalCode'}}})
 
@@ -113,6 +119,7 @@ class FHIRRules:
                     logger.debug(f"{resource}\n")
         return dict_searchparam
 
+    @timing
     def _get_from_file(self, path: str, filename: str) -> dict:
         """Get a json (dict) from a file
 

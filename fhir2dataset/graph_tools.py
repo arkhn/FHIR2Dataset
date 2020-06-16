@@ -7,10 +7,11 @@ import itertools
 import types
 import logging
 
+from fhir2dataset.timer import timing
 
 logger = logging.getLogger(__name__)
 
-
+@timing
 def join_path(graph: nx.Graph) -> list:
     """transforms the query graph into an Eulerian graph in order to be able to find an Eulerian path in it.
 
@@ -28,7 +29,7 @@ def join_path(graph: nx.Graph) -> list:
     path = clean_euler_path(euler_path)
     return path
 
-
+@timing
 def clean_euler_path(eulerian_path: list) -> list:
     """Cleans a Eulerian path so that each edge (not directed) appears only once in the list. If a edge appears more than once, only the first occurrence is kept.
 

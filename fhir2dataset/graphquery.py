@@ -5,7 +5,8 @@ import logging
 from pprint import pformat
 from typing import Type
 
-from .fhirrules_getter import FHIRRules
+from fhir2dataset.fhirrules_getter import FHIRRules
+from fhir2dataset.timer import timing
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class GraphQuery:
                                         * a boolean indicating whether to return the number of instances of the resource that meets all these criteria or not
         fhir_rules {Type(FHIRRules)} -- an instance of an FHIRRules object which contains information specific to the FHIR standard and the API used (for example the expressions associated with the search param of a resource).
     """
-
+    @timing
     def __init__(self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None) -> None:
         """Instantiate the class and create the query object
 
@@ -51,6 +52,7 @@ class GraphQuery:
         self.resources_alias_graph = nx.Graph()
         self.resources_alias_info = dict()
 
+    @timing
     def execute(
         self,
         select_dict: dict,
@@ -83,6 +85,7 @@ class GraphQuery:
         logger.info(f"The information gathered for each node is:")
         logger.info(pformat(self.resources_alias_info))
 
+    @timing
     def _complete_element_concat_type_dict(self, default_element_concat_type):
         for resource_alias in self.resources_alias_info.keys():
             elements = []
@@ -98,6 +101,7 @@ class GraphQuery:
                         element
                     ] = default_element_concat_type
 
+    @timing
     def from_config(self, config: dict):
         """Populates the attributes resources_alias_graph and resources_alias_info according to the information given in the configuration file
 
@@ -111,6 +115,7 @@ class GraphQuery:
             join_dict=config.get("join"),
         )
 
+    @timing
     def _from(self, **resource_type_alias):
         """Initializes the graph nodes contained in resources_alias_graph and the dictionary of resources_alias_info information of the aliases listed in resource_type_alias
 
@@ -139,6 +144,7 @@ class GraphQuery:
                 "count": False,
             }
 
+    @timing
     def _join(self, **join_as):
         """Builds the reference links between the aliases involved in the query
         1. fills in the elements in attribute resources_alias_info to be retrieved from the json resource file to be able to make the joins
@@ -223,6 +229,7 @@ class GraphQuery:
                     #         type_parent]["searchInclude"]
                     #     logging.info(f"{check} not in {possibilities}")
 
+    @timing
     def _where(self, **wheres):
         """updates the resources_alias_info attribute with the conditions that each alias must meet
 
@@ -273,6 +280,7 @@ class GraphQuery:
                     element
                 )
 
+    @timing
     def _select(self, **selects):
         """updates the resources_alias_info attribute with the elements that must be retrieved for each alias
 
@@ -288,6 +296,7 @@ class GraphQuery:
                 resource_alias
             ]
 
+    @timing
     def draw_relations(self):
         """draws the resources_alias_graph attribute
         """

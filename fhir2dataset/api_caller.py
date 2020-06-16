@@ -7,6 +7,8 @@ import random
 from itertools import product
 from jsonpath_ng import jsonpath, parse
 
+from fhir2dataset.timer import timing
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,6 +16,7 @@ class CallApi:
     """generic class that manages the sending and receiving of a url request to a FHIR API.
     """
 
+    @timing
     def __init__(self, url: str, token: str = None):
         self.url = url
         self.status_code = None
@@ -22,12 +25,43 @@ class CallApi:
         self.auth = BearerAuth(token)
         self.get_response(self.url)
 
+    @timing
     def get_response(self, url: str):
         """sends the request and stores the elements of the response
 
         Arguments:
             url {str} -- url of the request
         """
+        count = self._get_count(url)
+        if count == 0:
+            logger.warning(f"there is 0 matching resources for {url}")
+        if url[-1] == "?":
+            url = f"{url}_count={count}"
+        else:
+            url = f"{url}&_count={count}"
+        response = self._get_bundle_response(url)
+        self.status_code = response.status_code
+        try:
+            self.results = response.json()["entry"]
+        except KeyError as e:
+            # add things to understand why
+            logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
+            logger.debug(f"status code of KeyError response:\n{response.status_code}")
+            logger.debug(f"content of the KeyError response:\n{response.content}")
+        try:
+            self.next_url = None
+            for relation in response.json()["link"]:
+                if relation["relation"] == "next":
+                    self.next_url = relation["url"]
+                    break
+        except KeyError as e:
+            # add things to understand why
+            logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
+            logger.debug(f"status code of KeyError response:\n{response.status_code}")
+            logger.debug(f"content of the KeyError response:\n{response.content}")
+
+    @timing
+    def _get_count(self, url):
         # the retrieval of the number of results is not necessary if the FHIR api supports pagination
         # -> to be deleted
         if url[-1] == "?":
@@ -41,36 +75,21 @@ class CallApi:
         # print(r)
         # print(r.raw)
         # print(r.content)
-        count = min(response.json()["total"], 10000)
-        if count == 0:
-            logger.warning(f"there is 0 matching resources for {url}")
-        if url[-1] == "?":
-            url = f"{url}_count={count}"
-        else:
-            url = f"{url}&_count={count}"
-        # print(url)
-        logger.info(f"Get {url}")
-        response = requests.get(url, auth=self.auth)
-        self.status_code = response.status_code
         try:
-            self.results = response.json()["entry"]
+            count = min(response.json()["total"], 10000)
         except KeyError as e:
-            # add things to understand why
-            logger.info(
-                f"Got a KeyError - There's no {e} key in the json data we received."
-            )
-        try:
-            self.next_url = None
-            for relation in response.json()["link"]:
-                if relation["relation"] == "next":
-                    self.next_url = relation["url"]
-                    break
-        except KeyError as e:
-            # add things to understand why
-            logger.info(
-                f"Got a KeyError - There's no {e} key in the json data we received."
-            )
+            logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
+            logger.warning(f"status code of failing response:\n{response.status_code}")
+            logger.warning(f"content of the failing response:\n{response.content}")
+            raise
+        return count
 
+    @timing
+    def _get_bundle_response(self, url):
+        logger.info(f"Get {url}")
+        return requests.get(url, auth=self.auth)
+
+    @timing
     def get_next(self):
         """retrieves the responses contained in the following pages
         """
@@ -94,6 +113,7 @@ class ApiGetter(CallApi):
     """class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
     """
 
+    @timing
     def __init__(
         self,
         url: str,
@@ -112,6 +132,7 @@ class ApiGetter(CallApi):
         self.data = self._init_data()
         self._get_data()
 
+    @timing
     def display_data(self) -> pd.DataFrame:
         """transforms the collected data into a dataframe
 
@@ -119,11 +140,10 @@ class ApiGetter(CallApi):
             pd.DataFrame -- collected data into a dataframe
         """
         df = pd.DataFrame(self.data)
-        logger.debug(
-            f"{self.main_resource_alias} dataframe builded head - \n{df.to_string()}"
-        )
+        logger.debug(f"{self.main_resource_alias} dataframe builded head - \n{df.to_string()}")
         return df
 
+    @timing
     def _concatenate(self, column):
         result = []
         for list_cell in column:
@@ -133,12 +153,14 @@ class ApiGetter(CallApi):
                 result.append(list_cell)
         return result
 
+    @timing
     def get_all(self):
         """collects all the data corresponding to the initial url request by calling the following pages
         """
         while self.next_url:
             self.get_next()
 
+    @timing
     def get_next(self):
         """retrieves the responses contained in the following pages and stores the data in data attribute
         """
@@ -148,6 +170,7 @@ class ApiGetter(CallApi):
         else:
             logger.info("There is no more pages")
 
+    @timing
     def _get_data(self):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
         """
@@ -158,6 +181,7 @@ class ApiGetter(CallApi):
             data = pd.concat([data, df])
         self.data = data
 
+    @timing
     def _flatten_item_results(self, lines):
         infos = self.elements_concat_type
         cols = list(lines.keys())
@@ -179,6 +203,7 @@ class ApiGetter(CallApi):
         df2 = pd.DataFrame(list(product(*originDataset)), columns=final_cols)
         return df2
 
+    @timing
     def _get_match_search(self, json_resource) -> dict:
         lines = self._init_data()
         # print(f"expressions: {self.expressions}")
@@ -202,6 +227,7 @@ class ApiGetter(CallApi):
                 lines[element].extend(item)
         return lines
 
+    @timing
     def _search(self, search, json_resource):
         jsonpath_expr = parse(search)
         if jsonpath_expr.find(json_resource):
