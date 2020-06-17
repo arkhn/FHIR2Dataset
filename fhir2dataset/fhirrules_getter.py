@@ -6,8 +6,6 @@ import logging
 from fhir2dataset.timer import timing
 from functools import lru_cache
 
-from fhir2dataset.timer import timing
-from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 

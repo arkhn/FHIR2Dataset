@@ -78,9 +78,9 @@ class GraphQuery:
         self._select(**select_dict)
         self._complete_element_concat_type_dict(default_element_concat_type)
         logger.info(f"The nodes are:{self.resources_alias_graph.nodes()}")
-        logger.info(f"The edges are:")
+        logger.info("The edges are:")
         logger.info(pformat(list(self.resources_alias_graph.edges(data=True))))
-        logger.info(f"The information gathered for each node is:")
+        logger.info("The information gathered for each node is:")
         logger.info(pformat(self.resources_alias_info))
 
     @timing
@@ -283,7 +283,7 @@ class GraphQuery:
 
         edge_labels = dict()
         for i in self.resources_alias_graph.edges(data=True):
-            value = f""
+            value = ""
             for key, infos in i[2].items():
                 if isinstance(infos, dict):
                     for key_2, infos_2 in infos.items():
