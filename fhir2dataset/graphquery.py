@@ -1,9 +1,6 @@
-import json
-import requests
 import networkx as nx
 import logging
 from pprint import pformat
-from typing import Type
 
 from fhir2dataset.fhirrules_getter import FHIRRules
 from fhir2dataset.timer import timing
@@ -32,7 +29,7 @@ class GraphQuery:
                                         * the elements that must be retrieved from the json of a resource
                                         * a boolean indicating whether to return the number of instances of the resource that meets all these criteria or not
         fhir_rules {Type(FHIRRules)} -- an instance of an FHIRRules object which contains information specific to the FHIR standard and the API used (for example the expressions associated with the search param of a resource).
-    """
+    """  # noqa
 
     @timing
     def __init__(self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None) -> None:
@@ -43,7 +40,7 @@ class GraphQuery:
 
         Keyword Arguments:
             fhir_rules {type(FHIRRules)} -- an instance of a FHIRRules-type object. If the instance is not filled a default version will be used. (default: {None})
-        """
+        """  # noqa
         self.fhir_api_url = fhir_api_url
         if not fhir_rules:
             fhir_rules = FHIRRules(fhir_api_url=self.fhir_api_url)
@@ -72,7 +69,7 @@ class GraphQuery:
             join_dict {dict} -- dictionary containing the inner join rules between resources (default: {None})
             where_dict {dict} -- dictionary containing the (cumulative) conditions to be met by the resources (default: {None})
             default_element_concat_type {str} -- indicates how multiple occurrences of elements should be concatenated (cell: all in one cell, row: split in several rows, column: split in several columns) (default: {"cell"})
-        """
+        """  # noqa
         self._from(**from_dict)
         if join_dict:
             self._join(**join_dict)
@@ -106,7 +103,7 @@ class GraphQuery:
 
         Arguments:
             config {dict} -- dictionary in the format of a configuration file
-        """
+        """  # noqa
         self.execute(
             from_dict=config.get("from"),
             select_dict=config.get("select"),
@@ -120,7 +117,7 @@ class GraphQuery:
 
         Keyword Arguments:
             **resource_type_alias: the key corresponds to the alias and the value to the type of the resource.
-        """
+        """  # noqa
         for (resource_alias, resource_type,) in resource_type_alias.items():
             dict_elements = {
                 "select": [],
@@ -151,12 +148,12 @@ class GraphQuery:
 
         Keyword Arguments:
             **join_as: the key is an alias of a parent resource and the value is a dictionary containing in the key the expression leading to the reference, and in the value the alias of the child resource.
-        """
+        """  # noqa
         # to do : change to check in searchParameters // review naming : element not very precise
         for join_how, relationships_dict in join_as.items():
             join_how = join_how.lower()
-            assert join_how in ["inner", "child", "parent", "one",], "Precise how to join"
-            for (alias_parent, searchparam_dict,) in relationships_dict.items():
+            assert join_how in ["inner", "child", "parent", "one"], "Precise how to join"
+            for (alias_parent, searchparam_dict) in relationships_dict.items():
                 type_parent = self.resources_alias_info[alias_parent]["resource_type"]
                 for (searchparam_parent, alias_child,) in searchparam_dict.items():
 
@@ -223,7 +220,7 @@ class GraphQuery:
 
         Keyword Arguments:
             **wheres: the key is an alias, the value is a dictionary containing itself keys which are searchparams and whose values must be respected by the associated search params.
-        """
+        """  # noqa
         for resource_alias, conditions in wheres.items():
             for search_param, value_full in conditions.items():
                 # add assert search_param in CapabilityStatement
@@ -268,7 +265,7 @@ class GraphQuery:
 
         Keyword Arguments:
             **selects: the key is an alias, the value is a list containing expressions to leaf elements
-        """
+        """  # noqa
         for resource_alias in selects.keys():
             # handles the case of count
             if "count" == resource_alias:

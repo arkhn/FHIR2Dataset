@@ -1,11 +1,7 @@
 import pandas as pd
 import requests
-import json
-import types
 import logging
-import random
 from itertools import product
-from jsonpath_ng import jsonpath, parse
 
 from fhir2dataset.timer import timing
 
@@ -62,7 +58,8 @@ class CallApi:
 
     @timing
     def _get_count(self, url):
-        # the retrieval of the number of results is not necessary if the FHIR api supports pagination
+        # the retrieval of the number of results is not necessary if the FHIR api supports
+        # pagination
         # -> to be deleted
         if url[-1] == "?":
             url_number = f"{url}_summary=count"
@@ -70,11 +67,6 @@ class CallApi:
             url_number = f"{url}&_summary=count"
         response = requests.get(url_number, auth=self.auth)
         logger.info(f"Get {url_number}")
-        # print(url_number)
-        # print()
-        # print(r)
-        # print(r.raw)
-        # print(r.content)
         try:
             count = min(response.json()["total"], 10000)
         except KeyError as e:
@@ -115,7 +107,7 @@ class BearerAuth(requests.auth.AuthBase):
 
 class ApiGetter(CallApi):
     """class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
-    """
+    """  # noqa
 
     @timing
     def __init__(
@@ -160,14 +152,14 @@ class ApiGetter(CallApi):
     @timing
     def get_all(self):
         """collects all the data corresponding to the initial url request by calling the following pages
-        """
+        """  # noqa
         while self.next_url:
             self.get_next()
 
     @timing
     def get_next(self):
         """retrieves the responses contained in the following pages and stores the data in data attribute
-        """
+        """  # noqa
         if self.next_url:
             self.get_response(self.next_url)
             self._get_data()
@@ -177,7 +169,7 @@ class ApiGetter(CallApi):
     @timing
     def _get_data(self):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
-        """
+        """  # noqa
         data = pd.DataFrame(self.data)
         for json_resource in self.results:
             lines = self._get_match_search(json_resource)
@@ -253,7 +245,7 @@ class ApiGetter(CallApi):
 
         Returns:
             dict -- dictionary described above
-        """
+        """  # noqa
         data = dict()
         for elem in list(self.expressions.keys()):
             data[elem] = []
@@ -261,14 +253,14 @@ class ApiGetter(CallApi):
 
     def _get_element_at_root(self):
         """transforms the element to be retrieved at the root level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
-        """
+        """  # noqa
         elements_at_root = self.elements["additional_root"]
         for element in elements_at_root:
             self.expressions[element]["exact"] = f"$.{element}"
 
     def _get_element_after_resource(self):
         """transforms the element to be retrieved at the resource level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
-        """
+        """  # noqa
         elements_after_resource = (
             self.elements["additional_resource"]
             + self.elements["select"]

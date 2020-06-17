@@ -1,6 +1,5 @@
 import pandas as pd
 import logging
-import os
 
 from fhir2dataset.graphquery import GraphQuery
 from fhir2dataset.fhirrules_getter import FHIRRules
@@ -96,7 +95,7 @@ class Query:
         query.from_config(config)
         query.execute()
         df = query.main_dataframe
-    """
+    """  # noqa
 
     @timing
     def __init__(self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None, token: str = None):
@@ -108,7 +107,7 @@ class Query:
         Keyword Arguments:
             fhir_rules {type(FHIRRules)} -- an instance of a FHIRRules-type object. If the instance is not filled a default version will be used. (default: {None})
             token {str} -- bearer token authentication if necessary (default: {None})
-        """
+        """  # noqa
         self.fhir_api_url = fhir_api_url
         if not fhir_rules:
             fhir_rules = FHIRRules(fhir_api_url=self.fhir_api_url)
@@ -145,7 +144,7 @@ class Query:
 
         Keyword Arguments::
             debug {bool} -- if debug is true then the columns needed for internal processing are kept in the final dataframe. Otherwise only the columns of the select are kept in the final dataframe. (default: {False})
-        """
+        """  # noqa
         self.graph_query = GraphQuery(fhir_api_url=self.fhir_api_url, fhir_rules=self.fhir_rules)
         self.graph_query.execute(**self.config)
         for resource_alias in self.graph_query.resources_alias_info.keys():
@@ -259,7 +258,7 @@ class Query:
             df_2 {pd.DataFrame} -- dataframe containing the elements of a resource
         Returns:
             pd.DataFrame -- dataframe containing the elements of the 2 resources according to an inner join
-        """
+        """  # noqa
         edge_info = self.graph_query.resources_alias_graph.edges[alias_1, alias_2]
         alias_parent = edge_info["parent"]
         alias_child = edge_info["child"]
@@ -278,22 +277,22 @@ class Query:
             how = "inner"
 
         if alias_1 == alias_parent:
-            ### to delete after ??
+            ### to delete after ??  # noqa
             if alias_1 == "patient":
                 df_2 = self._group_lines(df_2, child_on)
             elif alias_2 == "patient":
                 df_1 = self._group_lines(df_1, parent_on)
-            ###################################################
+            ##################  # noqa
             df_merged_inner = pd.merge(
                 left=df_1, right=df_2, left_on=parent_on, right_on=child_on, how=how,
             )
         else:
-            ### to delete after ??
+            ### to delete after ??  # noqa
             if alias_1 == "patient":
                 df_2 = self._group_lines(df_2, parent_on)
             elif alias_2 == "patient":
                 df_1 = self._group_lines(df_1, child_on)
-            ###################################################
+            ###################  # noqa
             df_merged_inner = pd.merge(
                 left=df_2, right=df_1, left_on=parent_on, right_on=child_on, how=how,
             )
@@ -320,7 +319,7 @@ class Query:
         """performs preprocessing on all dataframes harvested in the dataframe attribute:
             * adds the resource type in front of an element id so that the resource id matches the references of its parent resource references
             * adds the table alias as a prefix to each column name
-        """
+        """  # noqa
         for resource_alias, df in self.dataframes.items():
             resource_type = self.graph_query.resources_alias_info[resource_alias]["resource_type"]
 
