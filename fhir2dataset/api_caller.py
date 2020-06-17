@@ -212,7 +212,7 @@ class ApiGetter(CallApi):
             item = self._search(search, json_resource)
             lines[element].extend(item)
         return lines
-        
+
     @timing
     def _get_search_exp(self, search, json_resource):
         search_elems = search.split(".")
