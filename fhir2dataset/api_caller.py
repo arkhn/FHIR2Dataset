@@ -130,7 +130,7 @@ class ApiGetter(CallApi):
         self.main_resource_alias = main_resource_alias
         self.elements = elements
         self.elements_concat_type = elements_concat_type
-        self.expressions = {"exact": {}, "to_test": {}}
+        self.expressions = {}
         self._get_element_at_root()
         self._get_element_after_resource()
         self.data = self._init_data()
@@ -210,19 +210,11 @@ class ApiGetter(CallApi):
     @timing
     def _get_match_search(self, json_resource) -> dict:
         lines = self._init_data()
-        # print(f"expressions: {self.expressions}")
-        for element, search in self.expressions["exact"].items():
+        for element, search in self.expressions.items():
             item = self._search(search, json_resource)
             lines[element].extend(item)
-        for element, search in self.expressions["to_test"].items():
-            # print(f"search: {search}")
-            search_exp = self._get_search_exp(search, json_resource)
-            if search_exp not in self.expressions["exact"].values():
-                # print(f"search_exp: {search_exp}")
-                item = self._search(search_exp, json_resource)
-                lines[element].extend(item)
         return lines
-        
+
     @timing
     def _get_search_exp(self, search, json_resource):
         search_elems = search.split(".")
@@ -238,13 +230,23 @@ class ApiGetter(CallApi):
 
     @timing
     def _search(self, search, json_resource):
-        jsonpath_expr = parse(search)
-        if jsonpath_expr.find(json_resource):
-            # item = [match.value for match in jsonpath_expr.find(json_resource)]
-            item = [match.value for match in jsonpath_expr.find(json_resource)]
-        else:
-            item = [None]
-        return item
+        search_elems = search.split(".")
+        result_instances = [json_resource]
+        for key in search_elems:
+            instances = [
+                json_instance[key]
+                for json_instance in result_instances
+                if key in json_instance.keys()
+            ]
+            result_instances = []
+            for instance in instances:
+                if isinstance(instance, list):
+                    result_instances.extend(instance)
+                else:
+                    result_instances.append(instance)
+        if not result_instances:
+            result_instances = [None]
+        return result_instances
 
     def _init_data(self) -> dict:
         """generation of a dictionary whose keys correspond to expressions (column name) and the value to an empty list
@@ -253,9 +255,7 @@ class ApiGetter(CallApi):
             dict -- dictionary described above
         """
         data = dict()
-        for elem in list(self.expressions["exact"].keys()) + list(
-            self.expressions["to_test"].keys()
-        ):
+        for elem in list(self.expressions.keys()):
             data[elem] = []
         return data
 
@@ -269,11 +269,11 @@ class ApiGetter(CallApi):
     def _get_element_after_resource(self):
         """transforms the element to be retrieved at the resource level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
         """
-        elements_after_resource_exact = (
-            self.elements["additional_resource"] + self.elements["select"]
+        elements_after_resource = (
+            self.elements["additional_resource"]
+            + self.elements["select"]
+            + self.elements["where"]
+            + self.elements["join"]
         )
-        elements_after_resource_to_test = self.elements["where"] + self.elements["join"]
-        for element in elements_after_resource_exact:
-            self.expressions["exact"][element] = f"$.resource.{element}"
-        for element in elements_after_resource_to_test:
-            self.expressions["to_test"][element] = f"$.resource.{element}"
+        for element in elements_after_resource:
+            self.expressions[element] = f"resource.{element}"
