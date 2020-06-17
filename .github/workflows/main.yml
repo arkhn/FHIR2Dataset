@@ -1,0 +1,28 @@
+name: fhir2dataset
+
+on: [push]
+
+jobs:
+  build:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.7', '3.8']
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 fhir2dataset --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 fhir2dataset --count --max-complexity=10 --max-line-length=100 --statistics
