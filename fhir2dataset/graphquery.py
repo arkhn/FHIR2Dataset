@@ -33,6 +33,7 @@ class GraphQuery:
                                         * a boolean indicating whether to return the number of instances of the resource that meets all these criteria or not
         fhir_rules {Type(FHIRRules)} -- an instance of an FHIRRules object which contains information specific to the FHIR standard and the API used (for example the expressions associated with the search param of a resource).
     """
+
     @timing
     def __init__(self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None) -> None:
         """Instantiate the class and create the query object
@@ -93,9 +94,7 @@ class GraphQuery:
                 elements.extend(value)
             for element in elements:
                 if element not in list(
-                    self.resources_alias_info[resource_alias][
-                        "elements_concat_type"
-                    ].keys()
+                    self.resources_alias_info[resource_alias]["elements_concat_type"].keys()
                 ):
                     self.resources_alias_info[resource_alias]["elements_concat_type"][
                         element
@@ -156,12 +155,7 @@ class GraphQuery:
         # to do : change to check in searchParameters // review naming : element not very precise
         for join_how, relationships_dict in join_as.items():
             join_how = join_how.lower()
-            assert join_how in [
-                "inner",
-                "child",
-                "parent",
-                "one",
-            ], "Precise how to join"
+            assert join_how in ["inner", "child", "parent", "one",], "Precise how to join"
             for (alias_parent, searchparam_dict,) in relationships_dict.items():
                 type_parent = self.resources_alias_info[alias_parent]["resource_type"]
                 for (searchparam_parent, alias_child,) in searchparam_dict.items():
@@ -171,9 +165,7 @@ class GraphQuery:
                         resource_type=type_parent, search_param=searchparam_parent,
                     )
                     element_join = f"{element_join}.reference"
-                    self.resources_alias_info[alias_parent]["elements"]["join"].append(
-                        element_join
-                    )
+                    self.resources_alias_info[alias_parent]["elements"]["join"].append(element_join)
                     self.resources_alias_info[alias_parent]["elements_concat_type"][
                         element_join
                     ] = "row"
@@ -182,9 +174,7 @@ class GraphQuery:
 
                     searchparam_parent_to_child = f"{searchparam_parent}:{type_child}."
                     include = f"{type_parent}:{searchparam_parent}:" f"{type_child}"
-                    searchparam_child_to_parent = (
-                        f"_has:{type_parent}:{searchparam_parent}:"
-                    )
+                    searchparam_child_to_parent = f"_has:{type_parent}:{searchparam_parent}:"
                     revinclude = f"{type_parent}:{searchparam_parent}:" f"{type_child}"
                     url_data = {
                         alias_parent: {
@@ -206,9 +196,7 @@ class GraphQuery:
                         join_how=join_how,
                     )
 
-                    self.resources_alias_graph[alias_parent][alias_child].update(
-                        url_data
-                    )
+                    self.resources_alias_graph[alias_parent][alias_child].update(url_data)
 
                     # To do: make assert
                     # check = f"{type_parent}.{searchparam_parent}"
@@ -255,15 +243,11 @@ class GraphQuery:
                 #         "search_parameters"
                 #     ]
                 # )
-                self.resources_alias_info[resource_alias]["search_parameters"][
-                    search_param
-                ] = {
+                self.resources_alias_info[resource_alias]["search_parameters"][search_param] = {
                     "prefix": prefix,
                     "value": value,
                 }
-                resource_type = self.resources_alias_info[resource_alias][
-                    "resource_type"
-                ]
+                resource_type = self.resources_alias_info[resource_alias]["resource_type"]
                 searchparam_to_element = self.fhir_rules.resourcetype_searchparam_to_element(
                     resource_type=resource_type, search_param=search_param,
                 )
@@ -276,9 +260,7 @@ class GraphQuery:
                 if modifier in MODIFIERS_POSS:
                     element = ":".join(element.split(":")[:-1])
                     # print(f"element modified: {element}")
-                self.resources_alias_info[resource_alias]["elements"]["where"].append(
-                    element
-                )
+                self.resources_alias_info[resource_alias]["elements"]["where"].append(element)
 
     @timing
     def _select(self, **selects):
@@ -324,9 +306,6 @@ class GraphQuery:
         nx.draw_networkx(self.resources_alias_graph, pos=layout)
         nx.draw_networkx_labels(self.resources_alias_graph, pos=layout)
         nx.draw_networkx_edge_labels(
-            self.resources_alias_graph,
-            pos=layout,
-            edge_labels=edge_labels,
-            font_size=10,
+            self.resources_alias_graph, pos=layout, edge_labels=edge_labels, font_size=10,
         )
         plt.show()

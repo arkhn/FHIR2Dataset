@@ -97,10 +97,9 @@ class Query:
         query.execute()
         df = query.main_dataframe
     """
+
     @timing
-    def __init__(
-        self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None, token: str = None
-    ):
+    def __init__(self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None, token: str = None):
         """Requestor's initialisation 
 
         Arguments:
@@ -147,9 +146,7 @@ class Query:
         Keyword Arguments::
             debug {bool} -- if debug is true then the columns needed for internal processing are kept in the final dataframe. Otherwise only the columns of the select are kept in the final dataframe. (default: {False})
         """
-        self.graph_query = GraphQuery(
-            fhir_api_url=self.fhir_api_url, fhir_rules=self.fhir_rules
-        )
+        self.graph_query = GraphQuery(fhir_api_url=self.fhir_api_url, fhir_rules=self.fhir_rules)
         self.graph_query.execute(**self.config)
         for resource_alias in self.graph_query.resources_alias_info.keys():
             resource_alias_info = self.graph_query.resources_alias_info[resource_alias]
@@ -175,9 +172,7 @@ class Query:
             # print(elements)
         self._clean_columns()
         for resource_alias, dataframe in self.dataframes.items():
-            logger.debug(
-                f"{resource_alias} dataframe builded head - \n{dataframe.to_string()}"
-            )
+            logger.debug(f"{resource_alias} dataframe builded head - \n{dataframe.to_string()}")
         # We check if there is more than 1 alias of resource
         if len(self.dataframes) > 1:
             self.main_dataframe = self._join()
@@ -200,9 +195,7 @@ class Query:
         for resource_alias in self.graph_query.resources_alias_info.keys():
             resource_alias_info = self.graph_query.resources_alias_info[resource_alias]
             elements_select = resource_alias_info["elements"]["select"]
-            final_columns.extend(
-                [f"{resource_alias}:{element}" for element in elements_select]
-            )
+            final_columns.extend([f"{resource_alias}:{element}" for element in elements_select])
         self.main_dataframe = self.main_dataframe[final_columns]
 
     @timing
@@ -229,15 +222,11 @@ class Query:
             if cols_group:
                 # cols_group += self.elements['additional_resource']
                 cols = df.columns.to_list()
-                cols_list = [
-                    col_name for col_name in cols if col_name not in cols_group
-                ]
+                cols_list = [col_name for col_name in cols if col_name not in cols_group]
                 dict_cols_list = {col: self._concatenate for col in cols_list}
                 df = df.groupby(cols_group).agg(dict_cols_list)
                 df.reset_index(inplace=True)
-            logger.debug(
-                f"dataframe after being grouped on {cols_group}:\n{df.to_string()}"
-            )
+            logger.debug(f"dataframe after being grouped on {cols_group}:\n{df.to_string()}")
         return df
 
     @timing
@@ -333,13 +322,12 @@ class Query:
             * adds the table alias as a prefix to each column name
         """
         for resource_alias, df in self.dataframes.items():
-            resource_type = self.graph_query.resources_alias_info[resource_alias][
-                "resource_type"
-            ]
+            resource_type = self.graph_query.resources_alias_info[resource_alias]["resource_type"]
 
             df = df.pipe(_add_resource_type_to_id, resource_type=resource_type)
 
             self.dataframes[resource_alias] = df.add_prefix(f"{resource_alias}:")
+
 
 def _add_resource_type_to_id(df, resource_type: str):
     # add assert to check that there is only one id in list

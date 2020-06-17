@@ -64,10 +64,10 @@ class URLBuilder:
                     value = f"{values['prefix'] or ''}{values['value']}"
                     url_temp = f"{f'{url_temp}&' if url_temp else ''}{to_resource or ''}{search_param}={value}"
 
-                self._url_params = f"{f'{self._url_params}&' if self._url_params else ''}{url_temp or ''}"
-                logger.debug(
-                    f"the part of the url for the params is: {self._url_params}"
+                self._url_params = (
+                    f"{f'{self._url_params}&' if self._url_params else ''}{url_temp or ''}"
                 )
+                logger.debug(f"the part of the url for the params is: {self._url_params}")
 
     # To change because it's useless to go through dijstra for the moment knowing that we only do chain parameters of length 1.
     def _light_chained_params(self, resource_alias: str) -> tuple:

@@ -21,6 +21,7 @@ class FHIRRules:
         capabilitystatement {dict} -- an instance json of a CapabilityStatement resource
         searchparameters {dict} -- an instance json of a SearchParameters resource
     """
+
     @timing
     def __init__(
         self,
@@ -37,16 +38,12 @@ class FHIRRules:
         self.fhir_api_url = fhir_api_url
         if not path:
             path = os.path.join(os.path.dirname(__file__), DEFAULT_METADATA_DIR)
-        self.searchparameters = self._get_from_file(
-            path=path, filename=searchparameters_filename
-        )
+        self.searchparameters = self._get_from_file(path=path, filename=searchparameters_filename)
         self.searchparam_to_element = self._get_searchparam_to_element()
 
     @timing
     @lru_cache(maxsize=200)
-    def resourcetype_searchparam_to_element(
-        self, resource_type: str, search_param: str
-    ):
+    def resourcetype_searchparam_to_element(self, resource_type: str, search_param: str):
         """retrieves the expression that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
 
         Arguments:
@@ -57,13 +54,9 @@ class FHIRRules:
             str -- the expression for retrieving the element that is the subject of the searchparam (e.g. 'address.postalCode')
         """
         try:
-            return self.searchparam_to_element[resource_type][search_param][
-                "expression"
-            ]
+            return self.searchparam_to_element[resource_type][search_param]["expression"]
         except:
-            logger.warning(
-                f"The searchparam '{search_param}' doesn't exist in the rules"
-            )
+            logger.warning(f"The searchparam '{search_param}' doesn't exist in the rules")
             return None
 
     @timing
