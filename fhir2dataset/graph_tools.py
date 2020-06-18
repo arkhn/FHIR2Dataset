@@ -3,13 +3,12 @@
 """
 
 import networkx as nx
-import itertools
-import types
 import logging
 
 from fhir2dataset.timer import timing
 
 logger = logging.getLogger(__name__)
+
 
 @timing
 def join_path(graph: nx.Graph) -> list:
@@ -23,11 +22,12 @@ def join_path(graph: nx.Graph) -> list:
 
     Returns:
         list -- List of tuples indicating the successive joints to be made
-    """
+    """  # noqa
     euler_graph = nx.eulerize(graph)
     euler_path = list(nx.eulerian_path(euler_graph))
     path = clean_euler_path(euler_path)
     return path
+
 
 @timing
 def clean_euler_path(eulerian_path: list) -> list:
@@ -38,7 +38,7 @@ def clean_euler_path(eulerian_path: list) -> list:
 
     Returns:
         list -- cleaned Eulerian path
-    """
+    """  # noqa
     path = []
     while eulerian_path:
         edge = eulerian_path.pop(0)

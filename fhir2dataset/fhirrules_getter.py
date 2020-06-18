@@ -2,10 +2,10 @@ import os
 import json
 import objectpath
 import logging
-import requests
 
 from fhir2dataset.timer import timing
 from functools import lru_cache
+
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,8 @@ class FHIRRules:
         searchparam_to_element {dict} -- dictionary storing for each resource the expression corresponding to each searchparameter (e.g. {'Organization': {'address-postalcode': {'expression': 'address.postalCode'}}})
         capabilitystatement {dict} -- an instance json of a CapabilityStatement resource
         searchparameters {dict} -- an instance json of a SearchParameters resource
-    """
+    """  # noqa
+
     @timing
     def __init__(
         self,
@@ -33,20 +34,16 @@ class FHIRRules:
             fhir_api_url {str} -- The Service Base URL (e.g. http://hapi.fhir.org/baseR4/) (default: {None})
             path {str} -- path to the folder containing capabilitystatement_filename and searchparameters_filename files (default: {None})
             searchparameters_filename {str} -- filename of a json that contains a resource of type SearchParameters  (default: {"SearchParameters.json"})
-        """
+        """  # noqa
         self.fhir_api_url = fhir_api_url
         if not path:
             path = os.path.join(os.path.dirname(__file__), DEFAULT_METADATA_DIR)
-        self.searchparameters = self._get_from_file(
-            path=path, filename=searchparameters_filename
-        )
+        self.searchparameters = self._get_from_file(path=path, filename=searchparameters_filename)
         self.searchparam_to_element = self._get_searchparam_to_element()
 
     @timing
     @lru_cache(maxsize=200)
-    def resourcetype_searchparam_to_element(
-        self, resource_type: str, search_param: str
-    ):
+    def resourcetype_searchparam_to_element(self, resource_type: str, search_param: str):
         """retrieves the expression that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
 
         Arguments:
@@ -55,15 +52,11 @@ class FHIRRules:
 
         Returns:
             str -- the expression for retrieving the element that is the subject of the searchparam (e.g. 'address.postalCode')
-        """
+        """  # noqa
         try:
-            return self.searchparam_to_element[resource_type][search_param][
-                "expression"
-            ]
-        except:
-            logger.warning(
-                f"The searchparam '{search_param}' doesn't exist in the rules"
-            )
+            return self.searchparam_to_element[resource_type][search_param]["expression"]
+        except KeyError:
+            logger.warning(f"The searchparam '{search_param}' doesn't exist in the rules")
             return None
 
     @timing
@@ -72,7 +65,7 @@ class FHIRRules:
 
         Returns:
             dict -- a dictionary as described above
-        """
+        """  # noqa
         dict_searchparam = dict()
         for resource in self.searchparameters["entry"]:
             resource_tree = objectpath.Tree(resource)
@@ -96,7 +89,8 @@ class FHIRRules:
                             exp_split = ".".join(exp_split[1:])
                             expression = exp_split.split(" ")[0]
                             logger.debug(
-                                f"\nthe searchpram '{name_search_param} is associated with this FHIRpath '{expression}'\n"
+                                f"\nthe searchpram '{name_search_param} is associated with this"
+                                f" FHIRpath '{expression}'\n"
                             )
                     if not find:
                         logger.warning(
@@ -114,7 +108,8 @@ class FHIRRules:
                     }
                 else:
                     logger.warning(
-                        f"\nthe instance of SearchParamater named '{name_search_param}' has no expression associated"
+                        f"\nthe instance of SearchParamater named '{name_search_param}'"
+                        f" has no expression associated"
                     )
                     logger.debug(f"{resource}\n")
         return dict_searchparam

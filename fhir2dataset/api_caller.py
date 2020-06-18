@@ -1,11 +1,7 @@
 import pandas as pd
 import requests
-import json
-import types
 import logging
-import random
 from itertools import product
-from jsonpath_ng import jsonpath, parse
 
 from fhir2dataset.timer import timing
 
@@ -62,7 +58,8 @@ class CallApi:
 
     @timing
     def _get_count(self, url):
-        # the retrieval of the number of results is not necessary if the FHIR api supports pagination
+        # the retrieval of the number of results is not necessary if the FHIR api supports
+        # pagination
         # -> to be deleted
         if url[-1] == "?":
             url_number = f"{url}_summary=count"
@@ -70,15 +67,14 @@ class CallApi:
             url_number = f"{url}&_summary=count"
         response = requests.get(url_number, auth=self.auth)
         logger.info(f"Get {url_number}")
-        # print(url_number)
-        # print()
-        # print(r)
-        # print(r.raw)
-        # print(r.content)
         try:
             count = min(response.json()["total"], 10000)
         except KeyError as e:
             logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
+            logger.warning(f"status code of failing response:\n{response.status_code}")
+            logger.warning(f"content of the failing response:\n{response.content}")
+            raise
+        except ValueError:
             logger.warning(f"status code of failing response:\n{response.status_code}")
             logger.warning(f"content of the failing response:\n{response.content}")
             raise
@@ -111,7 +107,7 @@ class BearerAuth(requests.auth.AuthBase):
 
 class ApiGetter(CallApi):
     """class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
-    """
+    """  # noqa
 
     @timing
     def __init__(
@@ -126,7 +122,7 @@ class ApiGetter(CallApi):
         self.main_resource_alias = main_resource_alias
         self.elements = elements
         self.elements_concat_type = elements_concat_type
-        self.expressions = {"exact": {}, "to_test": {}}
+        self.expressions = {}
         self._get_element_at_root()
         self._get_element_after_resource()
         self.data = self._init_data()
@@ -156,14 +152,14 @@ class ApiGetter(CallApi):
     @timing
     def get_all(self):
         """collects all the data corresponding to the initial url request by calling the following pages
-        """
+        """  # noqa
         while self.next_url:
             self.get_next()
 
     @timing
     def get_next(self):
         """retrieves the responses contained in the following pages and stores the data in data attribute
-        """
+        """  # noqa
         if self.next_url:
             self.get_response(self.next_url)
             self._get_data()
@@ -173,7 +169,7 @@ class ApiGetter(CallApi):
     @timing
     def _get_data(self):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
-        """
+        """  # noqa
         data = pd.DataFrame(self.data)
         for json_resource in self.results:
             lines = self._get_match_search(json_resource)
@@ -206,65 +202,57 @@ class ApiGetter(CallApi):
     @timing
     def _get_match_search(self, json_resource) -> dict:
         lines = self._init_data()
-        # print(f"expressions: {self.expressions}")
-        for element, search in self.expressions["exact"].items():
+        for element, search in self.expressions.items():
             item = self._search(search, json_resource)
             lines[element].extend(item)
-        for element, search in self.expressions["to_test"].items():
-            # print(f"search: {search}")
-            search_elems = search.split(".")
-            search_exp = ".".join(search_elems[:4])
-            search_elems = search_elems[4:]
-            for search_elem in search_elems:
-                # print(f"search_exp: {search_exp}")
-                item_temp = self._search(search_exp, json_resource)
-                if isinstance(item_temp, list):
-                    search_exp = f"{search_exp}[*]"
-                search_exp = f"{search_exp}.{search_elem}"
-            if search_exp not in self.expressions["exact"].values():
-                # print(f"search_exp: {search_exp}")
-                item = self._search(search_exp, json_resource)
-                lines[element].extend(item)
         return lines
 
     @timing
     def _search(self, search, json_resource):
-        jsonpath_expr = parse(search)
-        if jsonpath_expr.find(json_resource):
-            # item = [match.value for match in jsonpath_expr.find(json_resource)]
-            item = [match.value for match in jsonpath_expr.find(json_resource)]
-        else:
-            item = [None]
-        return item
+        search_elems = search.split(".")
+        result_instances = [json_resource]
+        for key in search_elems:
+            instances = [
+                json_instance[key]
+                for json_instance in result_instances
+                if key in json_instance.keys()
+            ]
+            result_instances = []
+            for instance in instances:
+                if isinstance(instance, list):
+                    result_instances.extend(instance)
+                else:
+                    result_instances.append(instance)
+        if not result_instances:
+            result_instances = [None]
+        return result_instances
 
     def _init_data(self) -> dict:
         """generation of a dictionary whose keys correspond to expressions (column name) and the value to an empty list
 
         Returns:
             dict -- dictionary described above
-        """
+        """  # noqa
         data = dict()
-        for elem in list(self.expressions["exact"].keys()) + list(
-            self.expressions["to_test"].keys()
-        ):
+        for elem in list(self.expressions.keys()):
             data[elem] = []
         return data
 
     def _get_element_at_root(self):
         """transforms the element to be retrieved at the root level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
-        """
+        """  # noqa
         elements_at_root = self.elements["additional_root"]
         for element in elements_at_root:
             self.expressions[element]["exact"] = f"$.{element}"
 
     def _get_element_after_resource(self):
         """transforms the element to be retrieved at the resource level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
-        """
-        elements_after_resource_exact = (
-            self.elements["additional_resource"] + self.elements["select"]
+        """  # noqa
+        elements_after_resource = (
+            self.elements["additional_resource"]
+            + self.elements["select"]
+            + self.elements["where"]
+            + self.elements["join"]
         )
-        elements_after_resource_to_test = self.elements["where"] + self.elements["join"]
-        for element in elements_after_resource_exact:
-            self.expressions["exact"][element] = f"$.resource.{element}"
-        for element in elements_after_resource_to_test:
-            self.expressions["to_test"][element] = f"$.resource.{element}"
+        for element in elements_after_resource:
+            self.expressions[element] = f"resource.{element}"
