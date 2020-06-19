@@ -212,19 +212,6 @@ class ApiGetter(CallApi):
         return lines
 
     @timing
-    def _get_search_exp(self, search, json_resource):
-        search_elems = search.split(".")
-        search_exp = ".".join(search_elems[:4])
-        search_elems = search_elems[4:]
-        for search_elem in search_elems:
-            # print(f"search_exp: {search_exp}")
-            item_temp = self._search(search_exp, json_resource)
-            if isinstance(item_temp, list):
-                search_exp = f"{search_exp}[*]"
-            search_exp = f"{search_exp}.{search_elem}"
-        return search_exp
-
-    @timing
     def _search(self, search, json_resource):
         search_elems = search.split(".")
         result_instances = [json_resource]
