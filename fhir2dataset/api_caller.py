@@ -78,6 +78,10 @@ class CallApi:
             logger.warning(f"status code of failing response:\n{response.status_code}")
             logger.warning(f"content of the failing response:\n{response.content}")
             raise
+        except ValueError:
+            logger.warning(f"status code of failing response:\n{response.status_code}")
+            logger.warning(f"content of the failing response:\n{response.content}")
+            raise
         return count
 
     @timing

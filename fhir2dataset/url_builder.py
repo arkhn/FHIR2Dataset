@@ -1,6 +1,9 @@
 import logging
 import networkx as nx
 
+from collections import defaultdict
+from posixpath import join as urljoin
+from urllib.parse import urlencode
 from .graphquery import GraphQuery
 
 
@@ -29,7 +32,7 @@ class URLBuilder:
         self.main_resource_alias = main_resource_alias
         self._query_graph = query_graph
 
-        self._url_params = None
+        self._params = defaultdict(list)
         self._get_url_params()
         self.search_query_url = self._compute_url()
 
@@ -40,11 +43,11 @@ class URLBuilder:
             str -- corresponding API request url
         """  # noqa
         # to do verify self.fhir_api_url finish by '/'
-        search_query_url = (
-            f"{self.fhir_api_url}"
+        params = (
             f"{self._query_graph.resources_alias_info[self.main_resource_alias]['resource_type']}?"
-            f"{self._url_params or ''}"
+            f"{urlencode(self._params , doseq=True)}"
         )
+        search_query_url = urljoin(self.fhir_api_url, params)
         logger.info(f"the computed url is {search_query_url}")
         return search_query_url
 
@@ -52,7 +55,6 @@ class URLBuilder:
         """retrieves the portions of the url that specify search parameters
         """
         for resource_alias in self._query_graph.resources_alias_info.keys():
-            url_temp = None
             to_resource, reliable = self._light_chained_params(resource_alias)
 
             if reliable:
@@ -60,16 +62,11 @@ class URLBuilder:
                 infos_search_param = infos_alias["search_parameters"]
                 for search_param, values in infos_search_param.items():
                     # add assert search_param in CapabilityStatement
+                    key = f"{to_resource or ''}{search_param}"
                     value = f"{values['prefix'] or ''}{values['value']}"
-                    url_temp = (
-                        f"{f'{url_temp}&' if url_temp else ''}{to_resource or ''}"
-                        f"{search_param}={value}"
-                    )
+                    self._params[key] = value
 
-                self._url_params = (
-                    f"{f'{self._url_params}&' if self._url_params else ''}{url_temp or ''}"
-                )
-                logger.debug(f"the part of the url for the params is: {self._url_params}")
+                logger.debug(f"the part of the url for the params is: {self._params}")
 
     # To change because it's useless to go through dijstra for the moment knowing that we only do
     # chain parameters of length 1.
