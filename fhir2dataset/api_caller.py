@@ -28,13 +28,14 @@ class CallApi:
         Arguments:
             url {str} -- url of the request
         """
-        count = self._get_count(url)
-        if count == 0:
-            logger.warning(f"there is 0 matching resources for {url}")
-        if url[-1] == "?":
-            url = f"{url}_count={count}"
-        else:
-            url = f"{url}&_count={count}"
+        # TODO : optimize count and paging
+        # count = self._get_count(url)
+        # if count == 0:
+        #     logger.warning(f"there is 0 matching resources for {url}")
+        # if url[-1] == "?":
+        #     url = f"{url}_count={count}"
+        # else:
+        #     url = f"{url}&_count={count}"
         response = self._get_bundle_response(url)
         self.status_code = response.status_code
         try:

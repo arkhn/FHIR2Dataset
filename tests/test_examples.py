@@ -6,6 +6,7 @@ import logging
 sys.path.append(".")
 
 from tools import test_resources_in_dataframe
+from tools import create_resource_test
 
 log_format = '[%(asctime)s] [%(levelname)s] - %(message)s'
 logging.basicConfig(level=logging.INFO, format=log_format)
@@ -46,6 +47,9 @@ def test_5():
 
     test_resources_in_dataframe(dirname, fhir_api_url, path_rules)
 
+def test_6():
+    create_resource_test("tests/6")
+
 if __name__ == "__main__":
     os.chdir(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -55,3 +59,4 @@ if __name__ == "__main__":
     test_3()
     test_4()
     test_5()
+    # test_6()

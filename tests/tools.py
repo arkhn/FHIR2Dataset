@@ -5,7 +5,7 @@ import sys
 import logging
 
 sys.path.append(".")
-from query import Query
+from fhir2dataset.query import Query
 
 def update_resource(fhir_api_url, body, filename, path_info):
     id_resource = None
