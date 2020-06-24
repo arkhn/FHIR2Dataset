@@ -23,6 +23,7 @@
         "condition": "Condition"
     },
     "join": {
+        "inner" : {
         "condition": {
             "subject": "patient"
         },
@@ -30,12 +31,11 @@
             "patient": "patient",
             "asserter": "practitioner"
         }
+    }
     },
     "where": {
         "patient": {
-            "birthdate": {
-                "gt": "1970"
-            }
+            "birthdate": "1976"
         },
         "allergy": {
             "code": "http://snomed.info/sct|22749300"

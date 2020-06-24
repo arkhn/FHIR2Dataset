@@ -277,24 +277,10 @@ class Query:
             how = "inner"
 
         if alias_1 == alias_parent:
-            # THIS PART IS SPECIFIC TO A MAPPING
-            # TODO delete after
-            if alias_1 == "patient":
-                df_2 = self._group_lines(df_2, child_on)
-            elif alias_2 == "patient":
-                df_1 = self._group_lines(df_1, parent_on)
-            # TODO delete before
             df_merged_inner = pd.merge(
                 left=df_1, right=df_2, left_on=parent_on, right_on=child_on, how=how,
             )
         else:
-            # THIS PART IS SPECIFIC TO A MAPPING
-            # TODO delete after
-            if alias_1 == "patient":
-                df_2 = self._group_lines(df_2, parent_on)
-            elif alias_2 == "patient":
-                df_1 = self._group_lines(df_1, child_on)
-            # TODO delete before
             df_merged_inner = pd.merge(
                 left=df_2, right=df_1, left_on=parent_on, right_on=child_on, how=how,
             )
