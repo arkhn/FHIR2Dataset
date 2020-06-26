@@ -55,7 +55,7 @@ class URLBuilder:
     def _update_url_params(self):
         """retrieves the portions of the url that specify search parameters
 
-        The current FHIR API makes union when "where conditions" are requested for the neighbouring resources 
+        The FHIR API makes union when "where conditions" are requested for neighbouring resources 
         Only one "where condition" on every neighbouring resource is taken into account 
         """
         for resource_alias in self._query_graph.resources_alias_graph.neighbors(
