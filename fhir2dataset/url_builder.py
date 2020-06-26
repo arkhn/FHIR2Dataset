@@ -34,7 +34,7 @@ class URLBuilder:
         self._query_graph = query_graph
 
         self._params = defaultdict(list)
-        self._get_url_params()
+        self._update_url_params()
         self.search_query_url = self._compute_url()
 
     def _compute_url(self) -> str:
@@ -52,25 +52,28 @@ class URLBuilder:
         logger.info(f"the computed url is {search_query_url}")
         return search_query_url
 
-    def _get_url_params(self):
+    def _update_url_params(self):
         """retrieves the portions of the url that specify search parameters
 
-        The current FHIR API makes union when "where conditions" are added to a joined resource 
-        Moreover only neighbouring resources are taken into account
-        Therefore we choose randomly one "where condition" on every neighbouring resource
+        The current FHIR API makes union when "where conditions" are requested for the neighbouring resources 
+        Only one "where condition" on every neighbouring resource is taken into account 
         """
-        for resource_alias in self._query_graph.resources_alias_graph.neighbors(self.main_resource_alias):
-            edge=self._query_graph.resources_alias_graph.edges[self.main_resource_alias,resource_alias]
+        for resource_alias in self._query_graph.resources_alias_graph.neighbors(
+            self.main_resource_alias
+        ):
+            edge = self._query_graph.resources_alias_graph.edges[
+                self.main_resource_alias, resource_alias
+            ]
 
             infos_alias = self._query_graph.resources_alias_info[resource_alias]
             infos_search_param = infos_alias["search_parameters"]
 
-            #check if there are "where conditions" on resource_alias
-            if infos_search_param :
-                #select a random "where condition" on resource_alias
-                search_param=random.choice(list(infos_search_param))
+            # check if there are "where conditions" on resource_alias
+            if infos_search_param:
+                # select a random "where condition" on resource_alias
+                search_param = random.choice(list(infos_search_param))
                 values = infos_search_param[search_param]
-                searchparam_prefixe=edge[self.main_resource_alias]['searchparam_prefix']
+                searchparam_prefixe = edge[self.main_resource_alias]["searchparam_prefix"]
 
                 key = f"{searchparam_prefixe}{search_param}"
                 value = f"{values['prefix'] or ''}{values['value']}"
@@ -82,9 +85,9 @@ class URLBuilder:
         infos_alias = self._query_graph.resources_alias_info[self.main_resource_alias]
         infos_search_param = infos_alias["search_parameters"]
 
-        for search_param,values in infos_search_param.items() : 
+        for search_param, values in infos_search_param.items():
             key = f"{search_param}"
             value = f"{values['prefix'] or ''}{values['value']}"
             self._params[key] = value
-        
+
         logger.debug(f"the part of the url for the params is: {self._params}")
