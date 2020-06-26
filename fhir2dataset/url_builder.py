@@ -52,7 +52,6 @@ class URLBuilder:
         logger.info(f"the computed url is {search_query_url}")
         return search_query_url
 
-
     def _get_url_params(self):
         """retrieves the portions of the url that specify search parameters
 
@@ -79,52 +78,13 @@ class URLBuilder:
 
                 logger.debug(f"the part of the url for the params is: {self._params}")
 
+        # "where condition" on the resource itself
+        infos_alias = self._query_graph.resources_alias_info[self.main_resource_alias]
+        infos_search_param = infos_alias["search_parameters"]
 
-    def _light_chained_params(self, resource_alias: str) -> tuple:
-        """gives the prefix (in the first element of the output tuple) to make a chained parameter from the main resource to the resource given as argument. If the resource given as argument is not a neighbor of the main resource, the second element of the output tuple is set to false
-
-        Arguments:
-            resource_alias {str} -- alias of a resource
-
-        Returns:
-            tuple -- (prefix, boolean)
-        """  # noqa
-        to_resource = None
-        reliable = True
-        # Construction of the path from the main resource to the
-        # resource on which the parameter(s) will be applied
-        if resource_alias != self.main_resource_alias:
-            reliable = False
-        return to_resource, reliable
-
-    def _chained_params(self, resource_alias: str) -> tuple:
-        """gives the prefix (in the first element of the output tuple) to make a chained parameter from the main resource to the resource given as argument. If the resource given as argument is not a neighbor of the main resource, the second element of the output tuple is set to false
-
-        Arguments:
-            resource_alias {str} -- alias of a resource
-
-        Returns:
-            tuple -- (prefix, boolean)
-        """  # noqa
-        to_resource = None
-        reliable = True
-        # Construction of the path from the main resource to the
-        # resource on which the parameter(s) will be applied
-        if resource_alias != self.main_resource_alias:
-            internal_path = nx.shortest_path(
-                self._query_graph.resources_alias_graph,
-                source=self.main_resource_alias,
-                target=resource_alias,
-            )
-            # because we are not sure about chaining
-            if len(internal_path) <= 2:
-                for ind in range(len(internal_path) - 1):
-                    edge = self._query_graph.resources_alias_graph.edges[
-                        internal_path[ind], internal_path[ind + 1]
-                    ]
-                    # logging.info(f"edge:{edge}")
-                    searchparam_prefix = edge[internal_path[ind]]["searchparam_prefix"]
-                    to_resource = f"{to_resource or ''}{searchparam_prefix}"
-            else:
-                reliable = False
-        return to_resource, reliable
+        for search_param,values in infos_search_param.items() : 
+            key = f"{search_param}"
+            value = f"{values['prefix'] or ''}{values['value']}"
+            self._params[key] = value
+        
+        logger.debug(f"the part of the url for the params is: {self._params}")
