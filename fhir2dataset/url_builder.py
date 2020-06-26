@@ -1,5 +1,6 @@
 import logging
 import networkx as nx
+import random
 
 from collections import defaultdict
 from posixpath import join as urljoin
@@ -51,25 +52,34 @@ class URLBuilder:
         logger.info(f"the computed url is {search_query_url}")
         return search_query_url
 
+
     def _get_url_params(self):
         """retrieves the portions of the url that specify search parameters
-        """
-        for resource_alias in self._query_graph.resources_alias_info.keys():
-            to_resource, reliable = self._light_chained_params(resource_alias)
 
-            if reliable:
-                infos_alias = self._query_graph.resources_alias_info[resource_alias]
-                infos_search_param = infos_alias["search_parameters"]
-                for search_param, values in infos_search_param.items():
-                    # add assert search_param in CapabilityStatement
-                    key = f"{to_resource or ''}{search_param}"
-                    value = f"{values['prefix'] or ''}{values['value']}"
-                    self._params[key] = value
+        The current FHIR API makes union when "where conditions" are added to a joined resource 
+        Moreover only neighbouring resources are taken into account
+        Therefore we choose randomly one "where condition" on every neighbouring resource
+        """
+        for resource_alias in self._query_graph.resources_alias_graph.neighbors(self.main_resource_alias):
+            edge=self._query_graph.resources_alias_graph.edges[self.main_resource_alias,resource_alias]
+
+            infos_alias = self._query_graph.resources_alias_info[resource_alias]
+            infos_search_param = infos_alias["search_parameters"]
+
+            #check if there are "where conditions" on resource_alias
+            if infos_search_param :
+                #select a random "where condition" on resource_alias
+                search_param=random.choice(list(infos_search_param))
+                values = infos_search_param[search_param]
+                searchparam_prefixe=edge[self.main_resource_alias]['searchparam_prefix']
+
+                key = f"{searchparam_prefixe}{search_param}"
+                value = f"{values['prefix'] or ''}{values['value']}"
+                self._params[key] = value
 
                 logger.debug(f"the part of the url for the params is: {self._params}")
 
-    # To change because it's useless to go through dijstra for the moment knowing that we only do
-    # chain parameters of length 1.
+
     def _light_chained_params(self, resource_alias: str) -> tuple:
         """gives the prefix (in the first element of the output tuple) to make a chained parameter from the main resource to the resource given as argument. If the resource given as argument is not a neighbor of the main resource, the second element of the output tuple is set to false
 
