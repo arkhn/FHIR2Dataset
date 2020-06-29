@@ -90,3 +90,8 @@ class URLBuilder:
             self._params[key] = value
 
         logger.debug(f"the part of the url for the params is: {self._params}")
+        
+        def _update_params_dict(self, search_param: str, values: dict, searchparam_prefixe: str = ""):
+                key = f"{searchparam_prefixe}{search_param}"
+                value = f"{values['prefix'] or ''}{values['value']}"
+                self._params[key] = value
