@@ -1,5 +1,4 @@
 import logging
-import networkx as nx
 import random
 
 from collections import defaultdict
@@ -56,8 +55,8 @@ class URLBuilder:
         """retrieves the portions of the url that specify search parameters
 
         The FHIR API makes union when "where conditions" are requested for neighbouring resources 
-        Only one "where condition" on every neighbouring resource is taken into account 
-        """
+        Only one "where condition" on every neighbouring resource is taken into account
+        """  # noqa
         for resource_alias in self._query_graph.resources_alias_graph.neighbors(
             self.main_resource_alias
         ):
