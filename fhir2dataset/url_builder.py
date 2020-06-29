@@ -93,4 +93,3 @@ class URLBuilder:
         key = f"{searchparam_prefixe}{search_param}"
         value = f"{values['prefix'] or ''}{values['value']}"
         self._params[key] = value
-
