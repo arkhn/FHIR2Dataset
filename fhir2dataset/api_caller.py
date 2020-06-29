@@ -17,9 +17,8 @@ class CallApi:
         self.url = url
         self.status_code = None
         self.results = None
-        self.next_url = None
+        self.next_url = url
         self.auth = BearerAuth(token)
-        self.get_response(self.url)
 
     @timing
     def get_response(self, url: str):
@@ -41,7 +40,6 @@ class CallApi:
         try:
             self.results = response.json()["entry"]
         except KeyError as e:
-            # add things to understand why
             logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
             logger.debug(f"status code of KeyError response:\n{response.status_code}")
             logger.debug(f"content of the KeyError response:\n{response.content}")
@@ -52,7 +50,6 @@ class CallApi:
                     self.next_url = relation["url"]
                     break
         except KeyError as e:
-            # add things to understand why
             logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
             logger.debug(f"status code of KeyError response:\n{response.status_code}")
             logger.debug(f"content of the KeyError response:\n{response.content}")
@@ -131,10 +128,9 @@ class ApiGetter(CallApi):
         self._get_element_at_root()
         self._get_element_after_resource()
         self.data = self._init_data()
-        self._get_data()
 
     @timing
-    def display_data(self) -> pd.DataFrame:
+    def dict_to_dataframe(self) -> pd.DataFrame:
         """transforms the collected data into a dataframe
 
         Returns:
