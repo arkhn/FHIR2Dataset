@@ -74,9 +74,9 @@ class URLBuilder:
                 values = infos_search_param[search_param]
                 searchparam_prefixe = edge[self.main_resource_alias]["searchparam_prefix"]
 
-                key = f"{searchparam_prefixe}{search_param}"
-                value = f"{values['prefix'] or ''}{values['value']}"
-                self._params[key] = value
+                self._update_params_dict(
+                    search_param, values, searchparam_prefixe=searchparam_prefixe
+                )
 
                 logger.debug(f"the part of the url for the params is: {self._params}")
 
