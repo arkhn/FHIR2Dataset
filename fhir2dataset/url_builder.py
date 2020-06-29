@@ -85,9 +85,7 @@ class URLBuilder:
         infos_search_param = infos_alias["search_parameters"]
 
         for search_param, values in infos_search_param.items():
-            key = f"{search_param}"
-            value = f"{values['prefix'] or ''}{values['value']}"
-            self._params[key] = value
+            self._update_params_dict(search_param, values)
 
         logger.debug(f"the part of the url for the params is: {self._params}")
         
