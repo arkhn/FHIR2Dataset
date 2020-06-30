@@ -1,11 +1,13 @@
 {
     "select": {
         "observation": [
-            "component.valueQuantity.value"
+            "component.valueQuantity.value",
+            "id"
         ],
         "patient": [
             "birthDate",
-            "gender"
+            "gender",
+            "id"
         ]
     },
     "from": {
@@ -13,8 +15,10 @@
         "observation": "Observation"
     },
     "join": {
-        "observation": {
-            "subject": "patient"
+        "inner": {
+            "observation": {
+                "subject": "patient"
+            }
         }
     },
     "where": {
