@@ -28,7 +28,6 @@ jobs:
           flake8 fhir2dataset --count --max-complexity=10 --max-line-length=100 --statistics
       - name: Test with pytest
         run: |
-          cd tests
           python -m pytest -svv
 
   publish:
