@@ -1,15 +1,21 @@
 {
     "select": {
         "patient": [
-        "gender",
-        "name.given",
-        "birthDate"
+            "gender",
+            "name.given",
+            "birthDate",
+            "id"
         ],
         "condition": [
-            "verificationStatus"
+            "verificationStatus",
+            "id"
         ],
         "practitioner": [
-            "name"
+            "name",
+            "id"
+        ],
+        "encounter": [
+            "id"
         ]
     },
     "from": {
@@ -19,21 +25,23 @@
         "encounter": "Encounter"
     },
     "join": {
-        "condition": {
-        "asserter": "practitioner",
-        "subject": "patient",
-        "encounter": "encounter"
+        "inner": {
+            "condition": {
+                "asserter": "practitioner",
+                "subject": "patient",
+                "encounter": "encounter"
+            }
         }
     },
     "where": {
         "practitioner": {
-        "family": "van den broek"
+            "family": "van den broek"
         },
-        "patient":{
+        "patient": {
             "family": "Smith"
         },
         "condition": {
-        "verification-status": "confirmed"
+            "verification-status": "confirmed"
         }
     }
 }

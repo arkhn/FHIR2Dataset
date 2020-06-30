@@ -2,18 +2,22 @@
     "select": {
         "patient": [
             "name.family",
-            "birthDate"
+            "birthDate",
+            "id"
         ],
         "practitioner": [
             "name.family",
-            "address"
+            "address",
+            "id"
         ],
         "allergy": [
-            "code.display"
+            "code.display",
+            "id"
         ],
         "condition": [
             "code.coding.display",
-            "severity.coding.display"
+            "severity.coding.display",
+            "id"
         ]
     },
     "from": {
@@ -23,15 +27,15 @@
         "condition": "Condition"
     },
     "join": {
-        "inner" : {
-        "condition": {
-            "subject": "patient"
-        },
-        "allergy":{
-            "patient": "patient",
-            "asserter": "practitioner"
+        "inner": {
+            "condition": {
+                "subject": "patient"
+            },
+            "allergy": {
+                "patient": "patient",
+                "asserter": "practitioner"
+            }
         }
-    }
     },
     "where": {
         "patient": {
@@ -40,7 +44,7 @@
         "allergy": {
             "code": "http://snomed.info/sct|22749300"
         },
-        "practitioner" : {
+        "practitioner": {
             "address-city": "paris"
         },
         "condition": {
