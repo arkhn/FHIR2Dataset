@@ -1,7 +1,6 @@
 # confidential data in examples
 examples/CapabilityStatement/*
 perso/
-tests/
 
 .DS_Store
 .idea/*
