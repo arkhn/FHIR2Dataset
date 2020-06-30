@@ -167,7 +167,7 @@ class Query:
                 token=self.token,
             )
             call.get_all()
-            self.dataframes[resource_alias] = call.display_data()
+            self.dataframes[resource_alias] = call.dict_to_dataframe()
             # print(elements)
         self._clean_columns()
         for resource_alias, dataframe in self.dataframes.items():
