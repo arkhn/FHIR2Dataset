@@ -50,8 +50,3 @@ def test_resources_in_dataframe(dirname, fhir_api_url):
         result = df[eval(condition)]
         logging.info(result)
         assert len(result.index) >= 1, f"{dirname} failed"
-
-
-if __name__ == "__main__":
-    os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    test_resources_in_dataframe("tests/1", "http://hapi.fhir.org/baseR4/")
