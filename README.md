@@ -41,6 +41,20 @@ Check out examples of queries and how they are transformed in call to the FHIR a
 - [Get the number of patients currently in intensive care unit because of Coronavirus](examples/example3.md)
 - [Get clinical information about patients that were in intensive care unit because of Coronavirus](examples/example4.md)
 
+## Contributing
+
+The following commands on a terminal and in your virtual environment allow you to do some minimal local testing before each commit:
+
+```
+pip install -r requirements-dev.txt
+pre-commit install
+```
+
+If you ever want to delete them you just have to do:
+```
+pre-commit clean
+```
+
 ## Publish
 
 First, you need to have `twine` installedd
