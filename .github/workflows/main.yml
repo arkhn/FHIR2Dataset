@@ -38,7 +38,7 @@ jobs:
     if: github.ref == 'refs/heads/master'
     strategy:
       matrix:
-        python-version: ["3.7", "3.8"]
+        python-version: ["3.8"]
 
     steps:
       - uses: actions/checkout@v2
