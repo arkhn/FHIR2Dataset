@@ -29,6 +29,7 @@ class GraphQuery:
                                         * the elements that must be retrieved from the json of a resource
                                         * a boolean indicating whether to return the number of instances of the resource that meets all these criteria or not
         fhir_rules {Type(FHIRRules)} -- an instance of an FHIRRules object which contains information specific to the FHIR standard and the API used (for example the expressions associated with the search param of a resource).
+        group_by_element {str} -- The attribute contains the element of the group by (or is empty)
     """  # noqa
 
     @timing
@@ -49,6 +50,7 @@ class GraphQuery:
         # to represent the relationships (references) between resources
         self.resources_alias_graph = nx.Graph()
         self.resources_alias_info = dict()
+        self.group_by_element = ""
 
     @timing
     def execute(
@@ -57,6 +59,7 @@ class GraphQuery:
         from_dict: dict,
         join_dict: dict = None,
         where_dict: dict = None,
+        group_by_dict: dict = None,
         default_element_concat_type: str = "cell",
     ):
         """Populates the attributes resources_alias_graph and resources_alias_info according to the information filled in 
@@ -69,6 +72,7 @@ class GraphQuery:
             join_dict {dict} -- dictionary containing the inner join rules between resources (default: {None})
             where_dict {dict} -- dictionary containing the (cumulative) conditions to be met by the resources (default: {None})
             default_element_concat_type {str} -- indicates how multiple occurrences of elements should be concatenated (cell: all in one cell, row: split in several rows, column: split in several columns) (default: {"cell"})
+            group_by_dict {dict} -- indicates the element that will be doing the group by
         """  # noqa
         self._from(**from_dict)
         if join_dict:
@@ -76,6 +80,8 @@ class GraphQuery:
         if where_dict:
             self._where(**where_dict)
         self._select(**select_dict)
+        if group_by_dict:
+            self._group_by(**group_by_dict)
         self._complete_element_concat_type_dict(default_element_concat_type)
         logger.info(f"The nodes are:{self.resources_alias_graph.nodes()}")
         logger.info("The edges are:")
@@ -109,6 +115,7 @@ class GraphQuery:
             select_dict=config.get("select"),
             where_dict=config.get("where"),
             join_dict=config.get("join"),
+            group_by_dict=config.get("group_by"),
         )
 
     @timing
@@ -139,6 +146,21 @@ class GraphQuery:
                 "elements_concat_type": dict_elem_concat_type,
                 "count": False,
             }
+
+    @timing
+    def _group_by(self, **group_by_dict):
+        """Update the value of group_by which will be used to group_by the dataframe obtained
+
+        Keyword Arguments:
+            **gb_dict: the key of the resource and the value of the search param doing the group by
+        """  # noqa
+        for resource_gb, search_param_gb in group_by_dict.items():
+            # as for now there is only one group by or not at all
+            resource_type = self.resources_alias_info[resource_gb]["resource_type"]
+            searchparam_to_element = self.fhir_rules.resourcetype_searchparam_to_element(
+                resource_type=resource_type, search_param=search_param_gb,
+            )
+            self.group_by_element = searchparam_to_element
 
     @timing
     def _join(self, **join_as):

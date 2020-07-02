@@ -189,6 +189,7 @@ class Query:
     @timing
     def _select_columns(self):
         """Clean the final dataframe to keep only the columns of the select
+        Group_by the element implemented
         """
         final_columns = []
         for resource_alias in self.graph_query.resources_alias_info.keys():
@@ -196,6 +197,9 @@ class Query:
             elements_select = resource_alias_info["elements"]["select"]
             final_columns.extend([f"{resource_alias}:{element}" for element in elements_select])
         self.main_dataframe = self.main_dataframe[final_columns]
+        group_by_element = self.graph_query.group_by_element
+        if group_by_element:
+            self.main_dataframe.groupby(group_by_element)
 
     @timing
     def _join(self) -> pd.DataFrame:
