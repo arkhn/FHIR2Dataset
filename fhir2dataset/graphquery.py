@@ -80,6 +80,8 @@ class GraphQuery:
         if where_dict:
             self._where(**where_dict)
         self._select(**select_dict)
+        logger.info("group_by_dict:")
+        logger.info(pformat(group_by_dict))
         if group_by_dict:
             self._group_by(**group_by_dict)
         self._complete_element_concat_type_dict(default_element_concat_type)
@@ -88,6 +90,7 @@ class GraphQuery:
         logger.info(pformat(list(self.resources_alias_graph.edges(data=True))))
         logger.info("The information gathered for each node is:")
         logger.info(pformat(self.resources_alias_info))
+        logger.info(f"the group_by element is :{self.group_by_element}")
 
     @timing
     def _complete_element_concat_type_dict(self, default_element_concat_type):
@@ -158,9 +161,11 @@ class GraphQuery:
             # as for now there is only one group by or not at all
             resource_type = self.resources_alias_info[resource_gb]["resource_type"]
             searchparam_to_element = self.fhir_rules.resourcetype_searchparam_to_element(
-                resource_type=resource_type, search_param=search_param_gb,
+                resource_type=resource_type, search_param=search_param_gb[0],
             )
-            self.group_by_element = searchparam_to_element
+            logger.info(f"the name of the group_by column is :{searchparam_to_element}")
+            resource_type = resource_type.lower()
+            self.group_by_element = f"{resource_type}:{searchparam_to_element}"
 
     @timing
     def _join(self, **join_as):

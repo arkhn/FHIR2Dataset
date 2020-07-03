@@ -131,6 +131,7 @@ class Query:
             "select_dict": config.get("select", None),
             "where_dict": config.get("where", None),
             "join_dict": config.get("join", None),
+            "group_by_dict": config.get("group_by", None),
         }
 
     @timing
@@ -198,8 +199,9 @@ class Query:
             final_columns.extend([f"{resource_alias}:{element}" for element in elements_select])
         self.main_dataframe = self.main_dataframe[final_columns]
         group_by_element = self.graph_query.group_by_element
+        logger.info(f"group_by_element : {group_by_element}")
         if group_by_element:
-            self.main_dataframe.groupby(group_by_element)
+            self.main_dataframe.groupby(group_by_element).apply(list)
 
     @timing
     def _join(self) -> pd.DataFrame:

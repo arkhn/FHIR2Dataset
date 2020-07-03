@@ -15,11 +15,12 @@ logging.basicConfig(level=logging.INFO, format=log_format)
 @pytest.mark.parametrize(
     "dirname, fhir_api_url",
     [
-        ("tests/1", "http://hapi.fhir.org/baseR4/"),
-        ("tests/2", "http://hapi.fhir.org/baseR4/"),
-        ("tests/3", "http://hapi.fhir.org/baseR4/"),
-        ("tests/1", "http://hapi.fhir.org/baseR4/"),
-        ("tests/5", "http://hapi.fhir.org/baseR4/"),
+        # ("tests/1", "http://hapi.fhir.org/baseR4/"),
+        # ("tests/2", "http://hapi.fhir.org/baseR4/"),
+        # ("tests/3", "http://hapi.fhir.org/baseR4/"),
+        # ("tests/1", "http://hapi.fhir.org/baseR4/"),
+        # ("tests/5", "http://hapi.fhir.org/baseR4/"),
+        ("tests/6", "http://hapi.fhir.org/baseR4/"),
     ],
 )
 def test_resources_in_dataframe(dirname, fhir_api_url):

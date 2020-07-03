@@ -51,4 +51,3 @@ def create_resource_test(path_test, fhir_api_url="http://hapi.fhir.org/baseR4/")
     for filename in config:
         body = resources_bodies[filename]
         update_resource(fhir_api_url, body, filename, path_info_hapi)
-
