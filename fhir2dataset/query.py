@@ -201,7 +201,7 @@ class Query:
         group_by_element = self.graph_query.group_by_element
         logger.info(f"group_by_element : {group_by_element}")
         if group_by_element:
-            self.main_dataframe.groupby(group_by_element).apply(list)
+            self.main_dataframe.groupby([group_by_element]).agg(lambda x: ",".join(set(x)))
 
     @timing
     def _join(self) -> pd.DataFrame:
