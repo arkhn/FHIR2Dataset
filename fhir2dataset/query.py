@@ -1,5 +1,6 @@
 import pandas as pd
 import logging
+import numpy as np
 
 from fhir2dataset.graphquery import GraphQuery
 from fhir2dataset.fhirrules_getter import FHIRRules
@@ -198,10 +199,26 @@ class Query:
             elements_select = resource_alias_info["elements"]["select"]
             final_columns.extend([f"{resource_alias}:{element}" for element in elements_select])
         self.main_dataframe = self.main_dataframe[final_columns]
+        # groupby selection
         group_by_element = self.graph_query.group_by_element
         logger.info(f"group_by_element : {group_by_element}")
         if group_by_element:
-            self.main_dataframe.groupby([group_by_element]).agg(lambda x: ",".join(set(x)))
+            lst_col = group_by_element
+            self.main_dataframe = pd.DataFrame(
+                {
+                    col: np.repeat(
+                        self.main_dataframe[col].values, self.main_dataframe[lst_col].str.len()
+                    )
+                    for col in self.main_dataframe.columns.drop(lst_col)
+                }
+            ).assign(**{lst_col: np.concatenate(self.main_dataframe[lst_col].values)})[
+                self.main_dataframe.columns
+            ]
+            # TODO : I don't understand why the algo doesnt take the floowing line into account
+            # as it works when applied directly in the tutorial
+            self.main_dataframe.groupby("patient:birthDate").aggregate(
+                lambda tdf: tdf.unique().tolist()
+            )
 
     @timing
     def _join(self) -> pd.DataFrame:
