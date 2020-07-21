@@ -287,22 +287,6 @@ class Query:
         return df_merged_inner
 
     @timing
-    def _get_main_alias_join(self) -> str:
-        """returns the alias being involved in the maximum number of joins
-
-        Returns:
-            str -- an alias
-        """
-        main_alias = None
-        max_join = -1
-        for (alias, infos,) in self.graph_query.resources_alias_info.items():
-            num_join = len(infos["elements"]["join"])
-            if max_join < num_join:
-                main_alias = alias
-                max_join = num_join
-        return main_alias
-
-    @timing
     def _clean_columns(self):
         """performs preprocessing on all dataframes harvested in the dataframe attribute:
             * adds the resource type in front of an element id so that the resource id matches the references of its parent resource references
