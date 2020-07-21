@@ -28,6 +28,7 @@ After cloning this repository, you can install the required dependencies
 
 ```
 pip install -r requirements.txt
+npm install --prefix ./fhir2dataset/metadata/node_modules 
 ```
 
 For usage, refer to this [turorial](https://htmlpreview.github.io/?https://github.com/arkhn/FHIR2Dataset/blob/query_tests/examples/tutorial.html) and then this [Jupyer Notebook](examples/example.ipynb)
