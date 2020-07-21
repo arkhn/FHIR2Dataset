@@ -28,12 +28,12 @@ class Query:
             },
             "select": {
                 "alias n°1": [
-                    "expression of attribute a of resource type 1",
-                    "expression of attribute b of resource type 1",
-                    "expression of attribute c of resource type 1"
+                    "searchparam of attribute a of resource type 1",
+                    "searchparam of attribute b of resource type 1",
+                    "searchparam of attribute c of resource type 1"
                 ],
                 "alias n°2": [
-                    "expression of attribute a of resource type 2",
+                    "searchparam of attribute a of resource type 2",
                     ...
                 ],
                 ...
