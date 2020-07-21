@@ -4,6 +4,7 @@ import logging
 from itertools import product
 
 from fhir2dataset.timer import timing
+from fhir2dataset.fhirpath import multiple_search_dict
 
 logger = logging.getLogger(__name__)
 
@@ -124,9 +125,7 @@ class ApiGetter(CallApi):
         self.main_resource_alias = main_resource_alias
         self.elements = elements
         self.elements_concat_type = elements_concat_type
-        self.expressions = {}
-        self._get_element_at_root()
-        self._get_element_after_resource()
+        self.searchparam_fhirpath = self._get_dict_searchparam_fhirpath()
         self.data = self._init_data()
 
     @timing
@@ -203,57 +202,37 @@ class ApiGetter(CallApi):
     @timing
     def _get_match_search(self, json_resource) -> dict:
         lines = self._init_data()
-        for element, search in self.expressions.items():
-            item = self._search(search, json_resource)
-            lines[element].extend(item)
+        item = multiple_search_dict(
+            [json_resource["resource"]], list(self.searchparam_fhirpath.values())
+        )
+        for idx, fhirpath in enumerate(self.searchparam_fhirpath.keys()):
+            lines[fhirpath].extend(item[0][idx])
         return lines
 
-    @timing
-    def _search(self, search, json_resource):
-        search_elems = search.split(".")
-        result_instances = [json_resource]
-        for key in search_elems:
-            instances = [
-                json_instance[key]
-                for json_instance in result_instances
-                if key in json_instance.keys()
-            ]
-            result_instances = []
-            for instance in instances:
-                if isinstance(instance, list):
-                    result_instances.extend(instance)
-                else:
-                    result_instances.append(instance)
-        if not result_instances:
-            result_instances = [None]
-        return result_instances
-
     def _init_data(self) -> dict:
-        """generation of a dictionary whose keys correspond to expressions (column name) and the value to an empty list
+        """generation of a dictionary whose keys correspond to the column name and the value to an empty list
 
         Returns:
             dict -- dictionary described above
         """  # noqa
         data = dict()
-        for elem in list(self.expressions.keys()):
-            data[elem] = []
+        for searchparam_or_fhirpath in self.searchparam_fhirpath.keys():
+            data[searchparam_or_fhirpath] = []
         return data
 
-    def _get_element_at_root(self):
-        """transforms the element to be retrieved at the root level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
+    def _get_dict_searchparam_fhirpath(self):
+        """transforms the element to be retrieved at the resource level (in elements attribute) in the json file into the corresponding fhirpath expression. The result is stored in expression attribute
+        
+        Returns:
+            dict -- dictionary described above
         """  # noqa
-        elements_at_root = self.elements["additional_root"]
-        for element in elements_at_root:
-            self.expressions[element]["exact"] = f"$.{element}"
-
-    def _get_element_after_resource(self):
-        """transforms the element to be retrieved at the resource level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
-        """  # noqa
-        elements_after_resource = (
-            self.elements["additional_resource"]
-            + self.elements["select"]
-            + self.elements["where"]
-            + self.elements["join"]
-        )
-        for element in elements_after_resource:
-            self.expressions[element] = f"resource.{element}"
+        dict_searchparam_fhirpath = dict()
+        for dico in self.elements.values():
+            for searchparam_or_fhirpath, fhirpath in dico.items():
+                if searchparam_or_fhirpath in dict_searchparam_fhirpath:
+                    assert (
+                        dict_searchparam_fhirpath[searchparam_or_fhirpath] == fhirpath
+                    ), f"There's a conflict between two fhirpaths: {dict_searchparam_fhirpath[searchparam_or_fhirpath]} and {fhirpath}"
+                else:
+                    dict_searchparam_fhirpath[searchparam_or_fhirpath] = fhirpath
+        return dict_searchparam_fhirpath

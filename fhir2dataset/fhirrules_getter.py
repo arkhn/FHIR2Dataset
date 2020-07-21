@@ -2,9 +2,11 @@ import os
 import json
 import objectpath
 import logging
+from collections import defaultdict
+from functools import lru_cache
 
 from fhir2dataset.timer import timing
-from functools import lru_cache
+from fhir2dataset.fhirpath import multiple_search_dict
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +18,7 @@ class FHIRRules:
 
     Attributes:
         possible_references {dict} -- dictionary storing searchparameters that can be used from a resource after an _include or _revinclude parameter
-        searchparam_to_element {dict} -- dictionary storing for each resource the expression corresponding to each searchparameter (e.g. {'Organization': {'address-postalcode': {'expression': 'address.postalCode'}}})
+        searchparam_to_element {dict} -- dictionary storing for each resource the fhirpath corresponding to each searchparameter (e.g. {'Organization': {'address-postalcode': 'address.postalCode'}})
         capabilitystatement {dict} -- an instance json of a CapabilityStatement resource
         searchparameters {dict} -- an instance json of a SearchParameters resource
     """  # noqa
@@ -43,74 +45,42 @@ class FHIRRules:
     @timing
     @lru_cache(maxsize=200)
     def resourcetype_searchparam_to_element(self, resource_type: str, search_param: str):
-        """retrieves the expression that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
+        """retrieves the fhirpath that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
 
         Arguments:
             resource_type {str} -- name of a resource type (e.g. 'Organization')
             search_param {str} -- name of a searchparam of this resource type (e.g. 'address-postalcode')
 
         Returns:
-            str -- the expression for retrieving the element that is the subject of the searchparam (e.g. 'address.postalCode')
+            str -- the fhirpath for retrieving the element that is the subject of the searchparam (e.g. 'address.postalCode')
         """  # noqa
         try:
-            return self.searchparam_to_element[resource_type][search_param]["expression"]
+            return self.searchparam_to_element[resource_type][search_param]
         except KeyError:
             logger.warning(f"The searchparam '{search_param}' doesn't exist in the rules")
             return None
 
     @timing
     def _get_searchparam_to_element(self) -> dict:
-        """builds a dictionary storing for each resource the expression corresponding to each searchparameter (e.g. {'Organization': {'address-postalcode': {'expression': 'address.postalCode'}}})
+        """builds a dictionary storing for each resource the fhirpath corresponding to each searchparameter (e.g. {'Organization': {'address-postalcode':'address.postalCode'}})
 
         Returns:
             dict -- a dictionary as described above
         """  # noqa
-        dict_searchparam = dict()
-        for resource in self.searchparameters["entry"]:
-            resource_tree = objectpath.Tree(resource)
-            name_search_param = resource_tree.execute("$.resource.code")
-            expression_search_param = resource_tree.execute("$.resource.expression")
-            # xpath_search_param = resource_tree.execute("$.resource.xpath")
-            for resource_type in resource_tree.execute("$.resource.base"):
-                if resource_type not in dict_searchparam:
-                    dict_searchparam[resource_type] = dict()
-                if expression_search_param:
-                    list_expression = expression_search_param.split(" | ")
-                    find = False
-                    for exp in list_expression:
-                        exp_split = exp.split(".")
-                        if resource_type == exp_split[0]:
-                            find = True
-                            expression = ".".join(exp_split[1:])
-                        elif resource_type in exp_split[0]:
-                            # special cases : CodeableConcept, Quantity etc
-                            find = True
-                            exp_split = ".".join(exp_split[1:])
-                            expression = exp_split.split(" ")[0]
-                            logger.debug(
-                                f"\nthe searchpram '{name_search_param} is associated with this"
-                                f" FHIRpath '{expression}'\n"
-                            )
-                    if not find:
-                        logger.warning(
-                            f"\nthe fhirpath associated to the instance of SearchParamater "
-                            f"named '{name_search_param}' wasn't found for the resource_type "
-                            f"'{resource_type}''"
-                        )
-                        logger.debug(
-                            f"the list of firpath associated with this SearchParamater is "
-                            f"{list_expression}"
-                            f"the json associated is :\n {resource}\n"
-                        )
-                    dict_searchparam[resource_type][name_search_param] = {
-                        "expression": expression,
-                    }
-                else:
-                    logger.warning(
-                        f"\nthe instance of SearchParamater named '{name_search_param}'"
-                        f" has no expression associated"
-                    )
-                    logger.debug(f"{resource}\n")
+        dict_searchparam = defaultdict(dict)
+        fhirpaths = ["SearchParameter.code", "SearchParameter.expression", "SearchParameter.base"]
+        resources = [resource["resource"] for resource in self.searchparameters["entry"]]
+        results = multiple_search_dict(resources, fhirpaths)
+        for idx, result in enumerate(results):
+            if result[1]:
+                for resource_type in result[2]:
+                    dict_searchparam[resource_type][result[0][0]] = result[1][0]
+            else:
+                logger.warning(
+                    f"\nthe instance of SearchParamater named {result[0]}"
+                    f" has no fhirpath associated"
+                )
+                logger.debug(f"{resources[idx]}\n")
         return dict_searchparam
 
     @timing
