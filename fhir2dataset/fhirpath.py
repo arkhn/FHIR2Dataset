@@ -57,12 +57,7 @@ def execute(code: str, args: list = None, g: dict = None):
     c = wrapper % {"func": code, "globals": json.dumps(g), "args": json.dumps(args)}
     outs, errs = prc.communicate(input=c)
     if isinstance(outs, str):
-        try:
-            outs = json.loads(outs)
-        except:
-            logger.warning(f"outs: {outs}")
-            logger.warning(f"errs: {errs}")
-            raise
+        outs = json.loads(outs)
     if "result" in outs:
         outs = outs["result"]
         return outs
