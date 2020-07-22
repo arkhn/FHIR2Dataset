@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 wrapper = """
 (function run(globals) {
     try {
-        var result = (%(func)s).apply(globals, %(args)s);
+        let result = (%(func)s).apply(globals, %(args)s);
         if ((typeof result) == 'string') {
             result = JSON.stringify(result);
         }
@@ -86,19 +86,17 @@ def multiple_search_dict(resources, fhirpaths):
                 return resources.map((resource) => {
                     return fhirpaths.map((fhirpath_exp) => {
                         try {
-                            const result = fhirpath.evaluate(
+                            return fhirpath.evaluate(
                                 resource,
                                 fhirpath_exp,
                                 null,
                                 fhirpath_r4_model
                             );
-                            return result;
                         } catch (e) {
                             if (e.message.includes("TypeExpression")) {
-                                const result = [
+                                return [
                                     "the fhirpath could not be evaluated by the library",
                                 ];
-                                return result;
                             } else {
                                 throw e;
                             }
