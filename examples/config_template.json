@@ -6,13 +6,11 @@
     },
     "select": {
         "alias n°1": [
-            "searchparam of attribute a of resource type 1",
-            "searchparam of attribute b of resource type 1",
-            "searchparam of attribute c of resource type 1"
+            "searchparam/fhirpath of attribute a of resource type 1",
+            "searchparam/fhirpath of attribute b of resource type 1",
+            "searchparam/fhirpath of attribute c of resource type 1"
         ],
-        "alias n°2": [
-            "searchparam of attribute a of resource type 2"
-        ]
+        "alias n°2": ["searchparam of attribute a of resource type 2"]
     },
     "join": {
         "alias n°1": {
