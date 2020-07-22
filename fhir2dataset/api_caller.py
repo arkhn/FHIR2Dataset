@@ -232,7 +232,8 @@ class ApiGetter(CallApi):
                 if searchparam_or_fhirpath in dict_searchparam_fhirpath:
                     assert (
                         dict_searchparam_fhirpath[searchparam_or_fhirpath] == fhirpath
-                    ), f"There's a conflict between two fhirpaths: {dict_searchparam_fhirpath[searchparam_or_fhirpath]} and {fhirpath}"
+                    ), "There's a conflict between two fhirpaths: "
+                    f"{dict_searchparam_fhirpath[searchparam_or_fhirpath]} and {fhirpath}"
                 else:
                     dict_searchparam_fhirpath[searchparam_or_fhirpath] = fhirpath
         return dict_searchparam_fhirpath

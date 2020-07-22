@@ -1,6 +1,5 @@
 import os
 import json
-import objectpath
 import logging
 from collections import defaultdict
 from functools import lru_cache

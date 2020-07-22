@@ -1,7 +1,6 @@
 """set of functions allowing to use the javascript coded library on the repository https://github.com/HL7/fhirpath.js
-"""
+"""  # noqa
 import json
-import time
 import logging
 from subprocess import Popen, PIPE
 
@@ -45,7 +44,6 @@ def execute(code: str, args: list = None, g: dict = None):
     assert isinstance(code, str)
     assert isinstance(g, dict)
     assert code.strip(" ").strip("\t").startswith("function"), "Code must be function"
-    start = time.time()
     prc = Popen(
         "node",
         shell=False,
@@ -57,7 +55,6 @@ def execute(code: str, args: list = None, g: dict = None):
     )
 
     c = wrapper % {"func": code, "globals": json.dumps(g), "args": json.dumps(args)}
-    start2 = time.time()
     outs, errs = prc.communicate(input=c)
     if isinstance(outs, str):
         try:
@@ -85,29 +82,35 @@ def multiple_search_dict(resources, fhirpaths):
 
     Returns:
         list: the element list[1][2] corresponds to the element found by the fhirpath at position 1 in the 'fhirpaths' list on the instance at position 2 in the 'resources' list
-    """
+    """  # noqa
     result = execute(
         """function test(resources, fhirpaths) {
-            const fhirpath = require('fhirpath');
-            const fhirpath_r4_model = require('fhirpath/fhir-context/r4');
+                const fhirpath = require("fhirpath");
+                const fhirpath_r4_model = require("fhirpath/fhir-context/r4");
 
-            return resources.map((resource) => {
-                return fhirpaths.map((fhirpath_exp) => {
-                    try {
-                        const result = fhirpath.evaluate(resource, fhirpath_exp, null, fhirpath_r4_model);
-                        return result
-                    } catch (e) {
-                        if (e.message.includes('TypeExpression')) {
-                            const result = ['the fhirpath could not be evaluated by the library'];
+                return resources.map((resource) => {
+                    return fhirpaths.map((fhirpath_exp) => {
+                        try {
+                            const result = fhirpath.evaluate(
+                                resource,
+                                fhirpath_exp,
+                                null,
+                                fhirpath_r4_model
+                            );
                             return result;
-                        } else {
-                            throw e;
+                        } catch (e) {
+                            if (e.message.includes("TypeExpression")) {
+                                const result = [
+                                    "the fhirpath could not be evaluated by the library",
+                                ];
+                                return result;
+                            } else {
+                                throw e;
+                            }
                         }
-                    }
-                })
-            })
-            
-        }
+                    });
+                });
+            }
     """,
         args=[resources, fhirpaths],
     )
