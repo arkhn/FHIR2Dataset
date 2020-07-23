@@ -16,7 +16,7 @@ wrapper = """
             result = JSON.stringify(result);
         }
         console.log(
-            %(result_keyword)s + 
+            %(result_keyword)s +
             JSON.stringify({"result": result}) +
             %(result_keyword)s
             )
