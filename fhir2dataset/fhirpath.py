@@ -15,9 +15,15 @@ wrapper = """
         if ((typeof result) == 'string') {
             result = JSON.stringify(result);
         }
-        console.log(JSON.stringify({"result": result}))
+        console.log(
+            %(result_keyword)s + 
+            JSON.stringify({"result": result}) +
+            %(result_keyword)s
+            )
     } catch (e) {
-        console.log(JSON.stringify({error: e.message}));
+        %(result_keyword)s +
+        console.log(JSON.stringify({error: e.message}) +
+        %(result_keyword)s);
     }
 })(%(globals)s);
 """
@@ -44,6 +50,11 @@ def execute(code: str, args: list = None, g: dict = None):
     assert isinstance(code, str)
     assert isinstance(g, dict)
     assert code.strip(" ").strip("\t").startswith("function"), "Code must be function"
+
+    # Here, the Popen function allows to execute the javascript script as in a terminal with the
+    # command 'node'. As in a terminal, the result is returned in console between the keywords
+    # defined by the variable VV. The python script, is in charge of retrieving the result between
+    # these keywords.
     prc = Popen(
         "node",
         shell=False,
@@ -54,9 +65,17 @@ def execute(code: str, args: list = None, g: dict = None):
         encoding="utf-8",
     )
 
-    c = wrapper % {"func": code, "globals": json.dumps(g), "args": json.dumps(args)}
+    result_keyword = "--FHIRPATH--"
+
+    c = wrapper % {
+        "func": code,
+        "globals": json.dumps(g),
+        "args": json.dumps(args),
+        "result_keyword": f'"{result_keyword}"',
+    }
     outs, errs = prc.communicate(input=c)
     if isinstance(outs, str):
+        outs = outs.split(result_keyword)[1]
         outs = json.loads(outs)
     if "result" in outs:
         outs = outs["result"]
