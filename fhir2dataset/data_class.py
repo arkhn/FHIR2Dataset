@@ -27,7 +27,7 @@ class Element:
     col_name: str
     fhirpath: str
     goal: str = field(default="select",)
-    value: Optional[list] = field(default=None,)  # list ? TODO check
+    value: Optional[list] = field(default=None,)
     concat_type: Optional[str] = field(default="cell",)
     search_parameter: Optional[SearchParameter] = field(default=None,)
 
