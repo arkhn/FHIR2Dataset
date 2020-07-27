@@ -3,6 +3,7 @@
 import json
 import logging
 from subprocess import Popen, PIPE
+from typing import List
 
 from fhir2dataset.timer import timing
 
@@ -87,43 +88,47 @@ def execute(code: str, args: list = None, g: dict = None):
 
 
 @timing
-def multiple_search_dict(resources, fhirpaths):
-    """constructs a list composed of the elements resulting from the fhirpaths contained in the 'fhirpaths' argument applied to an instance of a resource and then concatenates all these lists into a larger list for all resources contained in the 'resources' argument.
+def multiple_search_dict(resources: list, elements: dict) -> List[dict]:
+    """Returns the updated element instance on each element in the Resources list. These updated instances are stored in a list which is the element returned by the function.
+    The update consists for each element of the instance elements in the application of the fhirpath (element.fhirpath) on an instance of the Resources list and the storage of the response in element.value.
 
     Args:
-        resources (list): json, corresponding to a fhir resource, list 
-        fhirpaths (list): list of fhirpaths to be applied to each resource
+        resources (list): list composed of several instances of resources
+        elements (dict): an instance of the Elements object in dictionary format
 
     Returns:
-        list: the element list[1][2] corresponds to the element found by the fhirpath at position 1 in the 'fhirpaths' list on the instance at position 2 in the 'resources' list
+        list: elements object list copied and updated on each resource composing the resources list
     """  # noqa
     result = execute(
-        """function test(resources, fhirpaths) {
+        """function test(resources) {
                 const fhirpath = require("fhirpath");
                 const fhirpath_r4_model = require("fhirpath/fhir-context/r4");
 
                 return resources.map((resource) => {
-                    return fhirpaths.map((fhirpath_exp) => {
+                    var fhirpath_result = [];
+                    for (index = 0; index < this.elements.length; index++) {
                         try {
-                            return fhirpath.evaluate(
+                            this.elements[index].value = fhirpath.evaluate(
                                 resource,
-                                fhirpath_exp,
+                                this.elements[index].fhirpath,
                                 null,
                                 fhirpath_r4_model
                             );
                         } catch (e) {
                             if (e.message.includes("TypeExpression")) {
-                                return [
+                                this.elements[index].value = [
                                     "the fhirpath could not be evaluated by the library",
                                 ];
                             } else {
                                 throw e;
                             }
                         }
-                    });
+                    };
+                    return JSON.parse(JSON.stringify(this))
                 });
             }
     """,
-        args=[resources, fhirpaths],
+        args=[resources],
+        g=elements,
     )
     return result

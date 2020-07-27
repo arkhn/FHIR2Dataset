@@ -149,26 +149,17 @@ class Query:
         self.graph_query.execute(**self.config)
         for resource_alias in self.graph_query.resources_alias_info.keys():
             resource_alias_info = self.graph_query.resources_alias_info[resource_alias]
-            elements = resource_alias_info["elements"]
-            elements_concat_type = resource_alias_info["elements_concat_type"]
-
+            elements = resource_alias_info.elements
             url_builder = URLBuilder(
                 fhir_api_url=self.fhir_api_url,
-                query_graph=self.graph_query,
+                graph_query=self.graph_query,
                 main_resource_alias=resource_alias,
             )
 
-            url = url_builder.search_query_url
-            call = ApiGetter(
-                url=url,
-                elements=elements,
-                elements_concat_type=elements_concat_type,
-                main_resource_alias=resource_alias,
-                token=self.token,
-            )
+            url = url_builder.compute()
+            call = ApiGetter(url=url, elements=elements, token=self.token,)
             call.get_all()
-            self.dataframes[resource_alias] = call.dict_to_dataframe()
-            # print(elements)
+            self.dataframes[resource_alias] = call.df
         self._clean_columns()
         for resource_alias, dataframe in self.dataframes.items():
             logger.debug(f"{resource_alias} dataframe builded head - \n{dataframe.to_string()}")
@@ -184,17 +175,16 @@ class Query:
         )
         if not debug:
             self._select_columns()
-        # to do check where
+        # TODO check where
 
     @timing
     def _select_columns(self):
         """Clean the final dataframe to keep only the columns of the select
         """
         final_columns = []
-        for resource_alias in self.graph_query.resources_alias_info.keys():
-            resource_alias_info = self.graph_query.resources_alias_info[resource_alias]
-            elements_select = resource_alias_info["elements"]["select"]
-            final_columns.extend([f"{resource_alias}:{element}" for element in elements_select])
+        for resource_alias, resource_alias_info in self.graph_query.resources_alias_info.items():
+            for element in resource_alias_info.elements.get_subset_elements(goal="select"):
+                final_columns.append(f"{resource_alias}:{element.col_name}")
         self.main_dataframe = self.main_dataframe[final_columns]
 
     @timing
@@ -219,7 +209,6 @@ class Query:
         if not df.empty:
             cols_group = [col_name]
             if cols_group:
-                # cols_group += self.elements['additional_resource']
                 cols = df.columns.to_list()
                 cols_list = [col_name for col_name in cols if col_name not in cols_group]
                 dict_cols_list = {col: self._concatenate for col in cols_list}
@@ -247,7 +236,7 @@ class Query:
         The join key is the id of the child resource.
         This id is contained in :
             * in the column child_alias:id of the child resource table named child_alias (e.g. parent:id for a parent dataframe)
-            * in the alias_parent:element_join column of the parent resource table named alias_parent (e.g. condition:subject.reference for a condition dataframe)
+            * in the alias_parent:searchparam_parent column of the parent resource table named alias_parent (e.g. condition:subject.reference for a condition dataframe)
 
         The function is in charge of finding out who is the mother resource and who is the daughter resource.
 
@@ -259,15 +248,15 @@ class Query:
         Returns:
             pd.DataFrame -- dataframe containing the elements of the 2 resources according to an inner join
         """  # noqa
-        edge_info = self.graph_query.resources_alias_graph.edges[alias_1, alias_2]
-        alias_parent = edge_info["parent"]
-        alias_child = edge_info["child"]
+        edge_info = self.graph_query.resources_alias_graph.edges[alias_1, alias_2]["info"]
+        alias_parent = edge_info.parent
+        alias_child = edge_info.child
 
-        how = edge_info["join_how"]
-        element_join = edge_info["element_join"]
+        how = edge_info.join_how
+        searchparam_parent = edge_info.searchparam_parent
 
-        parent_on = f"{alias_parent}:{element_join}"
-        child_on = f"{alias_child}:id"
+        parent_on = f"{alias_parent}:join_{searchparam_parent}"
+        child_on = f"{alias_child}:from_id"
 
         if how == "child":
             how = "right"
@@ -293,7 +282,7 @@ class Query:
             * adds the table alias as a prefix to each column name
         """  # noqa
         for resource_alias, df in self.dataframes.items():
-            resource_type = self.graph_query.resources_alias_info[resource_alias]["resource_type"]
+            resource_type = self.graph_query.resources_alias_info[resource_alias].resource_type
 
             df = df.pipe(_add_resource_type_to_id, resource_type=resource_type)
 
@@ -302,5 +291,5 @@ class Query:
 
 def _add_resource_type_to_id(df, resource_type: str):
     # add assert to check that there is only one id in list
-    df["id"] = f"{resource_type}/" + df["id"]
+    df["from_id"] = f"{resource_type}/" + df["from_id"]
     return df

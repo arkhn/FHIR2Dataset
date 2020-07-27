@@ -2,11 +2,37 @@ import pandas as pd
 import requests
 import logging
 from itertools import product
+from typing import Type
+from dataclasses import asdict
+from dacite import from_dict
 
 from fhir2dataset.timer import timing
 from fhir2dataset.fhirpath import multiple_search_dict
+from fhir2dataset.data_class import Elements
 
 logger = logging.getLogger(__name__)
+
+
+def concat_cell(dataset, cols, element):
+    dataset.append([element.value])
+    cols.append(element.col_name)
+    return dataset, cols
+
+
+def concat_col(dataset, cols, element):
+    for index, value in enumerate(element.value):
+        dataset.append([value])
+        cols.append(f"{element.col_name}_{index}")
+    return dataset, cols
+
+
+def concat_row(dataset, cols, element):
+    dataset.append(element.value)
+    cols.append(element.col_name)
+    return dataset, cols
+
+
+MAPPING_CONCAT = {"cell": concat_cell, "col": concat_col, "row": concat_row}
 
 
 class CallApi:
@@ -110,44 +136,19 @@ class BearerAuth(requests.auth.AuthBase):
 
 class ApiGetter(CallApi):
     """class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
+
+    Attributes:
+        elements (Elements): instance of the FHIR2Dataset Elements class that allows to list all the elements that need to be retrieved from the bundles returned in response to the request url
+        df (pd.DataFrame): dataframe containing the elements to be recovered in tabular format
     """  # noqa
 
     @timing
     def __init__(
-        self,
-        url: str,
-        elements: dict,
-        elements_concat_type: dict,
-        main_resource_alias: str,
-        token: str = None,
+        self, url: str, elements: Type[Elements], token: str = None,
     ):
         CallApi.__init__(self, url, token)
-        self.main_resource_alias = main_resource_alias
         self.elements = elements
-        self.elements_concat_type = elements_concat_type
-        self.searchparam_fhirpath = self._get_dict_searchparam_fhirpath()
-        self.data = self._init_data()
-
-    @timing
-    def dict_to_dataframe(self) -> pd.DataFrame:
-        """transforms the collected data into a dataframe
-
-        Returns:
-            pd.DataFrame -- collected data into a dataframe
-        """
-        df = pd.DataFrame(self.data)
-        logger.debug(f"{self.main_resource_alias} dataframe builded head - \n{df.to_string()}")
-        return df
-
-    @timing
-    def _concatenate(self, column):
-        result = []
-        for list_cell in column:
-            if isinstance(list_cell, list):
-                result.extend([value for value in list_cell])
-            else:
-                result.append(list_cell)
-        return result
+        self.df = self._init_data()
 
     @timing
     def get_all(self):
@@ -170,44 +171,28 @@ class ApiGetter(CallApi):
     def _get_data(self):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
         """  # noqa
-        data = pd.DataFrame(self.data)
+        data = self.df
+        elements_empty = asdict(self.elements)
         for json_resource in self.results:
-            lines = self._get_match_search(json_resource)
-            df = self._flatten_item_results(lines)
+
+            data_dict = multiple_search_dict([json_resource["resource"]], elements_empty)[
+                0
+            ]  # because there is only one resource
+            elements = from_dict(data_class=Elements, data=data_dict)
+            df = self._flatten_item_results(elements)
             data = pd.concat([data, df])
-        self.data = data
+        self.df = data
 
     @timing
-    def _flatten_item_results(self, lines):
-        infos = self.elements_concat_type
-        cols = list(lines.keys())
-        final_cols = []
+    def _flatten_item_results(self, elements: Type[Elements]):
+        cols = []
+        dataset = []
 
-        originDataset = []
-        for col in cols:
-            if infos[col] == "cell":
-                originDataset.append([lines[col]])
-                final_cols.append(col)
-            elif infos[col] == "col":
-                for i in range(len(lines[col])):
-                    originDataset.append([lines[col][i]])
-                    final_cols.append(f"{col}_{i}")
-            else:
-                originDataset.append(lines[col])
-                final_cols.append(col)
+        for element in elements.elements:
+            MAPPING_CONCAT[element.concat_type](dataset, cols, element)
 
-        df2 = pd.DataFrame(list(product(*originDataset)), columns=final_cols)
+        df2 = pd.DataFrame(list(product(*dataset)), columns=cols)
         return df2
-
-    @timing
-    def _get_match_search(self, json_resource) -> dict:
-        lines = self._init_data()
-        item = multiple_search_dict(
-            [json_resource["resource"]], list(self.searchparam_fhirpath.values())
-        )
-        for idx, fhirpath in enumerate(self.searchparam_fhirpath.keys()):
-            lines[fhirpath].extend(item[0][idx])
-        return lines
 
     def _init_data(self) -> dict:
         """generation of a dictionary whose keys correspond to the column name and the value to an empty list
@@ -216,24 +201,6 @@ class ApiGetter(CallApi):
             dict -- dictionary described above
         """  # noqa
         data = dict()
-        for searchparam_or_fhirpath in self.searchparam_fhirpath.keys():
-            data[searchparam_or_fhirpath] = []
-        return data
-
-    def _get_dict_searchparam_fhirpath(self):
-        """transforms the element to be retrieved at the resource level (in elements attribute) in the json file into the corresponding fhirpath expression. The result is stored in expression attribute
-        
-        Returns:
-            dict -- dictionary described above
-        """  # noqa
-        dict_searchparam_fhirpath = dict()
-        for dico in self.elements.values():
-            for searchparam_or_fhirpath, fhirpath in dico.items():
-                if searchparam_or_fhirpath in dict_searchparam_fhirpath:
-                    assert (
-                        dict_searchparam_fhirpath[searchparam_or_fhirpath] == fhirpath
-                    ), "There's a conflict between two fhirpaths: "
-                    f"{dict_searchparam_fhirpath[searchparam_or_fhirpath]} and {fhirpath}"
-                else:
-                    dict_searchparam_fhirpath[searchparam_or_fhirpath] = fhirpath
-        return dict_searchparam_fhirpath
+        for col_name in [element.col_name for element in self.elements.elements]:
+            data[col_name] = []
+        return pd.DataFrame(data)

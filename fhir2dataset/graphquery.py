@@ -1,22 +1,14 @@
 import networkx as nx
 import logging
+from typing import Type
 from pprint import pformat
+from collections import defaultdict
 
 from fhir2dataset.fhirrules_getter import FHIRRules
 from fhir2dataset.timer import timing
+from fhir2dataset.data_class import SearchParameter, ResourceAliasInfo, Element, Elements, EdgeInfo
 
 logger = logging.getLogger(__name__)
-
-MODIFIERS_POSS = [
-    "missing",
-    "exact",
-    "contains",
-    "text",
-    "in",
-    "below",
-    "above",
-    "not-in",
-]
 
 
 class GraphQuery:
@@ -48,7 +40,7 @@ class GraphQuery:
 
         # to represent the relationships (references) between resources
         self.resources_alias_graph = nx.Graph()
-        self.resources_alias_info = dict()
+        self.resources_alias_info = defaultdict(Type[ResourceAliasInfo])
 
     @timing
     def execute(
@@ -76,26 +68,11 @@ class GraphQuery:
         if where_dict:
             self._where(**where_dict)
         self._select(**select_dict)
-        self._complete_element_concat_type_dict(default_element_concat_type)
         logger.info(f"The nodes are:{self.resources_alias_graph.nodes()}")
         logger.info("The edges are:")
         logger.info(pformat(list(self.resources_alias_graph.edges(data=True))))
         logger.info("The information gathered for each node is:")
         logger.info(pformat(self.resources_alias_info))
-
-    @timing
-    def _complete_element_concat_type_dict(self, default_element_concat_type):
-        for resource_alias in self.resources_alias_info.keys():
-            elements = []
-            for value in self.resources_alias_info[resource_alias]["elements"].values():
-                elements.extend(value)
-            for element in elements:
-                if element not in list(
-                    self.resources_alias_info[resource_alias]["elements_concat_type"].keys()
-                ):
-                    self.resources_alias_info[resource_alias]["elements_concat_type"][
-                        element
-                    ] = default_element_concat_type
 
     @timing
     def from_config(self, config: dict):
@@ -119,24 +96,22 @@ class GraphQuery:
             **resource_type_alias: the key corresponds to the alias and the value to the type of the resource.
         """  # noqa
         for (resource_alias, resource_type,) in resource_type_alias.items():
-            dict_elements = {
-                "select": {},
-                "additional_resource": {"id": "id"},
-                "where": {},
-                "join": {},
-            }
-            dict_elem_concat_type = {"id": "row"}
-            dict_search_parameters = dict()
+            elements = Elements(
+                [
+                    Element(
+                        goal="additional_resource",
+                        col_name="from_id",
+                        fhirpath="id",
+                        concat_type="row",
+                    )
+                ]
+            )
 
             self.resources_alias_graph.add_node(resource_alias)
 
-            self.resources_alias_info[resource_alias] = {
-                "resource_type": resource_type,
-                "elements": dict_elements,
-                "search_parameters": dict_search_parameters,
-                "elements_concat_type": dict_elem_concat_type,
-                "count": False,
-            }
+            self.resources_alias_info[resource_alias] = ResourceAliasInfo(
+                alias=resource_alias, resource_type=resource_type, elements=elements
+            )
 
     @timing
     def _join(self, **join_as):
@@ -147,56 +122,55 @@ class GraphQuery:
         Keyword Arguments:
             **join_as: the key is an alias of a parent resource and the value is a dictionary containing in the key the search parameter leading to the reference, and in the value the alias of the child resource.
         """  # noqa
-        # to do : change to check in searchParameters // review naming : element not very precise
+        # TODO : review naming : element not very precise
         for join_how, relationships_dict in join_as.items():
             join_how = join_how.lower()
             assert join_how in ["inner", "child", "parent", "one"], "Precise how to join"
             for (alias_parent, searchparam_dict) in relationships_dict.items():
-                type_parent = self.resources_alias_info[alias_parent]["resource_type"]
+                type_parent = self.resources_alias_info[alias_parent].resource_type
                 for (searchparam_parent, alias_child,) in searchparam_dict.items():
 
                     # Update element to have in table
-                    element_join = self.fhir_rules.resourcetype_searchparam_to_element(
+                    fhirpath_searchparam = self.fhir_rules.searchparam_to_fhirpath(
                         resource_type=type_parent, search_param=searchparam_parent,
                     )
-                    if " | " in element_join:
-                        element_join = f"({element_join}).reference"
+                    if " | " in fhirpath_searchparam:
+                        fhirpath_ref = f"({fhirpath_searchparam}).reference"
                     else:
-                        element_join = f"{element_join}.reference"
-                    self.resources_alias_info[alias_parent]["elements"]["join"][
-                        searchparam_parent
-                    ] = element_join
-                    self.resources_alias_info[alias_parent]["elements_concat_type"][
-                        searchparam_parent
-                    ] = "row"
-                    # Udpade Graph
-                    type_child = self.resources_alias_info[alias_child]["resource_type"]
+                        fhirpath_ref = f"{fhirpath_searchparam}.reference"
 
-                    searchparam_parent_to_child = f"{searchparam_parent}:{type_child}."
-                    include = f"{type_parent}:{searchparam_parent}:" f"{type_child}"
-                    searchparam_child_to_parent = f"_has:{type_parent}:{searchparam_parent}:"
-                    revinclude = f"{type_parent}:{searchparam_parent}:" f"{type_child}"
-                    url_data = {
-                        alias_parent: {
-                            "searchparam_prefix": searchparam_parent_to_child,
-                            "include_prefix": include,
-                        },
-                        alias_child: {
-                            "searchparam_prefix": searchparam_child_to_parent,
-                            "include_prefix": revinclude,
-                        },
-                    }
-
-                    self.resources_alias_graph.add_edge(
-                        alias_parent,
-                        alias_child,
-                        parent=alias_parent,
-                        child=alias_child,
-                        element_join=searchparam_parent,
-                        join_how=join_how,
+                    self.resources_alias_info[alias_parent].elements.append(
+                        Element(
+                            goal="join",
+                            col_name=f"join_{searchparam_parent}",
+                            fhirpath=fhirpath_ref,
+                            concat_type="row",
+                        )
                     )
 
-                    self.resources_alias_graph[alias_parent][alias_child].update(url_data)
+                    # Udpade Graph
+                    type_child = self.resources_alias_info[alias_child].resource_type
+
+                    searchparam_parent_to_child = f"{searchparam_parent}:{type_child}."
+                    # include = f"{type_parent}:{searchparam_parent}:" f"{type_child}"
+
+                    searchparam_child_to_parent = f"_has:{type_parent}:{searchparam_parent}:"
+                    # revinclude = f"{type_parent}:{searchparam_parent}:" f"{type_child}"
+
+                    searchparam_prefix = {
+                        alias_parent: searchparam_parent_to_child,
+                        alias_child: searchparam_child_to_parent,
+                    }
+
+                    edge_info = EdgeInfo(
+                        parent=alias_parent,
+                        child=alias_child,
+                        searchparam_parent=searchparam_parent,
+                        join_how=join_how,
+                        searchparam_prefix=searchparam_prefix,
+                    )
+
+                    self.resources_alias_graph.add_edge(alias_parent, alias_child, info=edge_info)
 
     @timing
     def _where(self, **wheres):
@@ -207,7 +181,6 @@ class GraphQuery:
         """  # noqa
         for resource_alias, conditions in wheres.items():
             for search_param, value_full in conditions.items():
-                # add assert search_param in CapabilityStatement
 
                 # handles the case where a prefix has been specified
                 # value_full={"ge": "1970"}
@@ -218,25 +191,18 @@ class GraphQuery:
                 else:
                     prefix = None
                     value = value_full
-                # to do verify we don't delete something
-                # print(
-                #     self.resources_alias_info[resource_alias][
-                #         "search_parameters"
-                #     ]
-                # )
-                self.resources_alias_info[resource_alias]["search_parameters"][search_param] = {
-                    "prefix": prefix,
-                    "value": value,
-                }
-                element = self._check_searchparam_or_fhirpath(resource_alias, search_param)
-                # # print(f"element: {element}")
-                # modifier = element.split(":")[-1]
-                # if modifier in MODIFIERS_POSS:
-                #     element = ":".join(element.split(":")[:-1])
-                # print(f"element modified: {element}")
-                self.resources_alias_info[resource_alias]["elements"]["where"][
-                    search_param
-                ] = element
+
+                fhirpath = self._check_searchparam_or_fhirpath(resource_alias, search_param)
+
+                search_param = SearchParameter(code=search_param, prefix=prefix, value=value)
+                self.resources_alias_info[resource_alias].elements.append(
+                    Element(
+                        goal="where",
+                        col_name=f"where_{search_param.code}",
+                        fhirpath=fhirpath,
+                        search_parameter=search_param,
+                    )
+                )
 
     @timing
     def _select(self, **selects):
@@ -245,26 +211,32 @@ class GraphQuery:
         Keyword Arguments:
             **selects: the key is an alias, the value is a list containing fhirpath to leaf elements
         """  # noqa
-        for resource_alias in selects.keys():
-            # handles the case of count
-            if "count" == resource_alias:
-                for resource_alias_count in selects["count"]:
-                    self.resources_alias_info[resource_alias_count]["count"] = True
-            for search_param in selects[resource_alias]:
-                self.resources_alias_info[resource_alias]["elements"]["select"][
-                    search_param
-                ] = self._check_searchparam_or_fhirpath(resource_alias, search_param)
+        for resource_alias, col_names in selects.items():
+            for col_name in col_names:
+                fhirpath = self._check_searchparam_or_fhirpath(resource_alias, col_name)
+                self.resources_alias_info[resource_alias].elements.append(
+                    Element(goal="select", col_name=col_name, fhirpath=fhirpath,)
+                )
 
     @timing
-    def _check_searchparam_or_fhirpath(self, resource_alias, search_param):
-        resource_type = self.resources_alias_info[resource_alias]["resource_type"]
-        searchparam_to_element = self.fhir_rules.resourcetype_searchparam_to_element(
-            resource_type=resource_type, search_param=search_param,
+    def _check_searchparam_or_fhirpath(self, resource_alias: str, searchparam_or_fhirpath: str):
+        """transforms searchparam_or_fhirpath into its fhirpath if it's a searchparam, otherwise it returns the argument as it was entered.
+
+        Args:
+            resource_alias (str): alias associated with a resource
+            searchparam_or_fhirpath (str): string of characters that can correspond to a searchparam or a fhirpath
+
+        Returns:
+            str: string of characters corresponding to a fhirpath
+        """  # noqa
+        resource_type = self.resources_alias_info[resource_alias].resource_type
+        searchparam_to_element = self.fhir_rules.searchparam_to_fhirpath(
+            resource_type=resource_type, search_param=searchparam_or_fhirpath,
         )
         if searchparam_to_element:
             element = searchparam_to_element
         else:
-            element = search_param
+            element = searchparam_or_fhirpath
         return element
 
     @timing

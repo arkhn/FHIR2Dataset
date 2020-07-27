@@ -1,15 +1,29 @@
 import os
 import json
 import logging
-from collections import defaultdict
 from functools import lru_cache
+from dataclasses import asdict
+from dacite import from_dict
 
 from fhir2dataset.timer import timing
 from fhir2dataset.fhirpath import multiple_search_dict
+from fhir2dataset.data_class import SearchParameters, SearchParameter, Elements, Element
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_METADATA_DIR = "metadata"
+
+MAPPING_SEARCHPARAMS = {
+    "code": lambda search_param, element_value: setattr(
+        search_param, "code", next(iter(element_value), None)
+    ),
+    "expression": lambda search_param, element_value: setattr(
+        search_param, "fhirpath", next(iter(element_value), None)
+    ),
+    "base": lambda search_param, element_value: setattr(
+        search_param, "resource_types", element_value
+    ),
+}
 
 
 class FHIRRules:
@@ -38,12 +52,13 @@ class FHIRRules:
         self.fhir_api_url = fhir_api_url
         if not path:
             path = os.path.join(os.path.dirname(__file__), DEFAULT_METADATA_DIR)
-        self.searchparameters = self._get_from_file(path=path, filename=searchparameters_filename)
-        self.searchparam_to_element = self._get_searchparam_to_element()
+        self.path = path
+        self.searchparameters_filename = searchparameters_filename
+        self.searchparameters = self._get_searchparameters()
 
     @timing
     @lru_cache(maxsize=200)
-    def resourcetype_searchparam_to_element(self, resource_type: str, search_param: str):
+    def searchparam_to_fhirpath(self, search_param: str, resource_type: str = "all"):
         """retrieves the fhirpath that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
 
         Arguments:
@@ -54,33 +69,52 @@ class FHIRRules:
             str -- the fhirpath for retrieving the element that is the subject of the searchparam (e.g. 'address.postalCode')
         """  # noqa
         try:
-            return self.searchparam_to_element[resource_type][search_param]
+            return self.searchparameters.searchparam_to_fhirpath(search_param, resource_type)
         except KeyError:
             logger.warning(f"The searchparam '{search_param}' doesn't exist in the rules")
             return None
 
     @timing
-    def _get_searchparam_to_element(self) -> dict:
+    def _get_searchparameters(self) -> dict:
         """builds a dictionary storing for each resource the fhirpath corresponding to each searchparameter (e.g. {'Organization': {'address-postalcode':'address.postalCode'}})
 
         Returns:
             dict -- a dictionary as described above
         """  # noqa
-        dict_searchparam = defaultdict(dict)
-        fhirpaths = ["SearchParameter.code", "SearchParameter.expression", "SearchParameter.base"]
-        resources = [resource["resource"] for resource in self.searchparameters["entry"]]
-        results = multiple_search_dict(resources, fhirpaths)
-        for idx, result in enumerate(results):
-            if result[1]:
-                for resource_type in result[2]:
-                    dict_searchparam[resource_type][result[0][0]] = result[1][0]
+        bundle = self._get_from_file(self.path, self.searchparameters_filename)
+        elements_empty = Elements(
+            elements=[
+                Element(col_name="code", fhirpath="SearchParameter.code",),
+                Element(col_name="expression", fhirpath="SearchParameter.expression",),
+                Element(col_name="base", fhirpath="SearchParameter.base",),
+            ]
+        )
+        elements_empty = asdict(elements_empty)
+        resources = [resource["resource"] for resource in bundle["entry"]]
+        raw_list_elements = multiple_search_dict(resources, elements_empty)
+        search_parameters = SearchParameters()
+        for idx, raw_elements in enumerate(raw_list_elements):
+            elements = from_dict(data_class=Elements, data=raw_elements)
+            search_param = SearchParameter()
+            for element in elements.elements:
+                MAPPING_SEARCHPARAMS[element.col_name](search_param, element.value)
+                # if element.col_name == "code":
+                #     search_param.code = element.value[0]
+                # elif element.col_name == "expression":
+                #     if element.value:
+                #         search_param.fhirpath = element.value[0]
+                # elif element.col_name == "base":
+                #     search_param.resource_types = element.value
+            if search_param.fhirpath and search_param.resource_types:
+                search_parameters.add(search_param)
             else:
                 logger.warning(
-                    f"\nthe instance of SearchParamater named {result[0]}"
+                    f"\nthe instance of SearchParameter named "
+                    f"{search_param.code}"
                     f" has no fhirpath associated"
                 )
                 logger.debug(f"{resources[idx]}\n")
-        return dict_searchparam
+        return search_parameters
 
     @timing
     def _get_from_file(self, path: str, filename: str) -> dict:
