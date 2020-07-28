@@ -76,10 +76,13 @@ class FHIRRules:
 
     @timing
     def _get_searchparameters(self) -> dict:
-        """builds a dictionary storing for each resource the fhirpath corresponding to each searchparameter (e.g. {'Organization': {'address-postalcode':'address.postalCode'}})
+        """builds an instance of SearchParameters storing all the possible searchparameters (instance of SearchParameter) whose information comes from a bundle composed only of FHIR resources of type SearchParameter according to the following process:
+        1. Retrieves information of interest in each instance of the bundle. For each instance of the bundle are retrieved: the code, the expression (=fhirpath) and the base (=the types of resources on which these fhirpaths can be applied)
+        2. With these 3 pieces of information a SearchParameter object is created
+        3. SearchParameter objects are stored in a SearchParameters object.
 
         Returns:
-            dict -- a dictionary as described above
+            SearchParameters -- instance described above
         """  # noqa
         bundle = self._get_from_file(self.path, self.searchparameters_filename)
         elements_empty = Elements(
@@ -98,13 +101,6 @@ class FHIRRules:
             search_param = SearchParameter()
             for element in elements.elements:
                 MAPPING_SEARCHPARAMS[element.col_name](search_param, element.value)
-                # if element.col_name == "code":
-                #     search_param.code = element.value[0]
-                # elif element.col_name == "expression":
-                #     if element.value:
-                #         search_param.fhirpath = element.value[0]
-                # elif element.col_name == "base":
-                #     search_param.resource_types = element.value
             if search_param.fhirpath and search_param.resource_types:
                 search_parameters.add(search_param)
             else:

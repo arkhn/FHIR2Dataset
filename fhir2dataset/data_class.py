@@ -21,6 +21,11 @@ class SearchParameter:
 
 @dataclass
 class Element:
+    """unit entity that can be found in a fhir instance in json format using fhirpath or in a table in the col_name column.
+
+    An element is destined to be associated with a single value. For example, if we want to retrieve the patient id of a bundle containing 2 patients, we will have to create 2 element instances.
+    """  # noqa
+
     col_name: str
     fhirpath: str
     goal: str = field(default="select",)
@@ -31,6 +36,9 @@ class Element:
 
 @dataclass
 class Elements:
+    """collection allowing to group together elements
+    """
+
     elements: List[Element] = field(default_factory=list)
 
     def append(self, x):

@@ -13,23 +13,29 @@ from fhir2dataset.data_class import Elements
 logger = logging.getLogger(__name__)
 
 
-def concat_cell(dataset, cols, element):
-    dataset.append([element.value])
-    cols.append(element.col_name)
-    return dataset, cols
+def concat_cell(dataset, cols_name, element):
+    # column of one row, this single cell is of the same type as element.value, i.e. a list
+    column = [element.value]
+    dataset.append(column)
+    cols_name.append(element.col_name)
+    return dataset, cols_name
 
 
-def concat_col(dataset, cols, element):
+def concat_col(dataset, cols_name, element):
     for index, value in enumerate(element.value):
-        dataset.append([value])
-        cols.append(f"{element.col_name}_{index}")
-    return dataset, cols
+        # column of one row, this single cell is of the same type as value
+        column = [value]
+        dataset.append(column)
+        cols_name.append(f"{element.col_name}_{index}")
+    return dataset, cols_name
 
 
-def concat_row(dataset, cols, element):
-    dataset.append(element.value)
-    cols.append(element.col_name)
-    return dataset, cols
+def concat_row(dataset, cols_name, element):
+    # column of x=len(element.value) rows
+    column = element.value
+    dataset.append(column)
+    cols_name.append(element.col_name)
+    return dataset, cols_name
 
 
 MAPPING_CONCAT = {"cell": concat_cell, "col": concat_col, "row": concat_row}
@@ -183,13 +189,43 @@ class ApiGetter(CallApi):
 
     @timing
     def _flatten_item_results(self, elements: Type[Elements]):
-        cols = []
+        """creates the tabular version of the elements given as input argument.
+        For each element of elements, at least one column is added according to the following process.
+        1. The first step is to reproduce the type of concatenation desired for each element
+        If the concatenation type of the element is:
+            * cell: a single column is created with a single row. The single cell is therefore of the same type of element.value, i.e. a list.
+            * row: a single column is created and creates a row for each element in the element.value list.
+            * col: len(element.value) column are created. Each column contains a single cell composed of an element from the element.value list.
+
+        2. The second step is to produce the product of all possible combinations between columns.
+        For example, if at the end of step 1, the table is : 
+        Col_1 | Col_2 | Col_3
+        pat_1 | Pete  | Ginger
+        pat_1 | P.    | Ginger
+              | Peter | G.
+
+        The table resulting from step 2 will be : 
+        Col_1 | Col_2 | Col_3
+        pat_1 | Pete  | Ginger
+        pat_1 | Pete  | G.
+        pat_1 | P.    | Ginger
+        pat_1 | P.    | G.
+        pat_1 | Peter | Ginger
+        pat_1 | Peter | G.
+
+        Args:
+            elements (fhir2dataset.Elements): instance of elements
+
+        Returns:
+            pd.DataFrame: resulting dataframe
+        """  # noqa
+        cols_name = []
         dataset = []
 
         for element in elements.elements:
-            MAPPING_CONCAT[element.concat_type](dataset, cols, element)
+            MAPPING_CONCAT[element.concat_type](dataset, cols_name, element)
 
-        df = pd.DataFrame(list(product(*dataset)), columns=cols)
+        df = pd.DataFrame(list(product(*dataset)), columns=cols_name)
         return df
 
     def _init_data(self) -> dict:
