@@ -100,12 +100,14 @@ class SearchParameters:
             self._add_data(search_parameter)
 
     def _add_data(self, search_parameter: Type[SearchParameter]):
+        fhirpath = search_parameter.fhirpath
+        data = self._data[search_parameter.code]
         for resource_type in search_parameter.resource_types:
-            fhirpath = search_parameter.fhirpath
-            if resource_type in self._data[search_parameter.code]:
-                raise KeyError(
+            if resource_type not in data.keys():
+                data[resource_type] = fhirpath
+            else:
+                raise ValueError(
                     f"the search parameter {search_parameter.code} is already recorded\n"
                     f"data already recorded: {pformat(self._data[search_parameter.code])}\n"
                     f"data given as argument: {search_parameter}\n"
                 )
-            self._data[search_parameter.code][resource_type] = fhirpath
