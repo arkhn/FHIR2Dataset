@@ -18,9 +18,6 @@ class SearchParameter:
     prefix: Optional[str] = field(default=None,)
     value: Optional[str] = field(default=None,)
 
-    def modify(self, attribute, new_value):
-        setattr(self, attribute, new_value)
-
 
 @dataclass
 class Element:
@@ -60,25 +57,25 @@ class EdgeInfo:
 
 
 class SearchParameters:
-    def __init__(self, search_parameters_list: List[Type[SearchParameter]] = None):
-        if search_parameters_list:
-            self.items = search_parameters_list
+    def __init__(self, search_parameters: List[Type[SearchParameter]] = None):
+        if search_parameters:
+            self.items = search_parameters
         else:
             self.items = []
         self._init_data()
 
-    def add(self, search_parameter_s):
-        if isinstance(search_parameter_s, SearchParameter):
-            self.items.append(search_parameter_s)
-            self._add_data(search_parameter_s)
-        elif isinstance(search_parameter_s, list):
-            self.items.extend(search_parameter_s)
-            for search_parameter in search_parameter_s:
+    def add(self, search_parameters):
+        if isinstance(search_parameters, SearchParameter):
+            self.items.append(search_parameters)
+            self._add_data(search_parameters)
+        elif isinstance(search_parameters, list):
+            self.items.extend(search_parameters)
+            for search_parameter in search_parameters:
                 self._add_data(search_parameter)
         else:
             raise TypeError(
-                f"{search_parameter_s} should be a list or a SearchParameter type instead of "
-                f"{type(search_parameter_s)} type"
+                f"{search_parameters} should be a list or a SearchParameter type instead of "
+                f"{type(search_parameters)} type"
             )
 
     def searchparam_to_fhirpath(self, search_param: str, resource_type: str = "all"):

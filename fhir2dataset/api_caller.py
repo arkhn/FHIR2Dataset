@@ -171,7 +171,6 @@ class ApiGetter(CallApi):
     def _get_data(self):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
         """  # noqa
-        data = self.df
         elements_empty = asdict(self.elements)
         for json_resource in self.results:
 
@@ -180,8 +179,7 @@ class ApiGetter(CallApi):
             ]  # because there is only one resource
             elements = from_dict(data_class=Elements, data=data_dict)
             df = self._flatten_item_results(elements)
-            data = pd.concat([data, df])
-        self.df = data
+            self.df = pd.concat([self.df, df])
 
     @timing
     def _flatten_item_results(self, elements: Type[Elements]):
@@ -191,8 +189,8 @@ class ApiGetter(CallApi):
         for element in elements.elements:
             MAPPING_CONCAT[element.concat_type](dataset, cols, element)
 
-        df2 = pd.DataFrame(list(product(*dataset)), columns=cols)
-        return df2
+        df = pd.DataFrame(list(product(*dataset)), columns=cols)
+        return df
 
     def _init_data(self) -> dict:
         """generation of a dictionary whose keys correspond to the column name and the value to an empty list
@@ -201,6 +199,6 @@ class ApiGetter(CallApi):
             dict -- dictionary described above
         """  # noqa
         data = dict()
-        for col_name in [element.col_name for element in self.elements.elements]:
-            data[col_name] = []
+        for element in self.elements.elements:
+            data[element.col_name] = []
         return pd.DataFrame(data)
