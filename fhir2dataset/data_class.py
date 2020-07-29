@@ -6,6 +6,8 @@ from pprint import pformat
 from dataclasses import dataclass, field
 from typing import Type, List, Optional
 
+from fhir2dataset.visualization_tools import custom_print
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,10 +51,15 @@ class Elements:
 
 
 @dataclass
-class ResourceAliasInfo:
+class ResourceAliasInfoBasic:
     alias: str
     resource_type: str
     elements: Elements() = field(default_factory=Elements())
+
+
+class ResourceAliasInfo(ResourceAliasInfoBasic):
+    def __repr__(self):
+        return custom_print(super().__repr__())
 
 
 @dataclass

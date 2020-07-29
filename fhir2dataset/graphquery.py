@@ -6,6 +6,7 @@ from collections import defaultdict
 
 from fhir2dataset.fhirrules_getter import FHIRRules
 from fhir2dataset.timer import timing
+from fhir2dataset.visualization_tools import custom_print
 from fhir2dataset.data_class import SearchParameter, ResourceAliasInfo, Element, Elements, EdgeInfo
 
 logger = logging.getLogger(__name__)
@@ -247,26 +248,19 @@ class GraphQuery:
 
         edge_labels = dict()
         for i in self.resources_alias_graph.edges(data=True):
-            value = ""
-            for key, infos in i[2].items():
-                if isinstance(infos, dict):
-                    for key_2, infos_2 in infos.items():
-                        if value:
-                            value = f"{value}\n{key}: {key_2}: {infos_2}"
-                        else:
-                            value = f"{key}: {key_2}: {infos_2}"
-                else:
-                    if value:
-                        value = f"{value}\n{key}:{infos}"
-                    else:
-                        value = f"{key}:{infos}"
-            edge_labels[i[0:2]] = value
+            edge_infos = custom_print(i[2]["info"].__repr__())
+            edge_labels[i[0:2]] = edge_infos
 
         plt.figure(figsize=(15, 15))
         layout = nx.spring_layout(self.resources_alias_graph)
         nx.draw_networkx(self.resources_alias_graph, pos=layout)
         nx.draw_networkx_labels(self.resources_alias_graph, pos=layout)
         nx.draw_networkx_edge_labels(
-            self.resources_alias_graph, pos=layout, edge_labels=edge_labels, font_size=10,
+            self.resources_alias_graph,
+            pos=layout,
+            edge_labels=edge_labels,
+            font_size=10,
+            rotate=False,
+            horizontalalignment="left",
         )
         plt.show()
