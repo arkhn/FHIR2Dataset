@@ -6,7 +6,7 @@ from pprint import pformat
 from dataclasses import dataclass, field
 from typing import Type, List, Optional
 
-from fhir2dataset.visualization_tools import custom_print
+from fhir2dataset.visualization_tools import custom_repr
 
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ class ResourceAliasInfoBasic:
 
 class ResourceAliasInfo(ResourceAliasInfoBasic):
     def __repr__(self):
-        return custom_print(super().__repr__())
+        return custom_repr(super().__repr__())
 
 
 @dataclass

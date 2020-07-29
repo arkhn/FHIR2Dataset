@@ -6,7 +6,7 @@ from collections import defaultdict
 
 from fhir2dataset.fhirrules_getter import FHIRRules
 from fhir2dataset.timer import timing
-from fhir2dataset.visualization_tools import custom_print
+from fhir2dataset.visualization_tools import custom_repr
 from fhir2dataset.data_class import SearchParameter, ResourceAliasInfo, Element, Elements, EdgeInfo
 
 logger = logging.getLogger(__name__)
@@ -248,7 +248,7 @@ class GraphQuery:
 
         edge_labels = dict()
         for i in self.resources_alias_graph.edges(data=True):
-            edge_infos = custom_print(i[2]["info"].__repr__())
+            edge_infos = custom_repr(i[2]["info"].__repr__())
             edge_labels[i[0:2]] = edge_infos
 
         plt.figure(figsize=(15, 15))
