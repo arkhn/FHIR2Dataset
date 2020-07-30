@@ -1,24 +1,9 @@
 {
     "select": {
-        "patient": [
-            "family",
-            "birthdate",
-            "id"
-        ],
-        "practitioner": [
-            "family",
-            "address",
-            "id"
-        ],
-        "allergy": [
-            "code",
-            "id"
-        ],
-        "condition": [
-            "code",
-            "severity",
-            "id"
-        ]
+        "patient": ["family", "birthdate", "id"],
+        "practitioner": ["family", "address", "id"],
+        "allergy": ["code", "id"],
+        "condition": ["code", "severity", "id"]
     },
     "from": {
         "allergy": "AllergyIntolerance",
@@ -39,16 +24,16 @@
     },
     "where": {
         "patient": {
-            "birthdate": "1976"
+            "birthdate": { "eq": "1976" }
         },
         "allergy": {
-            "code": "http://snomed.info/sct|22749300"
+            "code": { "eq": "http://snomed.info/sct|22749300" }
         },
         "practitioner": {
-            "address-city": "paris"
+            "address-city": { "eq": "paris" }
         },
         "condition": {
-            "code": "http://snomed.info/sct|386661006"
+            "code": { "eq": "http://snomed.info/sct|386661006" }
         }
     }
 }
