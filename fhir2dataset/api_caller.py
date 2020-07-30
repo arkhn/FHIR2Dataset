@@ -2,10 +2,43 @@ import pandas as pd
 import requests
 import logging
 from itertools import product
+from typing import Type
+from dataclasses import asdict
+from dacite import from_dict
 
 from fhir2dataset.timer import timing
+from fhir2dataset.fhirpath import multiple_search_dict
+from fhir2dataset.data_class import Elements
 
 logger = logging.getLogger(__name__)
+
+
+def concat_cell(dataset, cols_name, element):
+    # column of one row, this single cell is of the same type as element.value, i.e. a list
+    column = [element.value]
+    dataset.append(column)
+    cols_name.append(element.col_name)
+    return dataset, cols_name
+
+
+def concat_col(dataset, cols_name, element):
+    for index, value in enumerate(element.value):
+        # column of one row, this single cell is of the same type as value
+        column = [value]
+        dataset.append(column)
+        cols_name.append(f"{element.col_name}_{index}")
+    return dataset, cols_name
+
+
+def concat_row(dataset, cols_name, element):
+    # column of x=len(element.value) rows
+    column = element.value
+    dataset.append(column)
+    cols_name.append(element.col_name)
+    return dataset, cols_name
+
+
+MAPPING_CONCAT = {"cell": concat_cell, "col": concat_col, "row": concat_row}
 
 
 class CallApi:
@@ -109,46 +142,19 @@ class BearerAuth(requests.auth.AuthBase):
 
 class ApiGetter(CallApi):
     """class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
+
+    Attributes:
+        elements (Elements): instance of the FHIR2Dataset Elements class that allows to list all the elements that need to be retrieved from the bundles returned in response to the request url
+        df (pd.DataFrame): dataframe containing the elements to be recovered in tabular format
     """  # noqa
 
     @timing
     def __init__(
-        self,
-        url: str,
-        elements: dict,
-        elements_concat_type: dict,
-        main_resource_alias: str,
-        token: str = None,
+        self, url: str, elements: Type[Elements], token: str = None,
     ):
         CallApi.__init__(self, url, token)
-        self.main_resource_alias = main_resource_alias
         self.elements = elements
-        self.elements_concat_type = elements_concat_type
-        self.expressions = {}
-        self._get_element_at_root()
-        self._get_element_after_resource()
-        self.data = self._init_data()
-
-    @timing
-    def dict_to_dataframe(self) -> pd.DataFrame:
-        """transforms the collected data into a dataframe
-
-        Returns:
-            pd.DataFrame -- collected data into a dataframe
-        """
-        df = pd.DataFrame(self.data)
-        logger.debug(f"{self.main_resource_alias} dataframe builded head - \n{df.to_string()}")
-        return df
-
-    @timing
-    def _concatenate(self, column):
-        result = []
-        for list_cell in column:
-            if isinstance(list_cell, list):
-                result.extend([value for value in list_cell])
-            else:
-                result.append(list_cell)
-        return result
+        self.df = self._init_data()
 
     @timing
     def get_all(self):
@@ -171,89 +177,64 @@ class ApiGetter(CallApi):
     def _get_data(self):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
         """  # noqa
-        data = pd.DataFrame(self.data)
+        elements_empty = asdict(self.elements)
         for json_resource in self.results:
-            lines = self._get_match_search(json_resource)
-            df = self._flatten_item_results(lines)
-            data = pd.concat([data, df])
-        self.data = data
+
+            data_dict = multiple_search_dict([json_resource["resource"]], elements_empty)[
+                0
+            ]  # because there is only one resource
+            elements = from_dict(data_class=Elements, data=data_dict)
+            df = self._flatten_item_results(elements)
+            self.df = pd.concat([self.df, df])
 
     @timing
-    def _flatten_item_results(self, lines):
-        infos = self.elements_concat_type
-        cols = list(lines.keys())
-        final_cols = []
+    def _flatten_item_results(self, elements: Type[Elements]):
+        """creates the tabular version of the elements given as input argument.
+        For each element of elements, at least one column is added according to the following process.
+        1. The first step is to reproduce the type of concatenation desired for each element
+        If the concatenation type of the element is:
+            * cell: a single column is created with a single row. The single cell is therefore of the same type of element.value, i.e. a list.
+            * row: a single column is created and creates a row for each element in the element.value list.
+            * col: len(element.value) column are created. Each column contains a single cell composed of an element from the element.value list.
 
-        originDataset = []
-        for col in cols:
-            if infos[col] == "cell":
-                originDataset.append([lines[col]])
-                final_cols.append(col)
-            elif infos[col] == "col":
-                for i in range(len(lines[col])):
-                    originDataset.append([lines[col][i]])
-                    final_cols.append(f"{col}_{i}")
-            else:
-                originDataset.append(lines[col])
-                final_cols.append(col)
+        2. The second step is to produce the product of all possible combinations between columns.
+        For example, if at the end of step 1, the table is : 
+        Col_1 | Col_2 | Col_3
+        pat_1 | Pete  | Ginger
+        pat_1 | P.    | Ginger
+              | Peter | G.
 
-        df2 = pd.DataFrame(list(product(*originDataset)), columns=final_cols)
-        return df2
+        The table resulting from step 2 will be : 
+        Col_1 | Col_2 | Col_3
+        pat_1 | Pete  | Ginger
+        pat_1 | Pete  | G.
+        pat_1 | P.    | Ginger
+        pat_1 | P.    | G.
+        pat_1 | Peter | Ginger
+        pat_1 | Peter | G.
 
-    @timing
-    def _get_match_search(self, json_resource) -> dict:
-        lines = self._init_data()
-        for element, search in self.expressions.items():
-            item = self._search(search, json_resource)
-            lines[element].extend(item)
-        return lines
+        Args:
+            elements (fhir2dataset.Elements): instance of elements
 
-    @timing
-    def _search(self, search, json_resource):
-        search_elems = search.split(".")
-        result_instances = [json_resource]
-        for key in search_elems:
-            instances = [
-                json_instance[key]
-                for json_instance in result_instances
-                if key in json_instance.keys()
-            ]
-            result_instances = []
-            for instance in instances:
-                if isinstance(instance, list):
-                    result_instances.extend(instance)
-                else:
-                    result_instances.append(instance)
-        if not result_instances:
-            result_instances = [None]
-        return result_instances
+        Returns:
+            pd.DataFrame: resulting dataframe
+        """  # noqa
+        cols_name = []
+        dataset = []
+
+        for element in elements.elements:
+            MAPPING_CONCAT[element.concat_type](dataset, cols_name, element)
+
+        df = pd.DataFrame(list(product(*dataset)), columns=cols_name)
+        return df
 
     def _init_data(self) -> dict:
-        """generation of a dictionary whose keys correspond to expressions (column name) and the value to an empty list
+        """generation of a dictionary whose keys correspond to the column name and the value to an empty list
 
         Returns:
             dict -- dictionary described above
         """  # noqa
         data = dict()
-        for elem in list(self.expressions.keys()):
-            data[elem] = []
-        return data
-
-    def _get_element_at_root(self):
-        """transforms the element to be retrieved at the root level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
-        """  # noqa
-        elements_at_root = self.elements["additional_root"]
-        for element in elements_at_root:
-            self.expressions[element]["exact"] = f"$.{element}"
-
-    def _get_element_after_resource(self):
-        """transforms the element to be retrieved at the resource level (in elements attribute) in the json file into the corresponding objectpath expression. The result is stored in expression attribute
-        """  # noqa
-        elements_after_resource = (
-            self.elements["additional_resource"]
-            + self.elements["select"]
-            + self.elements["where"]
-            + self.elements["join"]
-        )
-        for element in elements_after_resource:
-            self.expressions[element] = f"resource.{element}"
+        for element in self.elements.elements:
+            data[element.col_name] = []
+        return pd.DataFrame(data)
