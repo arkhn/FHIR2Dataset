@@ -28,6 +28,7 @@ After cloning this repository, you can install the required dependencies
 
 ```
 pip install -r requirements.txt
+npm install --prefix ./fhir2dataset/metadata
 ```
 
 For usage, refer to this [turorial](https://htmlpreview.github.io/?https://github.com/arkhn/FHIR2Dataset/blob/query_tests/examples/tutorial.html) and then this [Jupyer Notebook](examples/example.ipynb)
@@ -36,10 +37,10 @@ For usage, refer to this [turorial](https://htmlpreview.github.io/?https://githu
 
 Check out examples of queries and how they are transformed in call to the FHIR api!
 
-- [Select the gender and name for patients born after 2000](examples/example1.md)
-- [Get the pressure measures of patients born after 1970, together with their gender and birthdate](examples/example2.md)
-- [Get the number of patients currently in intensive care unit because of Coronavirus](examples/example3.md)
-- [Get clinical information about patients that were in intensive care unit because of Coronavirus](examples/example4.md)
+-   [Select the gender and name for patients born after 2000](examples/example1.md)
+-   [Get the pressure measures of patients born after 1970, together with their gender and birthdate](examples/example2.md)
+-   [Get the number of patients currently in intensive care unit because of Coronavirus](examples/example3.md)
+-   [Get clinical information about patients that were in intensive care unit because of Coronavirus](examples/example4.md)
 
 ## Contributing
 
@@ -51,6 +52,7 @@ pre-commit install
 ```
 
 If you ever want to delete them you just have to do:
+
 ```
 pre-commit clean
 ```

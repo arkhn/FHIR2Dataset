@@ -33,7 +33,7 @@ def test_resources_in_dataframe(dirname, fhir_api_url):
 
     query = Query(fhir_api_url)
     query.from_config(config)
-    query.execute()
+    query.execute(debug=True)
     df = query.main_dataframe
 
     lines = checks["line"]
@@ -41,7 +41,7 @@ def test_resources_in_dataframe(dirname, fhir_api_url):
         cols = []
         conditions = []
         for alias, filename in line:
-            cols.append(f"{alias}:id")
+            cols.append(f"{alias}:from_id")
             conditions.append(info_hapi[filename])
         condition = " & ".join(
             [f"(df['{col}'].str.contains('{cond}'))" for col, cond in zip(cols, conditions)]
