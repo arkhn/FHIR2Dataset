@@ -2,12 +2,12 @@
     "select": {
         "patient": [
             "gender",
-            "name.given",
-            "birthDate",
+            "given",
+            "birthdate",
             "id"
         ],
         "condition": [
-            "verificationStatus",
+            "verification-status",
             "id"
         ],
         "practitioner": [

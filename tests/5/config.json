@@ -1,22 +1,22 @@
 {
     "select": {
         "patient": [
-            "name.family",
-            "birthDate",
+            "family",
+            "birthdate",
             "id"
         ],
         "practitioner": [
-            "name.family",
+            "family",
             "address",
             "id"
         ],
         "allergy": [
-            "code.display",
+            "code",
             "id"
         ],
         "condition": [
-            "code.coding.display",
-            "severity.coding.display",
+            "code",
+            "severity",
             "id"
         ]
     },

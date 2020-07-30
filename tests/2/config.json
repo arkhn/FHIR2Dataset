@@ -1,11 +1,11 @@
 {
     "select": {
         "observation": [
-            "component.valueQuantity.value",
+            "code-value-quantity",
             "id"
         ],
         "patient": [
-            "birthDate",
+            "birthdate",
             "gender",
             "id"
         ]
