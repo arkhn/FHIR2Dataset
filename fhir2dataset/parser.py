@@ -137,9 +137,9 @@ class FHIR2DatasetParser:
             value = condition_parsed[2]
             if condition_parsed[1] in PREFIX:
                 prefix = condition_parsed[1].replace(" ", "")
+                self.__where[alias][where_rule] = {prefix: value}
             else:
-                prefix = "eq"
-            self.__where[alias][where_rule] = {prefix: value}
+                self.__where[alias][where_rule] = value
 
     def __init_clauses(self):
         BASIC_CLAUSES = OrderedDict(

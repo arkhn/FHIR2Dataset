@@ -24,16 +24,16 @@
     },
     "where": {
         "patient": {
-            "birthdate": { "eq": "1976" }
+            "birthdate": "1976"
         },
         "allergy": {
-            "code": { "eq": "http://snomed.info/sct|22749300" }
+            "code": "http://snomed.info/sct|22749300"
         },
         "practitioner": {
-            "address-city": { "eq": "paris" }
+            "address-city": "paris"
         },
         "condition": {
-            "code": { "eq": "http://snomed.info/sct|386661006" }
+            "code": "http://snomed.info/sct|386661006"
         }
     }
 }
