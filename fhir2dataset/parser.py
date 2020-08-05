@@ -159,7 +159,7 @@ class FHIR2DatasetParser:
         self.__where = defaultdict(dict)
         self.config = {
             "from": None,
-            "join": None,
+            "join": dict(),
             "where": None,
             "select": None,
         }
