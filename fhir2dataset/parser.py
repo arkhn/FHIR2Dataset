@@ -22,11 +22,13 @@ class FHIR2DatasetParser:
         SQL_string = _RE_COMBINE_WHITESPACE.sub(" ", SQL_string).strip()
 
         items = re.split(self.__split_mask_clauses, SQL_string)
-        items.remove("")
+
+        if "" in items:
+            items.remove("")
         for clause in self.CLAUSES.keys():
             for idx, item in enumerate(items):
-                if item == clause:
-                    self.CLAUSES[item](items[idx + 1])
+                if item.upper() == clause:
+                    self.CLAUSES[item.upper()](items[idx + 1])
 
         self.__create_config()
         return self.config
@@ -131,13 +133,13 @@ class FHIR2DatasetParser:
         )
 
     def __init_split_mask(self):
-        self.__split_mask_clauses = f"({'|'.join(self.CLAUSES.keys())})"
-        self.__split_mask_from = " AS "
-        self.__split_mask_select = " , |, "
-        self.__split_mask_from_join = " ON "
+        self.__split_mask_clauses = f"({'|'.join(self.CLAUSES.keys())})(?i)"
+        self.__split_mask_from = " AS (?i)"
+        self.__split_mask_select = " , |, (?i)"
+        self.__split_mask_from_join = " ON (?i)"
         self.__split_mask_join = " = "
-        self.__split_mask_where = " AND "
-        self.__split_mask_where_condition = f"({'|'.join(PREFIX + [' = '])})"
+        self.__split_mask_where = " AND (?i)"
+        self.__split_mask_where_condition = f"({'|'.join(PREFIX + [' = '])})(?i)"
 
     def __reset_config(self):
         self.__select = defaultdict(list)
