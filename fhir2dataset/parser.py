@@ -131,24 +131,13 @@ class FHIR2DatasetParser:
         )
 
     def __init_split_mask(self):
-        self.__split_mask_clauses = self.__create_mask_multiple_separators(self.CLAUSES.keys())
+        self.__split_mask_clauses = f"({'|'.join(self.CLAUSES.keys())})"
         self.__split_mask_from = " AS "
         self.__split_mask_select = " , |, "
         self.__split_mask_from_join = " ON "
         self.__split_mask_join = " = "
         self.__split_mask_where = " AND "
-        self.__split_mask_where_condition = self.__create_mask_multiple_separators(PREFIX + [" = "])
-
-    def __create_mask_multiple_separators(self, separators, keep_separators: bool = True):
-        split_mask_multiple = ""
-        for separator in separators:
-            if split_mask_multiple:
-                split_mask_multiple += f"|{separator}"
-            else:
-                split_mask_multiple += f"{separator}"
-        if keep_separators:
-            split_mask_multiple = f"({split_mask_multiple})"
-        return split_mask_multiple
+        self.__split_mask_where_condition = f"({'|'.join(PREFIX + [' = '])})"
 
     def __reset_config(self):
         self.__select = defaultdict(list)
