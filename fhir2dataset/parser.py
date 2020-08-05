@@ -35,25 +35,12 @@ class FHIR2DatasetParser:
         self.config["from"] = dict(self.__from)
         self.config["select"] = dict(self.__select)
         self.config["where"] = dict(self.__where)
-        if self.__inner_join:
-            if not self.config["join"]:
-                self.config["join"] = dict()
-            self.config["join"]["inner"] = dict(self.__inner_join)
-        if self.__child_join:
-            if not self.config["join"]:
-                self.config["join"] = dict()
-            self.config["join"]["child"] = dict(self.__child_join)
-        if self.__parent_join:
-            if not self.config["join"]:
-                self.config["join"] = dict()
-            self.config["join"]["parent"] = dict(self.__parent_join)
+        self.config["join"]["inner"] = dict(self.__inner_join)
+        self.config["join"]["child"] = dict(self.__child_join)
+        self.config["join"]["parent"] = dict(self.__parent_join)
 
-        keys_to_pop = []
-        for key, value in self.config.items():
-            if not value:
-                keys_to_pop.append(key)
-        for key in keys_to_pop:
-            self.config.pop(key)
+        self.config["join"] = {key: value for key, value in self.config["join"].items() if value}
+        self.config = {key: value for key, value in self.config.items() if value}
 
     def __select_parser(self, string):
         item_parsed = re.split(self.__split_mask_select, string)
