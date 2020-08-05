@@ -18,6 +18,9 @@ class FHIR2DatasetParser:
         self.__reset_config()
         SQL_string = SQL_string.replace("\n", " ")
 
+        _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
+        SQL_string = _RE_COMBINE_WHITESPACE.sub(" ", SQL_string).strip()
+
         items = re.split(self.__split_mask_clauses, SQL_string)
         items.remove("")
         for clause in self.CLAUSES.keys():
