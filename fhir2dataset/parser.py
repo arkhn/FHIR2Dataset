@@ -118,21 +118,17 @@ class FHIR2DatasetParser:
                 self.__where[alias][where_rule] = value
 
     def __init_clauses(self):
-        BASIC_CLAUSES = OrderedDict(
+        self.CLAUSES = OrderedDict(
             {
-                "FROM": self.__from_parser,
-                "INNER JOIN": self.__inner_join_parser,
-                "CHILD JOIN": self.__child_join_parser,
-                "PARENT JOIN": self.__parent_join_parser,
-                "SELECT": self.__select_parser,
-                "WHERE": self.__where_parser,
+                " FROM ": self.__from_parser,
+                " INNER JOIN ": self.__inner_join_parser,
+                " CHILD JOIN ": self.__child_join_parser,
+                " PARENT JOIN ": self.__parent_join_parser,
+                " SELECT ": self.__select_parser,
+                "SELECT ": self.__select_parser,
+                " WHERE ": self.__where_parser,
             }
         )
-        for clause, function in BASIC_CLAUSES.items():
-            self.CLAUSES[f" {clause} "] = function
-            self.CLAUSES[f"{clause} "] = function
-            self.CLAUSES[f" {clause}"] = function
-            self.CLAUSES[clause] = function
 
     def __init_split_mask(self):
         self.__split_mask_clauses = self.__create_mask_multiple_separators(self.CLAUSES.keys())
