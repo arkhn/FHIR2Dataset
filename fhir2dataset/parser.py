@@ -94,7 +94,7 @@ class FHIR2DatasetParser:
                 "behind a FROM, INNER JOIN, PARENT JOIN or CHILD JOIN. "
                 f"The only aliases referenced are here: {self.__from}"
             )
-            if join_rule in ["id", "id ", " id", " id "]:
+            if join_rule.strip() == "id":
                 if alias_child:
                     raise ValueError
                 alias_child = alias
