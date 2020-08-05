@@ -112,7 +112,7 @@ class FHIR2DatasetParser:
             alias, where_rule = re.split(r"\.", condition_parsed[0], 1)
             value = condition_parsed[2]
             if condition_parsed[1] in PREFIX:
-                prefix = condition_parsed[1].replace(" ", "")
+                prefix = condition_parsed[1].strip()
                 self.__where[alias][where_rule] = {prefix: value}
             else:
                 self.__where[alias][where_rule] = value
