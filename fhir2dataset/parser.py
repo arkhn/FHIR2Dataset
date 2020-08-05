@@ -17,14 +17,12 @@ class FHIR2DatasetParser:
     def parse(self, SQL_string: str):
         self.__reset_config()
         SQL_string = SQL_string.replace("\n", " ")
-        # print(f"SQL_string: {SQL_string}")
 
         items = re.split(self.__split_mask_clauses, SQL_string)
         items.remove("")
         for clause in self.CLAUSES.keys():
             for idx, item in enumerate(items):
                 if item == clause:
-                    # print(f"item: {item}")
                     self.CLAUSES[item](items[idx + 1])
 
         self.__create_config()
@@ -46,30 +44,23 @@ class FHIR2DatasetParser:
             if not self.config["join"]:
                 self.config["join"] = dict()
             self.config["join"]["parent"] = dict(self.__parent_join)
-        # print(f"self.config: {self.config}")
 
         keys_to_pop = []
         for key, value in self.config.items():
             if not value:
                 keys_to_pop.append(key)
-        # print(f"keys_to_pop: {keys_to_pop}")
         for key in keys_to_pop:
             self.config.pop(key)
 
     def __select_parser(self, string):
         item_parsed = re.split(self.__split_mask_select, string)
-        # print("\nSELECT")
-        # print(f"item_parsed: {item_parsed}")
         for item in item_parsed:
             alias, select_rule = re.split(r"\.", item, 1)
             assert alias in self.__from.keys()
             self.__select[alias].append(select_rule)
-        # print(f"self.__select: {self.__select}")
 
     def __from_parser(self, string):
         item_parsed = re.split(self.__split_mask_from, string)
-        # print("\nFROM")
-        # print(f"item_parsed: {item_parsed}")
         if len(item_parsed) == 2:
             resource_type = item_parsed[0]
             alias = item_parsed[1]
@@ -80,7 +71,6 @@ class FHIR2DatasetParser:
             self.__from[alias] = resource_type
         else:
             raise ValueError
-        # print(f"self.__from: {self.__from}")
 
     def __inner_join_parser(self, string):
         alias_parent, searchparam_parent, alias_child = self.__join_parser(string)
@@ -96,8 +86,6 @@ class FHIR2DatasetParser:
 
     def __join_parser(self, string):
         item_parsed = re.split(self.__split_mask_from_join, string)
-        # print("\nJOIN")
-        # print(f"item_parsed: {item_parsed}")
         assert len(item_parsed) == 2
         self.__from_parser(item_parsed[0])
 
@@ -128,8 +116,6 @@ class FHIR2DatasetParser:
 
     def __where_parser(self, string):
         item_parsed = re.split(self.__split_mask_where, string)
-        # print("\nWHERE")
-        # print(f"item_parsed: {item_parsed}")
         for where_condition in item_parsed:
             condition_parsed = re.split(self.__split_mask_where_condition, where_condition)
             assert len(condition_parsed) == 3
