@@ -170,22 +170,22 @@ class FHIR2DatasetParser:
             raise ValueError
 
         if keep_separators:
-            mask = f"({mask})"
+            mask = fr"({mask})"
 
         if can_start_sentence:
-            mask = f"(?:\s|^){mask}"
+            mask = fr"(?:\s|^){mask}"
         elif optional_space_before:
-            mask = f"\s?{mask}"
+            mask = fr"\s?{mask}"
         else:
-            mask = f"\s{mask}"
+            mask = fr"\s{mask}"
 
         if optional_space_after:
-            mask = f"{mask}\s?"
+            mask = fr"{mask}\s?"
         else:
-            mask = f"{mask}\s"
+            mask = fr"{mask}\s"
 
         if case_insensitive:
-            mask = f"{mask}(?i)"
+            mask = fr"{mask}(?i)"
 
         return mask
 
