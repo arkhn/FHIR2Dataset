@@ -1,5 +1,6 @@
 import os
 from setuptools import setup, find_packages
+from setuptools.command.build_py import build_py
 
 with open(
     os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md"), encoding="utf-8",
@@ -11,13 +12,20 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
+class NPMInstall(build_py):
+    def run(self):
+        self.run_command("npm install --prefix fhir2dataset/metadata")
+        build_py.run(self)
+
+
 requirements = read("requirements.txt").split()
 
 setup(
+    cmdclass={"npm_install": NPMInstall},
     name="fhir2dataset",
     packages=find_packages(),
     include_package_data=True,
-    version="0.0.8",
+    version="0.0.10",
     license="Apache License 2.0",
     description="Transform FHIR to Dataset",
     long_description=long_description,
@@ -31,10 +39,7 @@ setup(
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Build Tools",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
     ],
 )
