@@ -1,24 +1,9 @@
 {
     "select": {
-        "patient": [
-            "family",
-            "birthdate",
-            "id"
-        ],
-        "practitioner": [
-            "family",
-            "address",
-            "id"
-        ],
-        "allergy": [
-            "code",
-            "id"
-        ],
-        "condition": [
-            "code",
-            "severity",
-            "id"
-        ]
+        "patient": ["family", "birthdate", "id"],
+        "practitioner": ["family", "address", "id"],
+        "allergy": ["code", "id"],
+        "condition": ["code", "severity", "id"]
     },
     "from": {
         "allergy": "AllergyIntolerance",
