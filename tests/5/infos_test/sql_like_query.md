@@ -1,11 +1,11 @@
-SELECT patient.name.family, patient.birthDate, practitioner.name.family, practitioner.address, allergy.code.display, condition.code.coding.display, condition.severity.coding.display
+SELECT patient.family, patient.birthdate, patient.id, practitioner.family, practitioner.address, practitioner.id, allergy.code, allergy.id, condition.code, condition.severity, condition.id
 
-FROM AllergyIntolerance as allergy
-INNER JOIN Patient as patient ON allergy.patient.reference = patient.id
-INNER JOIN Practitioner as practitioner ON allergy.asserter.reference = practitioner.id
-INNER JOIN Condition as condition ON condition.subject.reference = patient.id
+FROM AllergyIntolerance AS allergy
+INNER JOIN Patient AS patient ON allergy.patient = patient.id
+INNER JOIN Practitioner AS practitioner ON allergy.asserter = practitioner.id
+INNER JOIN Condition AS condition ON condition.subject = patient.id
 
-WHERE patient.birthdate gt "1970"
+WHERE patient.birthdate = "1976"
 AND allergy.code = "http://snomed.info/sct|22749300"
 AND practitioner.address-city = "paris"
 AND condition.code = "http://snomed.info/sct|386661006"

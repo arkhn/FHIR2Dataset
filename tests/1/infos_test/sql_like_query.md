@@ -1,10 +1,10 @@
 SELECT patient.gender, patient.name.given, patient.birthDate, condition.verificationStatus, practitioner.name
 
-FROM Condition as condition
-INNER JOIN Patient as patient
-ON condition.subject.reference = patient.id
-INNER JOIN Practitioner as practitioner
-ON condition.asserter.reference = practitioner.id
+FROM Condition AS condition
+INNER JOIN Patient AS patient
+ON condition.subject = patient.id
+INNER JOIN Practitioner AS practitioner
+ON condition.asserter = practitioner.id
 
 WHERE practitioner.family = "van den broek"
 AND patient.family = "Smith"
