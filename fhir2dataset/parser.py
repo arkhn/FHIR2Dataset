@@ -1,8 +1,8 @@
 import re
 from collections import defaultdict, OrderedDict
+from collections.abc import Iterable
 
-
-PREFIX = [" eq ", " ne ", " gt ", " lt ", " ge ", " le ", " sa ", " eb ", " ap "]
+PREFIX = ["eq", "ne", "gt", "lt", "ge", "le", "sa", "eb", "ap"]
 
 
 class FHIR2DatasetParser:
@@ -114,7 +114,7 @@ class FHIR2DatasetParser:
             alias, where_rule = re.split(r"\.", condition_parsed[0], 1)
             value = condition_parsed[2]
             if condition_parsed[1] in PREFIX:
-                prefix = condition_parsed[1].strip()
+                prefix = condition_parsed[1]
                 self.__where[alias][where_rule] = {prefix: value}
             else:
                 self.__where[alias][where_rule] = value
@@ -122,24 +122,72 @@ class FHIR2DatasetParser:
     def __init_clauses(self):
         self.CLAUSES = OrderedDict(
             {
-                " FROM ": self.__from_parser,
-                " INNER JOIN ": self.__inner_join_parser,
-                " CHILD JOIN ": self.__child_join_parser,
-                " PARENT JOIN ": self.__parent_join_parser,
-                " SELECT ": self.__select_parser,
-                "SELECT ": self.__select_parser,
-                " WHERE ": self.__where_parser,
+                "FROM": self.__from_parser,
+                "INNER JOIN": self.__inner_join_parser,
+                "CHILD JOIN": self.__child_join_parser,
+                "PARENT JOIN": self.__parent_join_parser,
+                "SELECT": self.__select_parser,
+                "WHERE": self.__where_parser,
             }
         )
 
     def __init_split_mask(self):
-        self.__split_mask_clauses = f"({'|'.join(self.CLAUSES.keys())})(?i)"
-        self.__split_mask_from = " AS (?i)"
-        self.__split_mask_select = " , |, (?i)"
-        self.__split_mask_from_join = " ON (?i)"
-        self.__split_mask_join = " = "
-        self.__split_mask_where = " AND (?i)"
-        self.__split_mask_where_condition = f"({'|'.join(PREFIX + [' = '])})(?i)"
+        self.__split_mask_clauses = self.__create_mask(
+            self.CLAUSES.keys(), can_start_sentence=True,
+        )
+
+        self.__split_mask_from = self.__create_mask("AS", keep_separators=False,)
+
+        self.__split_mask_select = self.__create_mask(
+            ",", keep_separators=False, optional_space_before=True
+        )
+
+        self.__split_mask_from_join = self.__create_mask("ON", keep_separators=False,)
+
+        self.__split_mask_join = self.__create_mask("=", keep_separators=False,)
+
+        self.__split_mask_where = self.__create_mask("AND", keep_separators=False,)
+
+        self.__split_mask_where_condition = self.__create_mask(PREFIX + ["="])
+
+    def __create_mask(
+        self,
+        separators,
+        keep_separators=True,
+        case_insensitive: bool = True,
+        can_start_sentence: bool = False,
+        optional_space_before: bool = False,
+        optional_space_after: bool = False,
+    ):
+        assert not (
+            can_start_sentence and optional_space_before
+        ), "Can't set to true both can_start_sentence and optional_space_before optional arguments"
+        if isinstance(separators, str):
+            mask = separators
+        elif isinstance(separators, Iterable):
+            mask = "|".join(separators)
+        else:
+            raise ValueError
+
+        if keep_separators:
+            mask = f"({mask})"
+
+        if can_start_sentence:
+            mask = f"(?:\s|^){mask}"
+        elif optional_space_before:
+            mask = f"\s?{mask}"
+        else:
+            mask = f"\s{mask}"
+
+        if optional_space_after:
+            mask = f"{mask}\s?"
+        else:
+            mask = f"{mask}\s"
+
+        if case_insensitive:
+            mask = f"{mask}(?i)"
+
+        return mask
 
     def __reset_config(self):
         self.__select = defaultdict(list)
