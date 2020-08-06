@@ -133,27 +133,19 @@ class FHIR2DatasetParser:
 
     def __init_split_mask(self):
         self.__split_mask_clauses = self.__create_mask(
-            self.CLAUSES.keys(), can_start_sentence=True,
+            self.CLAUSES.keys(), can_start_sentence=True, keep_separators=True
         )
-
-        self.__split_mask_from = self.__create_mask("AS", keep_separators=False,)
-
-        self.__split_mask_select = self.__create_mask(
-            ",", keep_separators=False, optional_space_before=True
-        )
-
-        self.__split_mask_from_join = self.__create_mask("ON", keep_separators=False,)
-
-        self.__split_mask_join = self.__create_mask("=", keep_separators=False,)
-
-        self.__split_mask_where = self.__create_mask("AND", keep_separators=False,)
-
-        self.__split_mask_where_condition = self.__create_mask(PREFIX + ["="])
+        self.__split_mask_from = self.__create_mask("AS")
+        self.__split_mask_select = self.__create_mask(",", optional_space_before=True)
+        self.__split_mask_from_join = self.__create_mask("ON")
+        self.__split_mask_join = self.__create_mask("=")
+        self.__split_mask_where = self.__create_mask("AND")
+        self.__split_mask_where_condition = self.__create_mask(PREFIX + ["="], keep_separators=True)
 
     def __create_mask(
         self,
         separators,
-        keep_separators=True,
+        keep_separators=False,
         case_insensitive: bool = True,
         can_start_sentence: bool = False,
         optional_space_before: bool = False,
