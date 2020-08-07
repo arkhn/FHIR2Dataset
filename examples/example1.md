@@ -33,15 +33,6 @@ JSON query:
 }}
 ```
 
-FHIR2Dataset sends the URL to the FHIR REST API.
-
-URL :
-```
-Patient?birthdate=gt2000-01-01
-```
-
-The JSON resources are used to fill the response dataset.
-
 Dataset :
 
 ```
