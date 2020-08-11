@@ -1,5 +1,6 @@
 """set of functions allowing to use the javascript coded library on the repository https://github.com/HL7/fhirpath.js
 """  # noqa
+import os
 import json
 import logging
 from subprocess import Popen, PIPE
@@ -56,14 +57,10 @@ def execute(code: str, args: list = None, g: dict = None):
     # command 'node'. As in a terminal, the result is returned in console between the keywords
     # defined by the variable VV. The python script, is in charge of retrieving the result between
     # these keywords.
+    path = os.path.join(os.path.dirname(__file__), "metadata")
+
     prc = Popen(
-        "node",
-        shell=False,
-        stderr=PIPE,
-        stdout=PIPE,
-        stdin=PIPE,
-        cwd="fhir2dataset/metadata",
-        encoding="utf-8",
+        "node", shell=False, stderr=PIPE, stdout=PIPE, stdin=PIPE, cwd=path, encoding="utf-8",
     )
 
     result_keyword = "--FHIRPATH--"
