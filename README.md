@@ -117,6 +117,7 @@ with open(os.path.join(dirname, filename_config)) as json_file:
 
 query.from_config(config)
 query.execute()
+df = query.main_dataframe
 ```
 
 
