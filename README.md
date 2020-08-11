@@ -11,7 +11,11 @@ This repo allows to make a SQL query on a FHIR API and to retrieve tabular data.
 _FHIR2Dataset is still under active development!_
 
 ## Installation
+### With pip
 
+`pip install fhir2dataset`
+
+### From source
 After cloning this repository, you can install the required dependencies
 
 ```
