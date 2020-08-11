@@ -33,7 +33,7 @@ from fhir2dataset.fhirrules_getter import FHIRRules
 from fhir2dataset.parser import FHIR2DatasetParser
 
 fhir_api_url = 'http://hapi.fhir.org/baseR4/'
-fhir_rules=FHIRRules(fhir_api_url=fhir_api_url)
+fhir_rules = FHIRRules(fhir_api_url=fhir_api_url)
 query = Query(fhir_api_url,fhir_rules=fhir_rules)
 parser = FHIR2DatasetParser()
 ```
