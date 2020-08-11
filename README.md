@@ -57,6 +57,7 @@ AND (alias n°3).b = "value 4""
 config_from_parser = parser.parse(sql_like_query)
 query.from_config(config_from_parser)
 query.execute()
+df = query.main_dataframe
 ``` 
 
 **JSON config file as entry**
