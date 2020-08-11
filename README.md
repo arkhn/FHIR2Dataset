@@ -62,7 +62,6 @@ df = query.main_dataframe
 **JSON config file as entry**
 
 ```
-import pandas as pd
 from fhir2dataset.query import Query
 from fhir2dataset.fhirrules_getter import FHIRRules
 
