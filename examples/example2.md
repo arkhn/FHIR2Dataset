@@ -7,7 +7,6 @@
 Note that we use the following SNOMED CT codes:
 - 162673000: General examination of patient (procedure)
 - 840546002: Exposure to severe acute respiratory syndrome coronavirus 2 (event)
-- _(840539006: Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder))_
 
 SQL query : 
 ```
