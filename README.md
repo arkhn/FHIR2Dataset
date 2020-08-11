@@ -63,8 +63,8 @@ from fhir2dataset.query import Query
 from fhir2dataset.fhirrules_getter import FHIRRules
 
 fhir_api_url = 'http://hapi.fhir.org/baseR4/'
-fhir_rules=FHIRRules(fhir_api_url=fhir_api_url)
-query = Query(fhir_api_url,fhir_rules=fhir_rules)
+fhir_rules = FHIRRules(fhir_api_url=fhir_api_url)
+query = Query(fhir_api_url, fhir_rules=fhir_rules)
 ```
 
 config.json :
