@@ -33,7 +33,6 @@ Two possible ways to enter the query : as a SQL query or as a JSON config file
 **SQL query as entry**
 
 ```
-import pandas as pd
 from fhir2dataset import Query, FHIRRules, FHIR2DatasetParser
 
 fhir_api_url = 'http://hapi.fhir.org/baseR4/'
