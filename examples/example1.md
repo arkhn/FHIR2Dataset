@@ -4,45 +4,44 @@
 
 In the `from` object, the key should be FHIR resources and the value is the name that we will use in the `select` and `where` (same as SQL `SELECT pat.id from Patient as pat`)
 
-Config file
+SQL query : 
+```
+SELECT patient.gender, patient.name.given
+FROM Patient as patient
+WHERE patient.birthadate = "gt": "2000-01-01"
+```
+The request can also be implemented as a JSON query. 
+
+JSON query:
+
 ```json
-{
-  "select": {
-    "patient": [
-      "gender",
-      "name.given"
+{"select":{
+    "patient":[
+        "gender",
+        "name.given"
     ]
-  },
-  "from": {
-    "Patient": "patient"
-  },
-  "where": {
-    "patient" : {
-      "birthdate": {"gt": "2000-01-01"}
+},
+"from":{
+    "patient":"Patient"
+},
+"where":{
+    "patient":{
+        "birthdate":{
+            "gt": "2000-01-01"
+        }
     }
-  }
-}
+}}
 ```
 
-Python syntax suggestion
-```python
-Query
-.select("patient.gender", "patient.name.given")
-.from(Patient="patient")
-.where("patient.birthdate>2000-01-01")
-```
+Dataset :
 
-URL 1
 ```
-/Patient?birthdate=>2000-01-01
-```
-And some local treatment to extract `patient.gender` and `patient.name.given`, using http://objectpath.org/
+patient.id | patient.gender | patient.name.given | patient.birthdate
+____________________________________________________________________
 
-or 
+pat_1      | female         | [Marie, Mell]      | 2000-01-01
+____________________________________________________________________
 
-URL 2
-```
-Patient?birthdate=gt2000-01-01
-```
-And some local treatment to extract `patient.gender` and `patient.name.given`, using http://objectpath.org/
+pat_2      | male           | [Thomas]           | 2000-05-03
 
+```
