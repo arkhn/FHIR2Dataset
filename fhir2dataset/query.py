@@ -181,11 +181,27 @@ class Query:
     def _select_columns(self):
         """Clean the final dataframe to keep only the columns of the select
         """
+        if self.main_dataframe.empty:
+            self._select_columns_empty()
+        else:
+            final_columns = []
+            for (
+                resource_alias,
+                resource_alias_info,
+            ) in self.graph_query.resources_alias_info.items():
+                for element in resource_alias_info.elements.get_subset_elements(goal="select"):
+                    final_columns.append(f"{resource_alias}:{element.col_name}")
+            self.main_dataframe = self.main_dataframe[final_columns]
+
+    @timing
+    def _select_columns_empty(self):
+        """Creates an empty df when no resources match the request
+        """
         final_columns = []
         for resource_alias, resource_alias_info in self.graph_query.resources_alias_info.items():
             for element in resource_alias_info.elements.get_subset_elements(goal="select"):
                 final_columns.append(f"{resource_alias}:{element.col_name}")
-        self.main_dataframe = self.main_dataframe[final_columns]
+        self.main_dataframe = pd.DataFrame(columns=final_columns)
 
     @timing
     def _join(self) -> pd.DataFrame:
@@ -282,11 +298,12 @@ class Query:
             * adds the table alias as a prefix to each column name
         """  # noqa
         for resource_alias, df in self.dataframes.items():
-            resource_type = self.graph_query.resources_alias_info[resource_alias].resource_type
+            if not df.empty:
+                resource_type = self.graph_query.resources_alias_info[resource_alias].resource_type
 
-            df = df.pipe(_add_resource_type_to_id, resource_type=resource_type)
+                df = df.pipe(_add_resource_type_to_id, resource_type=resource_type)
 
-            self.dataframes[resource_alias] = df.add_prefix(f"{resource_alias}:")
+                self.dataframes[resource_alias] = df.add_prefix(f"{resource_alias}:")
 
 
 def _add_resource_type_to_id(df, resource_type: str):
