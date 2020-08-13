@@ -70,6 +70,9 @@ class CallApi:
         #     url = f"{url}&_count={count}"
         response = self._get_bundle_response(url)
         self.status_code = response.status_code
+        if response.json()["total"] == 0:
+            # no resources match the request
+            self.results = {}
         try:
             self.results = response.json()["entry"]
         except KeyError as e:
@@ -178,14 +181,19 @@ class ApiGetter(CallApi):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
         """  # noqa
         elements_empty = asdict(self.elements)
-        for json_resource in self.results:
+        if self.results == {}:
+            # when no resources match the request, it creates an empty df
+            self.df = pd.DataFrame()
+            logger.info(f"empty df is created for the resource")
+        else:
+            for json_resource in self.results:
 
-            data_dict = multiple_search_dict([json_resource["resource"]], elements_empty)[
-                0
-            ]  # because there is only one resource
-            elements = from_dict(data_class=Elements, data=data_dict)
-            df = self._flatten_item_results(elements)
-            self.df = pd.concat([self.df, df])
+                data_dict = multiple_search_dict([json_resource["resource"]], elements_empty)[
+                    0
+                ]  # because there is only one resource
+                elements = from_dict(data_class=Elements, data=data_dict)
+                df = self._flatten_item_results(elements)
+                self.df = pd.concat([self.df, df])
 
     @timing
     def _flatten_item_results(self, elements: Type[Elements]):

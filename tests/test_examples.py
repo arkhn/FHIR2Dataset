@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO, format=log_format)
         ("tests/1", "http://hapi.fhir.org/baseR4/"),
         ("tests/2", "http://hapi.fhir.org/baseR4/"),
         ("tests/3", "http://hapi.fhir.org/baseR4/"),
-        ("tests/1", "http://hapi.fhir.org/baseR4/"),
+        ("tests/4", "http://hapi.fhir.org/baseR4/"),
         ("tests/5", "http://hapi.fhir.org/baseR4/"),
     ],
 )
