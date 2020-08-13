@@ -76,10 +76,8 @@ class CallApi:
             logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
             logger.debug(f"status code of KeyError response:\n{response.status_code}")
             logger.debug(f"content of the KeyError response:\n{response.content}")
-        if total == 0:
-            # no resources match the request
-            self.results = {}
-        else:
+        if total != 0:
+            # if no resources match the request, self.results = None
             try:
                 self.results = response.json()["entry"]
             except KeyError as e:
@@ -188,12 +186,11 @@ class ApiGetter(CallApi):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
         """  # noqa
         elements_empty = asdict(self.elements)
-        if self.results == {}:
+        if not self.results:
             columns = [element.col_name for element in self.elements.elements]
             self.df = pd.DataFrame(columns=columns)
         else:
             for json_resource in self.results:
-
                 data_dict = multiple_search_dict([json_resource["resource"]], elements_empty)[
                     0
                 ]  # because there is only one resource
