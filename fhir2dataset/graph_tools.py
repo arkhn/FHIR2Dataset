@@ -40,15 +40,7 @@ def clean_euler_path(eulerian_path: list) -> list:
         list -- cleaned Eulerian path
     """  # noqa
     path = []
-    while eulerian_path:
-        edge = eulerian_path.pop(0)
-        path.append(edge)
-        list_to_pop = []
-        for ind in range(len(eulerian_path)):
-            if edge[::-1] == eulerian_path[ind] or edge == eulerian_path[ind]:
-                list_to_pop.append(ind)
-        if list_to_pop:
-            list_to_pop.sort(reverse=True)
-            for ind in list_to_pop:
-                eulerian_path.pop(ind)
+    for edge in eulerian_path:
+        if edge not in path and edge[::-1] not in path:
+            path.append(edge)
     return path
