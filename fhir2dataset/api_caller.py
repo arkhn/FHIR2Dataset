@@ -182,9 +182,8 @@ class ApiGetter(CallApi):
         """  # noqa
         elements_empty = asdict(self.elements)
         if self.results == {}:
-            # when no resources match the request, it creates an empty df
-            self.df = pd.DataFrame()
-            logger.info(f"empty df is created for the resource")
+            columns = [element.col_name for element in self.elements.elements]
+            self.df = pd.DataFrame(columns=columns)
         else:
             for json_resource in self.results:
 
