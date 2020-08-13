@@ -191,7 +191,12 @@ class Query:
             ) in self.graph_query.resources_alias_info.items():
                 for element in resource_alias_info.elements.get_subset_elements(goal="select"):
                     final_columns.append(f"{resource_alias}:{element.col_name}")
-            self.main_dataframe = self.main_dataframe[final_columns]
+            if all(elem in self.main_dataframe.columns for elem in final_columns):
+                self.main_dataframe = self.main_dataframe[final_columns]
+            else:
+                for name_col in final_columns:
+                    if not name_col in self.main_dataframe.columns:
+                        self.main_dataframe[name_col] = []
 
     @timing
     def _select_columns_empty(self):
@@ -216,6 +221,7 @@ class Query:
         for alias_1, alias_2 in list_join:
             df_1 = main_df
             df_2 = self.dataframes[alias_2]
+            logger.info(f"the dataframes that are gonna be joined are {df_1} and {df_2}")
             main_df = self._join_2_df(alias_1, alias_2, df_1, df_2)
         return main_df
 
@@ -281,7 +287,22 @@ class Query:
         elif how != "inner":
             how = "inner"
 
+        if df_1.empty:
+            if not parent_on in df_1.columns:
+                df_1[parent_on] = []
+            if not child_on in df_1.columns:
+                df_1[child_on] = []
+        if df_2.empty:
+            if not parent_on in df_2.columns:
+                df_2[parent_on] = []
+            if not child_on in df_2.columns:
+                df_2[child_on] = []
+
         if alias_1 == alias_parent:
+            logger.info(f"how : {how}")
+            logger.info(
+                f"left={df_1}, right={df_2}, left_on={parent_on}, right_on={child_on}, how={how}"
+            )
             df_merged_inner = pd.merge(
                 left=df_1, right=df_2, left_on=parent_on, right_on=child_on, how=how,
             )
@@ -289,6 +310,7 @@ class Query:
             df_merged_inner = pd.merge(
                 left=df_2, right=df_1, left_on=parent_on, right_on=child_on, how=how,
             )
+        logger.info(f"the merged df is {df_merged_inner}")
         return df_merged_inner
 
     @timing
