@@ -70,10 +70,10 @@ class CallApi:
         #     url = f"{url}&_count={count}"
         response = self._get_bundle_response(url)
         self.status_code = response.status_code
-        if response.json()["total"] == 0:
-            # no resources match the request
-            self.results = {}
         try:
+            if response.json()["total"] == 0:
+                # no resources match the request
+                self.results = {}
             self.results = response.json()["entry"]
         except KeyError as e:
             logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
