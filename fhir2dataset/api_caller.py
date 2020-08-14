@@ -61,10 +61,12 @@ class CallApi:
         Arguments:
             url {str} -- url of the request
         """
-        if not self.total:
+        if self.total is None:
             self.total = self._get_count(url)
             logger.info(f"there is {self.total} matching resources for {url}")
-        if self.total != 0:
+        if self.total == 0:
+            self.next_url = None
+        else:
             response = self._get_bundle_response(url)
             self.status_code = response.status_code
             if "entry" in response.json():
