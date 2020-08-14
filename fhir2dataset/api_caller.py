@@ -50,6 +50,7 @@ class CallApi:
         self.url = url
         self.status_code = None
         self.results = None
+        self.total = None
         self.next_url = url
         self.auth = BearerAuth(token)
 
@@ -60,40 +61,34 @@ class CallApi:
         Arguments:
             url {str} -- url of the request
         """
-        # TODO : optimize count and paging
-        # count = self._get_count(url)
-        # if count == 0:
-        #     logger.warning(f"there is 0 matching resources for {url}")
-        # if url[-1] == "?":
-        #     url = f"{url}_count={count}"
-        # else:
-        #     url = f"{url}&_count={count}"
-        response = self._get_bundle_response(url)
-        self.status_code = response.status_code
-        # try:
-        #     total = response.json()["total"]
-        # except KeyError as e:
-        #     logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
-        #     logger.debug(f"status code of KeyError response:\n{response.status_code}")
-        #     logger.debug(f"content of the KeyError response:\n{response.content}")
-        if "entry" in response.json():
-            # if no resources match the request, self.results = None
-            try:
-                self.results = response.json()["entry"]
-            except KeyError as e:
-                logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
-                logger.debug(f"status code of KeyError response:\n{response.status_code}")
-                logger.debug(f"content of the KeyError response:\n{response.content}")
-            try:
-                self.next_url = None
-                for relation in response.json()["link"]:
-                    if relation["relation"] == "next":
-                        self.next_url = relation["url"]
-                        break
-            except KeyError as e:
-                logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
-                logger.debug(f"status code of KeyError response:\n{response.status_code}")
-                logger.debug(f"content of the KeyError response:\n{response.content}")
+        if not self.total:
+            self.total = self._get_count(url)
+            logger.info(f"there is {self.total} matching resources for {url}")
+        if self.total != 0:
+            response = self._get_bundle_response(url)
+            self.status_code = response.status_code
+            if "entry" in response.json():
+                # if no resources match the request, self.results = None
+                try:
+                    self.results = response.json()["entry"]
+                except KeyError as e:
+                    logger.info(
+                        f"Got a KeyError - There's no {e} key in the json data we received."
+                    )
+                    logger.debug(f"status code of KeyError response:\n{response.status_code}")
+                    logger.debug(f"content of the KeyError response:\n{response.content}")
+                try:
+                    self.next_url = None
+                    for relation in response.json()["link"]:
+                        if relation["relation"] == "next":
+                            self.next_url = relation["url"]
+                            break
+                except KeyError as e:
+                    logger.info(
+                        f"Got a KeyError - There's no {e} key in the json data we received."
+                    )
+                    logger.debug(f"status code of KeyError response:\n{response.status_code}")
+                    logger.debug(f"content of the KeyError response:\n{response.content}")
 
     @timing
     def _get_count(self, url):
@@ -107,13 +102,9 @@ class CallApi:
         response = requests.get(url_number, auth=self.auth)
         logger.info(f"Get {url_number}")
         try:
-            count = min(response.json()["total"], 10000)
+            count = response.json()["total"]
         except KeyError as e:
             logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
-            logger.warning(f"status code of failing response:\n{response.status_code}")
-            logger.warning(f"content of the failing response:\n{response.content}")
-            raise
-        except ValueError:
             logger.warning(f"status code of failing response:\n{response.status_code}")
             logger.warning(f"content of the failing response:\n{response.content}")
             raise
