@@ -51,3 +51,21 @@ def create_resource_test(path_test, fhir_api_url="http://hapi.fhir.org/baseR4/")
     for filename in config:
         body = resources_bodies[filename]
         update_resource(fhir_api_url, body, filename, path_info_hapi)
+
+
+def delete_resource_test(path_test, fhir_api_url="http://hapi.fhir.org/baseR4/"):
+    # in config_resources_delete.json is a list of lists with the type of resource and its id to delete
+    with open(os.path.join(path_test, "infos_test", "config_resources_delete.json")) as json_file:
+        list_to_delete = json.load(json_file)
+        logging.info(f"list to delete : {list_to_delete}")
+
+    for resource in list_to_delete:
+        type_resource = resource[0]
+        id_resource = resource[1]
+        url = f"{fhir_api_url}{type_resource}/{id_resource}"
+        response = requests.delete(url)
+        status_code = response.status_code
+        if status_code == 200 or status_code == 204 or status_code == 202:
+            logging.info(f"The resource has successfully been delete")
+        else:
+            logging.info(f"The resource hasn't been delete\n" f"{status_code}")
