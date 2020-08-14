@@ -61,12 +61,11 @@ class CallApi:
         Arguments:
             url {str} -- url of the request
         """
+        self.next_url = None
         if self.total is None:
             self.total = self._get_count(url)
             logger.info(f"there is {self.total} matching resources for {url}")
-        if self.total == 0:
-            self.next_url = None
-        else:
+        if self.total != 0:
             response = self._get_bundle_response(url)
             self.status_code = response.status_code
             if "entry" in response.json():
@@ -80,7 +79,6 @@ class CallApi:
                     logger.debug(f"status code of KeyError response:\n{response.status_code}")
                     logger.debug(f"content of the KeyError response:\n{response.content}")
                 try:
-                    self.next_url = None
                     for relation in response.json()["link"]:
                         if relation["relation"] == "next":
                             self.next_url = relation["url"]
