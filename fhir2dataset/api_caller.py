@@ -41,6 +41,16 @@ def concat_row(dataset, cols_name, element):
 MAPPING_CONCAT = {"cell": concat_cell, "col": concat_col, "row": concat_row}
 
 
+class Response:
+    """class that contains the data retrieves from an url
+    """
+
+    def __init__(self):
+        self.status_code = None
+        self.results = None
+        self.next_url = None
+
+
 class CallApi:
     """generic class that manages the sending and receiving of a url request to a FHIR API.
     """
@@ -48,10 +58,7 @@ class CallApi:
     @timing
     def __init__(self, url: str, token: str = None):
         self.url = url
-        self.status_code = None
-        self.results = None
         self.total = None
-        self.next_url = url
         self.auth = BearerAuth(token)
 
     @timing
@@ -61,17 +68,18 @@ class CallApi:
         Arguments:
             url {str} -- url of the request
         """
-        self.next_url = None
         if self.total is None:
             self.total = self._get_count(url)
             logger.info(f"there is {self.total} matching resources for {url}")
         if self.total != 0:
+            # response_url contains the data returned by url
+            response_url = Response()
             response = self._get_bundle_response(url)
-            self.status_code = response.status_code
+            response_url.status_code = response.status_code
             if "entry" in response.json():
-                # if no resources match the request, self.results = None
+                # if no resources match the request, response_url.results = None
                 try:
-                    self.results = response.json()["entry"]
+                    response_url.results = response.json()["entry"]
                 except KeyError as e:
                     logger.info(
                         f"Got a KeyError - There's no {e} key in the json data we received."
@@ -81,7 +89,7 @@ class CallApi:
                 try:
                     for relation in response.json()["link"]:
                         if relation["relation"] == "next":
-                            self.next_url = relation["url"]
+                            response_url.next_url = relation["url"]
                             break
                 except KeyError as e:
                     logger.info(
@@ -89,6 +97,7 @@ class CallApi:
                     )
                     logger.debug(f"status code of KeyError response:\n{response.status_code}")
                     logger.debug(f"content of the KeyError response:\n{response.content}")
+            return response_url
 
     @timing
     def _get_count(self, url):
@@ -118,15 +127,6 @@ class CallApi:
     def _get_bundle_response(self, url):
         logger.info(f"Get {url}")
         return requests.get(url, auth=self.auth)
-
-    @timing
-    def get_next(self):
-        """retrieves the responses contained in the following pages
-        """
-        if self.next_url:
-            self.get_response(self.next_url)
-        else:
-            logger.info("There is no more pages")
 
 
 class BearerAuth(requests.auth.AuthBase):
@@ -159,35 +159,38 @@ class ApiGetter(CallApi):
     def get_all(self):
         """collects all the data corresponding to the initial url request by calling the following pages
         """  # noqa
-        while self.next_url:
-            self.get_next()
+        next_url = self.url
+        while next_url:
+            next_url = self.get_next(next_url)
 
     @timing
-    def get_next(self):
+    def get_next(self, next_url):
         """retrieves the responses contained in the following pages and stores the data in data attribute
         """  # noqa
-        if self.next_url:
-            self.get_response(self.next_url)
-            self._get_data()
+        if next_url:
+            response = self.get_response(next_url)
+            next_url = self._get_data(response)
+            return next_url
         else:
             logger.info("There is no more pages")
 
     @timing
-    def _get_data(self):
+    def _get_data(self, response: Type[Response]):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
         """  # noqa
         elements_empty = asdict(self.elements)
-        if not self.results:
+        if not response.results:
             columns = [element.col_name for element in self.elements.elements]
             self.df = pd.DataFrame(columns=columns)
         else:
-            for json_resource in self.results:
+            for json_resource in response.results:
                 data_dict = multiple_search_dict([json_resource["resource"]], elements_empty)[
                     0
                 ]  # because there is only one resource
                 elements = from_dict(data_class=Elements, data=data_dict)
                 df = self._flatten_item_results(elements)
                 self.df = pd.concat([self.df, df])
+        return response.next_url
 
     @timing
     def _flatten_item_results(self, elements: Type[Elements]):
