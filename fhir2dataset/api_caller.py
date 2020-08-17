@@ -78,14 +78,8 @@ class CallApi:
             response_url.status_code = response.status_code
             if "entry" in response.json():
                 # if no resources match the request, response_url.results = None
-                try:
-                    response_url.results = response.json()["entry"]
-                except KeyError as e:
-                    logger.info(
-                        f"Got a KeyError - There's no {e} key in the json data we received."
-                    )
-                    logger.debug(f"status code of KeyError response:\n{response.status_code}")
-                    logger.debug(f"content of the KeyError response:\n{response.content}")
+                logger.debug(f"status code of KeyError response:\n{response.status_code}")
+                logger.debug(f"content of the KeyError response:\n{response.content}")
                 try:
                     for relation in response.json()["link"]:
                         if relation["relation"] == "next":
@@ -97,7 +91,11 @@ class CallApi:
                     )
                     logger.debug(f"status code of KeyError response:\n{response.status_code}")
                     logger.debug(f"content of the KeyError response:\n{response.content}")
-            return response_url
+            else:
+                logger.info(f"Got a KeyError - There's no entry key in the json data we received.")
+        else:
+            response_url = Response()
+        return response_url
 
     @timing
     def _get_count(self, url):
