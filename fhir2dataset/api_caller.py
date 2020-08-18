@@ -95,26 +95,16 @@ class CallApi:
 
     @timing
     def _get_count(self, url):
-        # the retrieval of the number of results is not necessary if the FHIR api supports
-        # pagination
-        # -> to be deleted
         if url[-1] == "?":
             url_number = f"{url}_summary=count"
         else:
             url_number = f"{url}&_summary=count"
-        response = requests.get(url_number, auth=self.auth)
         logger.info(f"Get {url_number}")
-        try:
-            count = response.json()["total"]
-        except KeyError as e:
-            logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
+        response = requests.get(url_number, auth=self.auth)
+        count = response.json().get("total")
+        if count is None:
             logger.warning(f"status code of failing response:\n{response.status_code}")
             logger.warning(f"content of the failing response:\n{response.content}")
-            raise
-        except ValueError:
-            logger.warning(f"status code of failing response:\n{response.status_code}")
-            logger.warning(f"content of the failing response:\n{response.content}")
-            raise
         return count
 
     @timing
