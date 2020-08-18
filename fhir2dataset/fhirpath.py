@@ -21,11 +21,13 @@ wrapper = """
             %(result_keyword)s +
             JSON.stringify({"result": result}) +
             %(result_keyword)s
-            )
+            );
     } catch (e) {
-        %(result_keyword)s +
-        console.log(JSON.stringify({error: e.message}) +
-        %(result_keyword)s);
+        console.log(
+            %(result_keyword)s +
+            JSON.stringify({error: e.message}) +
+            %(result_keyword)s
+            );
     }
 })(%(globals)s);
 """
