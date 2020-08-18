@@ -4,7 +4,6 @@ import sys
 import logging
 import pytest
 
-sys.path.append(".")
 from fhir2dataset.query import Query
 from tools import create_resource_test
 
