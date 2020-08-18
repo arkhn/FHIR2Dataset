@@ -1,14 +1,7 @@
 {
     "select": {
-        "observation": [
-            "code-value-quantity ",
-            "id"
-        ],
-        "patient": [
-            "birthdate",
-            "gender",
-            "id"
-        ]
+        "observation": ["code-value-quantity", "id"],
+        "patient": ["birthdate", "gender", "id"]
     },
     "from": {
         "patient": "Patient",

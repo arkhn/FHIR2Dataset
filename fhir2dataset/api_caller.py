@@ -41,6 +41,16 @@ def concat_row(dataset, cols_name, element):
 MAPPING_CONCAT = {"cell": concat_cell, "col": concat_col, "row": concat_row}
 
 
+class Response:
+    """class that contains the data retrieves from an url
+    """
+
+    def __init__(self):
+        self.status_code = None
+        self.results = None
+        self.next_url = None
+
+
 class CallApi:
     """generic class that manages the sending and receiving of a url request to a FHIR API.
     """
@@ -48,9 +58,7 @@ class CallApi:
     @timing
     def __init__(self, url: str, token: str = None):
         self.url = url
-        self.status_code = None
-        self.results = None
-        self.next_url = url
+        self.total = None
         self.auth = BearerAuth(token)
 
     @timing
@@ -60,74 +68,49 @@ class CallApi:
         Arguments:
             url {str} -- url of the request
         """
-        # TODO : optimize count and paging
-        # count = self._get_count(url)
-        # if count == 0:
-        #     logger.warning(f"there is 0 matching resources for {url}")
-        # if url[-1] == "?":
-        #     url = f"{url}_count={count}"
-        # else:
-        #     url = f"{url}&_count={count}"
-        response = self._get_bundle_response(url)
-        self.status_code = response.status_code
-        try:
-            self.results = response.json()["entry"]
-        except KeyError as e:
-            logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
-            logger.debug(f"status code of KeyError response:\n{response.status_code}")
-            logger.debug(f"content of the KeyError response:\n{response.content}")
-        try:
-            self.next_url = None
-            for relation in response.json()["link"]:
-                if relation["relation"] == "next":
-                    self.next_url = relation["url"]
-                    break
-        except KeyError as e:
-            logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
-            logger.debug(f"status code of KeyError response:\n{response.status_code}")
-            logger.debug(f"content of the KeyError response:\n{response.content}")
+        if self.total is None:
+            self.total = self._get_count(url)
+            logger.info(f"there is {self.total} matching resources for {url}")
+        if self.total != 0:
+            # response_url contains the data returned by url
+            response_url = Response()
+            response = self._get_bundle_response(url)
+            response_url.status_code = response.status_code
+            if "entry" in response.json():
+                # if no resources match the request, response_url.results = None
+                logger.debug(f"status code of KeyError response:\n{response.status_code}")
+                logger.debug(f"content of the KeyError response:\n{response.content}")
+                response_url.results = response.json()["entry"]
+                links = response.json().get("link", [])
+                next_page = [l["url"] for l in links if l["relation"] == "next"]
+                if len(next_page) > 0:
+                    response_url.next_url = next_page[0]
+                else:
+                    logger.info("no next url was found")
+            else:
+                logger.info(f"Got a KeyError - There's no entry key in the json data we received.")
+        else:
+            response_url = Response()
+        return response_url
 
     @timing
     def _get_count(self, url):
-        # the retrieval of the number of results is not necessary if the FHIR api supports
-        # pagination
-        # -> to be deleted
         if url[-1] == "?":
             url_number = f"{url}_summary=count"
         else:
             url_number = f"{url}&_summary=count"
-        response = requests.get(url_number, auth=self.auth)
         logger.info(f"Get {url_number}")
-        try:
-            count = min(response.json()["total"], 10000)
-        except KeyError as e:
-            logger.info(f"Got a KeyError - There's no {e} key in the json data we received.")
+        response = requests.get(url_number, auth=self.auth)
+        count = response.json().get("total")
+        if count is None:
             logger.warning(f"status code of failing response:\n{response.status_code}")
             logger.warning(f"content of the failing response:\n{response.content}")
-            raise
-        except ValueError:
-            logger.warning(f"status code of failing response:\n{response.status_code}")
-            logger.warning(f"content of the failing response:\n{response.content}")
-            raise
-        except ValueError:
-            logger.warning(f"status code of failing response:\n{response.status_code}")
-            logger.warning(f"content of the failing response:\n{response.content}")
-            raise
         return count
 
     @timing
     def _get_bundle_response(self, url):
         logger.info(f"Get {url}")
         return requests.get(url, auth=self.auth)
-
-    @timing
-    def get_next(self):
-        """retrieves the responses contained in the following pages
-        """
-        if self.next_url:
-            self.get_response(self.next_url)
-        else:
-            logger.info("There is no more pages")
 
 
 class BearerAuth(requests.auth.AuthBase):
@@ -160,32 +143,43 @@ class ApiGetter(CallApi):
     def get_all(self):
         """collects all the data corresponding to the initial url request by calling the following pages
         """  # noqa
-        while self.next_url:
-            self.get_next()
+        next_url = self.url
+        while next_url:
+            next_url = self.get_next(next_url)
 
     @timing
-    def get_next(self):
+    def get_next(self, next_url):
         """retrieves the responses contained in the following pages and stores the data in data attribute
         """  # noqa
-        if self.next_url:
-            self.get_response(self.next_url)
-            self._get_data()
+        if next_url:
+            response = self.get_response(next_url)
+            next_url = self._get_data(response)
+            return next_url
         else:
             logger.info("There is no more pages")
+            return None
 
     @timing
-    def _get_data(self):
+    def _get_data(self, response: Type[Response]):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
         """  # noqa
         elements_empty = asdict(self.elements)
-        for json_resource in self.results:
-
-            data_dict = multiple_search_dict([json_resource["resource"]], elements_empty)[
-                0
-            ]  # because there is only one resource
-            elements = from_dict(data_class=Elements, data=data_dict)
-            df = self._flatten_item_results(elements)
+        if not response.results:
+            columns = [element.col_name for element in self.elements.elements]
+            df = pd.DataFrame(columns=columns)
             self.df = pd.concat([self.df, df])
+            logger.info(
+                "the current page doesnt have an entry keyword, therefore an empty df is created"
+            )
+        else:
+            data_dicts = multiple_search_dict(
+                [json_resource["resource"] for json_resource in response.results], elements_empty
+            )
+            for data_dict in data_dicts:
+                elements = from_dict(data_class=Elements, data=data_dict)
+                df = self._flatten_item_results(elements)
+                self.df = pd.concat([self.df, df])
+        return response.next_url
 
     @timing
     def _flatten_item_results(self, elements: Type[Elements]):

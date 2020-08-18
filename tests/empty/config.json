@@ -1,0 +1,18 @@
+{
+    "select": {
+        "patient": [
+            "gender",
+            "given",
+            "birthdate",
+            "id"
+        ]
+    },
+    "from": {
+        "patient": "Patient"
+    },
+    "where": {
+        "patient": {
+            "_id": "1288133"
+        }
+    }
+}

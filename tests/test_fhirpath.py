@@ -3,7 +3,6 @@ import sys
 from dataclasses import asdict
 from dacite import from_dict
 
-sys.path.append(".")
 from fhir2dataset.data_class import Elements, Element
 from fhir2dataset.fhirpath import multiple_search_dict
 
