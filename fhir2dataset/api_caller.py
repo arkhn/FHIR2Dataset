@@ -81,7 +81,7 @@ class CallApi:
                 logger.debug(f"status code of KeyError response:\n{response.status_code}")
                 logger.debug(f"content of the KeyError response:\n{response.content}")
                 response_url.results = response.json()["entry"]
-                links = response.json().get("links", [])
+                links = response.json().get("link", [])
                 next_page = [l["url"] for l in links if l["relation"] == "next"]
                 if len(next_page) > 0:
                     response_url.next_url = next_page[0]
@@ -182,10 +182,10 @@ class ApiGetter(CallApi):
                 "the current page doesnt have an entry keyword, therefore an empty df is created"
             )
         else:
-            for json_resource in response.results:
-                data_dict = multiple_search_dict([json_resource["resource"]], elements_empty)[
-                    0
-                ]  # because there is only one resource
+            data_dicts = multiple_search_dict(
+                [json_resource["resource"] for json_resource in response.results], elements_empty
+            )
+            for data_dict in data_dicts:
                 elements = from_dict(data_class=Elements, data=data_dict)
                 df = self._flatten_item_results(elements)
                 self.df = pd.concat([self.df, df])
