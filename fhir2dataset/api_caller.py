@@ -81,18 +81,12 @@ class CallApi:
                 logger.debug(f"status code of KeyError response:\n{response.status_code}")
                 logger.debug(f"content of the KeyError response:\n{response.content}")
                 response_url.results = response.json()["entry"]
-                try:
-                    for relation in response.json()["link"]:
-                        if relation["relation"] == "next":
-                            response_url.next_url = relation["url"]
-                            logger.info("one relation next has been found")
-                            break
-                except KeyError as e:
-                    logger.info(
-                        f"Got a KeyError - There's no {e} key in the json data we received."
-                    )
-                    logger.debug(f"status code of KeyError response:\n{response.status_code}")
-                    logger.debug(f"content of the KeyError response:\n{response.content}")
+                links = response.json().get("links", [])
+                next_page = [l["url"] for l in links if l["relation"] == "next"]
+                if len(next_page) > 0:
+                    response_url.next_url = next_page[0]
+                else:
+                    logger.info("no next url was found")
             else:
                 logger.info(f"Got a KeyError - There's no entry key in the json data we received.")
         else:
