@@ -85,6 +85,7 @@ class CallApi:
                     for relation in response.json()["link"]:
                         if relation["relation"] == "next":
                             response_url.next_url = relation["url"]
+                            logger.info("one relation next has been found")
                             break
                 except KeyError as e:
                     logger.info(
@@ -181,7 +182,11 @@ class ApiGetter(CallApi):
         elements_empty = asdict(self.elements)
         if not response.results:
             columns = [element.col_name for element in self.elements.elements]
-            self.df = pd.DataFrame(columns=columns)
+            df = pd.DataFrame(columns=columns)
+            self.df = pd.concat([self.df, df])
+            logger.info(
+                "the current page doesnt have an entry keyword, therefore an empty df is created"
+            )
         else:
             for json_resource in response.results:
                 data_dict = multiple_search_dict([json_resource["resource"]], elements_empty)[
