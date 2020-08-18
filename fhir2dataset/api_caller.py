@@ -80,6 +80,7 @@ class CallApi:
                 # if no resources match the request, response_url.results = None
                 logger.debug(f"status code of KeyError response:\n{response.status_code}")
                 logger.debug(f"content of the KeyError response:\n{response.content}")
+                response_url.results = response.json()["entry"]
                 try:
                     for relation in response.json()["link"]:
                         if relation["relation"] == "next":
@@ -171,6 +172,7 @@ class ApiGetter(CallApi):
             return next_url
         else:
             logger.info("There is no more pages")
+            return None
 
     @timing
     def _get_data(self, response: Type[Response]):
