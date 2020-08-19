@@ -1,6 +1,8 @@
 import os
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py
+from setuptools.command.sdist import sdist
+
 from subprocess import call
 
 with open(
@@ -13,20 +15,26 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-class NPMInstall(build_py):
+class MyBuildCommand(build_py):
     def run(self):
         call(["npm", "install", "--prefix", "fhir2dataset/metadata"])
         build_py.run(self)
 
 
+class MySdistCommand(sdist):
+    def run(self):
+        call(["npm", "install", "--prefix", "fhir2dataset/metadata"])
+        sdist.run(self)
+
+
 requirements = read("requirements.txt").split()
 
 setup(
-    cmdclass={"build_py": NPMInstall},
+    cmdclass={"build_py": MyBuildCommand, "sdist": MySdistCommand},
     name="fhir2dataset",
     packages=find_packages(),
     include_package_data=True,
-    version="0.1.1-a1",
+    version="0.1.1-a2",
     license="Apache License 2.0",
     description="Transform FHIR to Dataset",
     long_description=long_description,
