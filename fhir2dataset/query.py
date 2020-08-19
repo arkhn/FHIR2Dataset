@@ -175,6 +175,7 @@ class Query:
         )
         if not debug:
             self._select_columns()
+            self._remove_lists()
         # TODO check where
 
     @timing
@@ -186,6 +187,27 @@ class Query:
             for element in resource_alias_info.elements.get_subset_elements(goal="select"):
                 final_columns.append(f"{resource_alias}:{element.col_name}")
         self.main_dataframe = self.main_dataframe[final_columns]
+
+    @timing
+    def _remove_lists(self):
+        """Remove lists from columns with only single elements
+        """
+        df = self.main_dataframe
+        n = len(df)
+        for column in df.columns:
+            i = 0
+            new_col = []
+            if isinstance(df[column][0], list):
+                for liste in df[column]:
+                    if len(liste) > 1:
+                        break
+                    else:
+                        i += 1
+                        new_col.append(liste[0])
+                if i == n:
+                    df[column] = new_col
+                    logger.info(f"{column} has just been cleaned up")
+        self.main_dataframe = df
 
     @timing
     def _join(self) -> pd.DataFrame:
