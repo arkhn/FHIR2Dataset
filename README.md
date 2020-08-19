@@ -4,18 +4,18 @@ Transform FHIR to dataset for ML applications
 
 ## FHIR2Dataset in Detail
 
-This project is still under development.
-
-This repo allows to make a SQL query on a FHIR API and to retrieve tabular data. 
+This repo allows to make a SQL query on a FHIR API and to retrieve tabular data.
 
 _FHIR2Dataset is still under active development!_
 
 ## Installation
+
 ### With pip
 
 `pip install fhir2dataset`
 
 ### From source
+
 After cloning this repository, you can install the required dependencies
 
 ```
@@ -24,7 +24,6 @@ npm install --prefix ./fhir2dataset/metadata
 ```
 
 For usage, refer to this [turorial](https://htmlpreview.github.io/?https://github.com/arkhn/FHIR2Dataset/blob/query_tests/examples/tutorial.html) and then this [Jupyer Notebook](examples/example.ipynb)
-
 
 ## Getting started
 
@@ -57,7 +56,7 @@ config_from_parser = parser.parse(sql_like_query)
 query.from_config(config_from_parser)
 query.execute()
 df = query.main_dataframe
-``` 
+```
 
 **JSON config file as entry**
 
@@ -73,44 +72,39 @@ query = Query(fhir_api_url, fhir_rules=fhir_rules)
 config.json :
 
 ```json
-{"select":{
-    "alias n°1":[
-        "a",
-        "b",
-        "c"
-    ],
-    "alias n°2":[
-        "a"
-    ]
-},
-"from":{
-    "alias n°1":"Resource type 1",
-    "alias n°2":"Resource type 2",
-    "alias n°3":"Resource type 3"
-},
-"join":{
-    "inner": {
-        "alias n°1":{
-            "d":"alias n°2"
-
-        },
-        "alias n°2":{
-            "b":"alias n°3"
-        }
-
-    }
-},
-"where":{
-    "alias n°2":{
-        "c":"value 1",
-        "d":"value 2"
+{
+    "select": {
+        "alias n°1": ["a", "b", "c"],
+        "alias n°2": ["a"]
     },
-    "alias n°3":{
-        "a":"value 3",
-        "b":"value 4"
+    "from": {
+        "alias n°1": "Resource type 1",
+        "alias n°2": "Resource type 2",
+        "alias n°3": "Resource type 3"
+    },
+    "join": {
+        "inner": {
+            "alias n°1": {
+                "d": "alias n°2"
+            },
+            "alias n°2": {
+                "b": "alias n°3"
+            }
+        }
+    },
+    "where": {
+        "alias n°2": {
+            "c": "value 1",
+            "d": "value 2"
+        },
+        "alias n°3": {
+            "a": "value 3",
+            "b": "value 4"
+        }
     }
-}}
+}
 ```
+
 ```
 # Enter in dirname the path of config.json
 filename_config = 'config.json'
@@ -122,7 +116,6 @@ query.from_config(config)
 query.execute()
 df = query.main_dataframe
 ```
-
 
 ## Examples
 
