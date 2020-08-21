@@ -175,7 +175,7 @@ class Query:
         )
         if not debug:
             self._select_columns()
-            self._remove_lists()
+            # self._remove_lists()
         # TODO check where
 
     @timing
@@ -199,6 +199,7 @@ class Query:
             new_col = []
             if isinstance(df[column][0], list):
                 for liste in df[column]:
+                    logger.info(liste)
                     if len(liste) > 1:
                         break
                     else:
@@ -207,6 +208,22 @@ class Query:
                 if i == n:
                     df[column] = new_col
                     logger.info(f"{column} has just been cleaned up")
+        self.main_dataframe = df
+
+    def _remove_lists_2(self):
+        """Remove lists from columns with only single elements
+        """
+        df = self.main_dataframe
+        list_col = []
+        for column in df.columns:
+            lengths = df[column].str.len()
+            if all(len < 2 for len in lengths):
+                list_col.append(column)
+        logger.info(f"list of columns with one element only : {list_col}")
+
+        for column in list_col:
+            logger.info(f"the column treated is {column}")
+            df[column] = df[column].apply(lambda x: x[0])
         self.main_dataframe = df
 
     @timing
