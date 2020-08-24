@@ -193,16 +193,11 @@ class Query:
         """Remove lists from columns with only single elements
         """
         df = self.main_dataframe
-        list_col = []
         for column in df.columns:
             lengths = df[column].str.len()
             if all(len < 2 for len in lengths):
-                list_col.append(column)
-        logger.info(f"list of columns with one element only : {list_col}")
-
-        for column in list_col:
-            logger.info(f"the column treated is {column}")
-            df[column] = df[column].apply(lambda x: x[0])
+                df[column] = df[column].apply(lambda x: x[0])
+                logger.info(f"the column treated is {column}")
         self.main_dataframe = df
 
     @timing
