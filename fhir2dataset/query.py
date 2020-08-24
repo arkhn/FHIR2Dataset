@@ -197,7 +197,9 @@ class Query:
             lengths = df[column].str.len()
             if all(len < 2 for len in lengths):
                 df[column] = df[column].apply(lambda x: x[0])
-                logger.info(f"the column treated is {column}")
+                logger.info(
+                    f"extraction of the unique element from the lists composing the {column} column"
+                )
         self.main_dataframe = df
 
     @timing
