@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 def concat_cell(dataset, cols_name, element):
     # column of one row, this single cell is of the same type as element.value, i.e. a list
+    if element.value == []:
+        element.value = [None]
     column = [element.value]
     dataset.append(column)
     cols_name.append(element.col_name)
