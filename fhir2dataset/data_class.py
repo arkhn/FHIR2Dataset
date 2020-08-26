@@ -295,31 +295,53 @@ class Forest:
         root = splitted_fhirpath[0]
         if root not in self.trees.keys():
             self.trees[root] = Tree(root)
-        self.trees[root].add_edges_from_path(splitted_fhirpath, self.num_exp)
+        self.trees[root].add_edges_from_splitted_fhirpath(splitted_fhirpath, self.num_exp)
         self.num_exp += 1
 
 
 class Tree:
+    """class modeling a process tree
+
+    Attributes:
+        root (Node): the root of the tree
+        graph (nx.DiGraph): oriented graph representing the tree
+    """
+
     def __init__(self, root: Node):
         self.root = root
         self.graph = nx.DiGraph()
 
-    def add_edges_from_path(self, path: list, column_idx: int):
-        for node in path:
+    def add_edges_from_splitted_fhirpath(self, splitted_fhirpath: list, column_idx: int):
+        """add splitted_fhirpath to the tree, each sub-part of the fhirpath representing a node of 
+        the tree. The interest is that if 2 fhirpaths share the same first sub-fhirpaths then they
+        will share the same first nodes of the tree
+
+        Args:
+            splitted_fhirpath (List[str]): list of fhirpaths representing a process
+            column_idx ([type]): column number corresponding to the process number
+        """
+        for node in splitted_fhirpath:
             if node in self.graph.nodes:
                 self.graph.nodes[node]["column_idx"].append(column_idx)
             else:
                 self.graph.add_node(node, column_idx=[column_idx])
         edges = []
-        for idx in range(len(path) - 1):
-            edges.append((path[idx], path[idx + 1]))
+        for idx in range(len(splitted_fhirpath) - 1):
+            edges.append((splitted_fhirpath[idx], splitted_fhirpath[idx + 1]))
         self.graph.add_edges_from(edges)
 
     def parse_fhirpaths(self):
+        """transforms each expression that corresponds to a sub fhirpath of a node into a parsed 
+        version used by the fhirpath.js library.
+        """
         for node in nx.dfs_preorder_nodes(self.graph, self.root):
             node.parsed_fhirpath = parse_fhirpath(node.fhirpath)
 
     def simplify_tree(self):
+        """This function, executed once all the fhirpaths have been added, allows to reduce the 
+        tree. If a node has only one successor node and if they are tagged with exactly the same 
+        column numbers (the same processes), then they will be merged.
+        """
         tmp_root = self.root
         final_root = self.root
         new_graph = self.graph.copy()
