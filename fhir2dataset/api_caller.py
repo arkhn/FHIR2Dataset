@@ -3,7 +3,6 @@ import requests
 import logging
 from itertools import product
 from typing import Type
-from dataclasses import asdict
 
 from fhir2dataset.timer import timing
 from fhir2dataset.fhirpath import fhirpath_processus_tree
