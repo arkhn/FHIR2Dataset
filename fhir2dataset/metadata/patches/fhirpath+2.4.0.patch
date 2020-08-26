@@ -1,0 +1,329 @@
+diff --git a/node_modules/fhirpath/.eslintrc.yml b/node_modules/fhirpath/.eslintrc.yml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/.travis.yml b/node_modules/fhirpath/.travis.yml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/CHANGELOG.md b/node_modules/fhirpath/CHANGELOG.md
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/Gruntfile.js b/node_modules/fhirpath/Gruntfile.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/LICENSE.md b/node_modules/fhirpath/LICENSE.md
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/README.md b/node_modules/fhirpath/README.md
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/bashrc.fhirpath b/node_modules/fhirpath/bashrc.fhirpath
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/browser-build/Gruntfile.js b/node_modules/fhirpath/browser-build/Gruntfile.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/browser-build/fhirpathRequire.js b/node_modules/fhirpath/browser-build/fhirpathRequire.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/browser-build/test/protractor/conf.js b/node_modules/fhirpath/browser-build/test/protractor/conf.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/browser-build/test/protractor/index.html b/node_modules/fhirpath/browser-build/test/protractor/index.html
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/browser-build/test/protractor/spec/browser.spec.js b/node_modules/fhirpath/browser-build/test/protractor/spec/browser.spec.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/browser-build/webpack.config.js b/node_modules/fhirpath/browser-build/webpack.config.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/converter/README.md b/node_modules/fhirpath/converter/README.md
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/converter/converter.js b/node_modules/fhirpath/converter/converter.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/converter/dataset/fhir-r4.xml b/node_modules/fhirpath/converter/dataset/fhir-r4.xml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/converter/dataset/input/observation-example.xml b/node_modules/fhirpath/converter/dataset/input/observation-example.xml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/converter/dataset/input/patient-example.xml b/node_modules/fhirpath/converter/dataset/input/patient-example.xml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/converter/dataset/input/questionnaire-example.xml b/node_modules/fhirpath/converter/dataset/input/questionnaire-example.xml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/converter/dataset/input/valueset-example-expansion.xml b/node_modules/fhirpath/converter/dataset/input/valueset-example-expansion.xml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/converter/index.js b/node_modules/fhirpath/converter/index.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/demo/Gruntfile.js b/node_modules/fhirpath/demo/Gruntfile.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/demo/public/app.css b/node_modules/fhirpath/demo/public/app.css
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/demo/public/app.js b/node_modules/fhirpath/demo/public/app.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/demo/public/index.html b/node_modules/fhirpath/demo/public/index.html
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/demo/public/patient-example.yaml b/node_modules/fhirpath/demo/public/patient-example.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/demo/test/protractor/conf.js b/node_modules/fhirpath/demo/test/protractor/conf.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/demo/test/protractor/spec/json.spec.js b/node_modules/fhirpath/demo/test/protractor/spec/json.spec.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/demo/webpack.config.js b/node_modules/fhirpath/demo/webpack.config.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/fhir-context/dstu2/choiceTypePaths.json b/node_modules/fhirpath/fhir-context/dstu2/choiceTypePaths.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/fhir-context/dstu2/index.js b/node_modules/fhirpath/fhir-context/dstu2/index.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/fhir-context/dstu2/pathsDefinedElsewhere.json b/node_modules/fhirpath/fhir-context/dstu2/pathsDefinedElsewhere.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/fhir-context/r4/choiceTypePaths.json b/node_modules/fhirpath/fhir-context/r4/choiceTypePaths.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/fhir-context/r4/index.js b/node_modules/fhirpath/fhir-context/r4/index.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/fhir-context/r4/pathsDefinedElsewhere.json b/node_modules/fhirpath/fhir-context/r4/pathsDefinedElsewhere.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/fhir-context/stu3/choiceTypePaths.json b/node_modules/fhirpath/fhir-context/stu3/choiceTypePaths.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/fhir-context/stu3/index.js b/node_modules/fhirpath/fhir-context/stu3/index.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/fhir-context/stu3/pathsDefinedElsewhere.json b/node_modules/fhirpath/fhir-context/stu3/pathsDefinedElsewhere.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/jest.config.js b/node_modules/fhirpath/jest.config.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/aggregate.js b/node_modules/fhirpath/src/aggregate.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/collections.js b/node_modules/fhirpath/src/collections.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/combining.js b/node_modules/fhirpath/src/combining.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/constants.js b/node_modules/fhirpath/src/constants.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/datetime.js b/node_modules/fhirpath/src/datetime.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/deep-equal.js b/node_modules/fhirpath/src/deep-equal.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/equality.js b/node_modules/fhirpath/src/equality.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/existence.js b/node_modules/fhirpath/src/existence.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/fhirpath.js b/node_modules/fhirpath/src/fhirpath.js
+old mode 100644
+new mode 100755
+index 8ade332..6c8cdc9
+--- a/node_modules/fhirpath/src/fhirpath.js
++++ b/node_modules/fhirpath/src/fhirpath.js
+@@ -666,6 +666,7 @@ module.exports = {
+   parse: parse,
+   compile: compile,
+   evaluate: evaluate,
++  applyParsedPath: applyParsedPath,
+   // Might as well export the UCUM library, since we are using it.
+   ucumUtils: require('@lhncbc/ucum-lhc').UcumLhcUtils.getInstance()
+ };
+diff --git a/node_modules/fhirpath/src/filtering.js b/node_modules/fhirpath/src/filtering.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/logic.js b/node_modules/fhirpath/src/logic.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/math.js b/node_modules/fhirpath/src/math.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/misc.js b/node_modules/fhirpath/src/misc.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/navigation.js b/node_modules/fhirpath/src/navigation.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/numbers.js b/node_modules/fhirpath/src/numbers.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/parser/FHIRPath.g4 b/node_modules/fhirpath/src/parser/FHIRPath.g4
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/parser/antlr4-index.js b/node_modules/fhirpath/src/parser/antlr4-index.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/parser/generated/FHIRPath.interp b/node_modules/fhirpath/src/parser/generated/FHIRPath.interp
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/parser/generated/FHIRPath.tokens b/node_modules/fhirpath/src/parser/generated/FHIRPath.tokens
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/parser/generated/FHIRPathLexer.interp b/node_modules/fhirpath/src/parser/generated/FHIRPathLexer.interp
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/parser/generated/FHIRPathLexer.js b/node_modules/fhirpath/src/parser/generated/FHIRPathLexer.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/parser/generated/FHIRPathLexer.tokens b/node_modules/fhirpath/src/parser/generated/FHIRPathLexer.tokens
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/parser/generated/FHIRPathListener.js b/node_modules/fhirpath/src/parser/generated/FHIRPathListener.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/parser/generated/FHIRPathParser.js b/node_modules/fhirpath/src/parser/generated/FHIRPathParser.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/parser/index.js b/node_modules/fhirpath/src/parser/index.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/polyfill.js b/node_modules/fhirpath/src/polyfill.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/strings.js b/node_modules/fhirpath/src/strings.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/types.js b/node_modules/fhirpath/src/types.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/src/utilities.js b/node_modules/fhirpath/src/utilities.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/api.test.js b/node_modules/fhirpath/test/api.test.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/bin_fhirpath.test.js b/node_modules/fhirpath/test/bin_fhirpath.test.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/3.2_paths.yaml b/node_modules/fhirpath/test/cases/3.2_paths.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/4.1_literals.yaml b/node_modules/fhirpath/test/cases/4.1_literals.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/5.1_existence.yaml b/node_modules/fhirpath/test/cases/5.1_existence.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/5.2.3_repeat.yaml b/node_modules/fhirpath/test/cases/5.2.3_repeat.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/5.2_filtering_and_projection.yaml b/node_modules/fhirpath/test/cases/5.2_filtering_and_projection.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/5.3_subsetting.yaml b/node_modules/fhirpath/test/cases/5.3_subsetting.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/5.4_combining.yaml b/node_modules/fhirpath/test/cases/5.4_combining.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/5.5_conversion.yaml b/node_modules/fhirpath/test/cases/5.5_conversion.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/5.6_string_manipulation.yaml b/node_modules/fhirpath/test/cases/5.6_string_manipulation.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/5.7_math.yaml b/node_modules/fhirpath/test/cases/5.7_math.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/5.8_tree_navigation.yaml b/node_modules/fhirpath/test/cases/5.8_tree_navigation.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/5.9_utility_functions.yaml b/node_modules/fhirpath/test/cases/5.9_utility_functions.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/6.1_equality.yaml b/node_modules/fhirpath/test/cases/6.1_equality.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/6.2_comparision.yaml b/node_modules/fhirpath/test/cases/6.2_comparision.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/6.3_types.yaml b/node_modules/fhirpath/test/cases/6.3_types.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/6.4_collection.yaml b/node_modules/fhirpath/test/cases/6.4_collection.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/6.4_collections.yaml b/node_modules/fhirpath/test/cases/6.4_collections.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/6.5_boolean_logic.yaml b/node_modules/fhirpath/test/cases/6.5_boolean_logic.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/6.6_math.yaml b/node_modules/fhirpath/test/cases/6.6_math.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/7_aggregate.yaml b/node_modules/fhirpath/test/cases/7_aggregate.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/8_variables.yaml b/node_modules/fhirpath/test/cases/8_variables.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/fhir-quantity.yaml b/node_modules/fhirpath/test/cases/fhir-quantity.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/fhir-r4.yaml b/node_modules/fhirpath/test/cases/fhir-r4.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/cases/simple.yaml b/node_modules/fhirpath/test/cases/simple.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/convert.test.js b/node_modules/fhirpath/test/convert.test.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/fhirpath.test.js b/node_modules/fhirpath/test/fhirpath.test.js
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/fixtures/base-data.xml b/node_modules/fhirpath/test/fixtures/base-data.xml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/fixtures/base-data.yaml b/node_modules/fhirpath/test/fixtures/base-data.yaml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/fixtures/resource-example.json b/node_modules/fhirpath/test/fixtures/resource-example.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/fixtures/resource-example.xml b/node_modules/fhirpath/test/fixtures/resource-example.xml
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/resources/observation-example.json b/node_modules/fhirpath/test/resources/observation-example.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/resources/patient-example.json b/node_modules/fhirpath/test/resources/patient-example.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/resources/quantity-example.json b/node_modules/fhirpath/test/resources/quantity-example.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/resources/questionnaire-example.json b/node_modules/fhirpath/test/resources/questionnaire-example.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/resources/valueset-example-expansion.json b/node_modules/fhirpath/test/resources/valueset-example-expansion.json
+old mode 100644
+new mode 100755
+diff --git a/node_modules/fhirpath/test/test_utils.js b/node_modules/fhirpath/test/test_utils.js
+old mode 100644
+new mode 100755
