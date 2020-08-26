@@ -4,7 +4,6 @@ import os
 import json
 import logging
 from subprocess import Popen, PIPE
-from typing import List
 
 from fhir2dataset.timer import timing
 
