@@ -101,35 +101,22 @@ def parse_fhirpath(fhirpath: str):
 
 @timing
 def fhirpath_processus_tree(forest_dict, resource):
-    try:
-        result = execute(
-            """function test(args){
-                const graph = require('./forest')
-                forest_dict = args[0]
-                resource = args[1]
-                let result = []
-                for (const [root_id, tree_raw] of Object.entries(forest_dict)) {
-                    nodes_dict_raw = tree_raw["nodes_dict"]
-                    edges_array_raw = tree_raw["edges_array"]
-                    graph.compute_fhirpaths(nodes_dict_raw, edges_array_raw, root_id, resource, result)
-                }
-                return result 
+    result = execute(
+        """function test(args){
+            const graph = require('./forest')
+            forest_dict = args[0]
+            resource = args[1]
+            let result = []
+            for (const [root_id, tree_raw] of Object.entries(forest_dict)) {
+                nodes_dict_raw = tree_raw["nodes_dict"]
+                edges_array_raw = tree_raw["edges_array"]
+                graph.compute_fhirpaths(nodes_dict_raw, edges_array_raw, root_id, resource, result)
             }
-            """,
-            args=[[forest_dict, resource]],
-        )
-    except:
-        import pprint
-
-        print("\nforest_dict")
-        print(forest_dict)
-
-        print("\nresource")
-        print(resource)
-        print("----------")
-        pprint.pprint(forest_dict)
-        pprint.pprint(resource)
-        raise
+            return result 
+        }
+        """,
+        args=[[forest_dict, resource]],
+    )
     return result
 
 
