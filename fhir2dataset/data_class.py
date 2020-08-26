@@ -143,6 +143,9 @@ class SearchParameters:
 
 @dataclass(eq=True)
 class Node:
+    """Modeling a node of a process tree
+    """
+
     fhirpath: str
     index: str
     parsed_fhirpath: str = None
@@ -162,6 +165,20 @@ def break_dot(exp: str):
 
 
 def split_fhirpath(fhirpath: str) -> List[Node]:
+    """Transforms a fhirpath into a list of sub-fhirpaths that run one after the other would give 
+    the same result as the initial fhirpath.
+
+    Args:
+        fhirpath (str): a string of characters representing a fhirpath
+
+    Returns:
+        List[Node]: a list of Nodes representing the sub-fhirpaths described above
+
+    Examples: 
+        1. "Patient.name.given" becomes ["Patient","name","given"]
+        1. "Patient.name | Practitioner.name" becomes ["Patient.name | Practitioner.name"]
+        2. "Patient.(x | y).use" becomes ["Patient","(x | y)","use"]
+    """
     list_dot = break_dot(fhirpath)
     if "" in list_dot:
         list_dot.remove("")
@@ -189,7 +206,7 @@ def split_fhirpath(fhirpath: str) -> List[Node]:
     if num_or != 0:
         tmps_list = [fhirpath]
     node_list = [Node(fhirpath, str(idx)) for idx, fhirpath in enumerate(tmps_list)]
-    # print(f"the fhirpath: {fhirpath} is parsed in {[node.fhirpath for node in node_list]}")
+    logger.debug(f"the fhirpath: {fhirpath} is parsed in {[node.fhirpath for node in node_list]}")
     return node_list
 
 
