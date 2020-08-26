@@ -240,7 +240,6 @@ class Forest:
         for root, tree in self.trees.items():
             nodes = tree.graph.nodes
             edges = tree.graph.edges
-            column_idx = nx.get_node_attributes(tree.graph, "column_idx")
 
             nodes_dict = {}
             for node in nodes:
