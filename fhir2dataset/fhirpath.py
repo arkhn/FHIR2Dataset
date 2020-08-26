@@ -87,6 +87,53 @@ def execute(code: str, args: list = None, g: dict = None):
 
 
 @timing
+def parse_fhirpath(fhirpath: str):
+    result = execute(
+        """function test(fhirpath){
+        const fhirpath_module = require("fhirpath");
+        return JSON.stringify(fhirpath_module.parse(fhirpath))
+    }
+    """,
+        args=[fhirpath],
+    )
+    return result
+
+
+@timing
+def fhirpath_processus_tree(forest_dict, resource):
+    try:
+        result = execute(
+            """function test(args){
+                const graph = require('./forest')
+                forest_dict = args[0]
+                resource = args[1]
+                let result = []
+                for (const [root_id, tree_raw] of Object.entries(forest_dict)) {
+                    nodes_dict_raw = tree_raw["nodes_dict"]
+                    edges_array_raw = tree_raw["edges_array"]
+                    graph.compute_fhirpaths(nodes_dict_raw, edges_array_raw, root_id, resource, result)
+                }
+                return result 
+            }
+            """,
+            args=[[forest_dict, resource]],
+        )
+    except:
+        import pprint
+
+        print("\nforest_dict")
+        print(forest_dict)
+
+        print("\nresource")
+        print(resource)
+        print("----------")
+        pprint.pprint(forest_dict)
+        pprint.pprint(resource)
+        raise
+    return result
+
+
+@timing
 def multiple_search_dict(resources: list, elements: dict) -> List[dict]:
     """Returns the updated element instance on each element in the Resources list. These updated instances are stored in a list which is the element returned by the function.
     The update consists for each element of the instance elements in the application of the fhirpath (element.fhirpath) on an instance of the Resources list and the storage of the response in element.value.
