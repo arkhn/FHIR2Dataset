@@ -112,7 +112,7 @@ def fhirpath_processus_tree(forest_dict, resource):
                 edges_array_raw = tree_raw["edges_array"]
                 graph.compute_fhirpaths(nodes_dict_raw, edges_array_raw, root_id, resource, result)
             }
-            return result 
+            return result
         }
         """,
         args=[[forest_dict, resource]],
