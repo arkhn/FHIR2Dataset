@@ -223,15 +223,37 @@ def show_tree(graph):
 
 
 class Forest:
+    """class modeling the entire set of process trees
+
+    Attributes:
+        trees (dict): dictionary where the key is the value of the root and the value of the 
+        associated complete tree
+        num_exp (int): total number of fhirpath that will be computed by this process tree forest 
+    """
+
     def __init__(self):
         self.trees = {}
         self.num_exp = 0
 
     def add_fhirpath(self, fhirpath: str) -> None:
+        """Adding a fhirpath to the forest is done in the following steps:
+            1. the fhirpath is divided into sub-fhirpaths which executed one after the other give 
+            the same result as the execution of the whole fhirpath.
+            2. these subfhirpaths are added to the forest, each subfhirpath representing a node of 
+            a tree. The interest is that if 2 fhirpaths share the same first sub-fhirpaths then they
+            will share the same first nodes of the tree.
+
+        Args:
+            fhirpath (str): string representing a fhirpath
+        """
         splitted_fhirpath = split_fhirpath(fhirpath)
         self.__add_splitted_fhirpath(splitted_fhirpath)
 
     def simplify_trees(self):
+        """This function, executed once all the fhirpaths have been added, allows to reduce the 
+        trees in the forest. If a node has only one successor node and if they are tagged with 
+        exactly the same column numbers (the same processes), then they will be merged.
+        """
         new_trees = {}
         for root, tree in self.trees.items():
             tree.simplify_tree()
@@ -239,17 +261,19 @@ class Forest:
         self.trees = new_trees
 
     def parse_fhirpaths(self):
+        """transforms each expression that corresponds to a sub fhirpath of a node into a parsed 
+        version used by the fhirpath.js library.
+        """
         for tree in self.trees.values():
             tree.parse_fhirpaths()
 
-    def __add_splitted_fhirpath(self, splitted_fhirpath=List[Node]):
-        root = splitted_fhirpath[0]
-        if root not in self.trees.keys():
-            self.trees[root] = Tree(root)
-        self.trees[root].add_edges_from_path(splitted_fhirpath, self.num_exp)
-        self.num_exp += 1
-
     def create_forest_dict(self):
+        """creates a dictionary modeling the forest understandable by the javascript function in 
+        the forest.js file
+
+        Returns:
+            dict: dictionary described above
+        """
         forest_dict = {}
         for root, tree in self.trees.items():
             nodes = tree.graph.nodes
@@ -266,6 +290,13 @@ class Forest:
 
             forest_dict[str(hash(root))] = {"nodes_dict": nodes_dict, "edges_array": edges_array}
         return forest_dict
+
+    def __add_splitted_fhirpath(self, splitted_fhirpath=List[Node]):
+        root = splitted_fhirpath[0]
+        if root not in self.trees.keys():
+            self.trees[root] = Tree(root)
+        self.trees[root].add_edges_from_path(splitted_fhirpath, self.num_exp)
+        self.num_exp += 1
 
 
 class Tree:
