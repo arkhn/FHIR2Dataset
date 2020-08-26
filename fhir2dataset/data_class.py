@@ -210,7 +210,7 @@ def split_fhirpath(fhirpath: str) -> List[Node]:
     return node_list
 
 
-def show_tree(graph):
+def show_tree(graph, number):
     plt.figure(figsize=(5, 5))
     layout = nx.spring_layout(graph)
     labels = nx.get_node_attributes(graph, "column_idx")
@@ -218,8 +218,7 @@ def show_tree(graph):
         labels[key] = f"{key.fhirpath}\n{fhirpath}"
     nx.draw_networkx(graph, labels=labels, pos=layout)
 
-    plt.show()
-    plt.show()
+    plt.savefig(f"{number}.png")
 
 
 class Forest:
