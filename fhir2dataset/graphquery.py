@@ -7,7 +7,16 @@ from collections import defaultdict
 from fhir2dataset.fhirrules_getter import FHIRRules
 from fhir2dataset.timer import timing
 from fhir2dataset.visualization_tools import custom_repr
-from fhir2dataset.data_class import SearchParameter, ResourceAliasInfo, Element, Elements, EdgeInfo
+
+# TODO: delete show_tree
+from fhir2dataset.data_class import (
+    SearchParameter,
+    ResourceAliasInfo,
+    Element,
+    Elements,
+    EdgeInfo,
+    show_tree,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +78,14 @@ class GraphQuery:
         if where_dict:
             self._where(**where_dict)
         self._select(**select_dict)
+
+        for resource_alias in self.resources_alias_info.keys():
+            self.resources_alias_info[resource_alias].elements.compute_forest_fhirpaths()
+            # TODO : delete
+            forest = self.resources_alias_info[resource_alias].elements.forest
+            for tree in forest.trees.values():
+                show_tree(tree.graph)
+
         logger.info(f"The nodes are:{self.resources_alias_graph.nodes()}")
         logger.info("The edges are:")
         logger.info(pformat(list(self.resources_alias_graph.edges(data=True))))
