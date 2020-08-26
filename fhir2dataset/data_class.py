@@ -1,12 +1,19 @@
 """classes representing the different types of information manipulated in FHIR2Dataset
 """
+import re
 import logging
+import networkx as nx
+
+import matplotlib.pyplot as plt
 from collections import defaultdict
 from pprint import pformat
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from typing import Type, List, Optional
+from collections import defaultdict
+
 
 from fhir2dataset.visualization_tools import custom_repr
+from fhir2dataset.fhirpath import parse_fhirpath
 
 
 logger = logging.getLogger(__name__)
@@ -48,6 +55,15 @@ class Elements:
 
     def get_subset_elements(self, goal):
         return [element for element in self.elements if element.goal == goal]
+
+    def compute_forest_fhirpaths(self):
+        forest = Forest()
+        for fhirpath in [element.fhirpath for element in self.elements]:
+            forest.add_fhirpath(fhirpath)
+        forest.simplify_trees()
+        forest.parse_fhirpaths()
+        self.forest = forest
+        self.forest_dict = forest.create_forest_dict()
 
 
 @dataclass
@@ -126,3 +142,178 @@ class SearchParameters:
                     f"data already recorded: {pformat(self._data[search_parameter.code])}\n"
                     f"data given as argument: {search_parameter}\n"
                 )
+
+
+@dataclass(eq=True)
+class Node:
+    fhirpath: str
+    index: str
+    parsed_fhirpath: str = None
+
+    def __hash__(self):
+        return hash(self.fhirpath) ^ hash(self.index)
+
+
+def break_parenthesis(exp: str):
+    sublist = re.split(r"(\(|\))", exp)
+    return sublist
+
+
+def break_dot(exp: str):
+    sublist = re.split(r"\.", exp)
+    return sublist
+
+
+def split_fhirpath(fhirpath: str) -> List[Node]:
+    list_dot = break_dot(fhirpath)
+    if "" in list_dot:
+        list_dot.remove("")
+
+    tmps_list = []
+    tmp_word = ""
+    num_brackets = 0
+    num_or = fhirpath.count("|")
+
+    for idx in range(len(list_dot)):
+        curr_word = list_dot[idx]
+
+        if curr_word:
+            tmp_word = f"{tmp_word}.{curr_word}" if tmp_word else curr_word
+            for character in curr_word:
+                if character == "(":
+                    num_brackets += 1
+                elif character == ")":
+                    num_brackets -= 1
+                elif character == "|" and num_brackets % 2 == 1:
+                    num_or -= 1
+            if not num_brackets:
+                tmps_list.append(tmp_word)
+                tmp_word = ""
+    if num_or != 0:
+        tmps_list = [fhirpath]
+    node_list = [Node(fhirpath, str(idx)) for idx, fhirpath in enumerate(tmps_list)]
+    # print(f"the fhirpath: {fhirpath} is parsed in {[node.fhirpath for node in node_list]}")
+    return node_list
+
+
+def show_tree(graph):
+    plt.figure(figsize=(5, 5))
+    layout = nx.spring_layout(graph)
+    labels = nx.get_node_attributes(graph, "column_idx")
+    for key, fhirpath in labels.items():
+        labels[key] = f"{key.fhirpath}\n{fhirpath}"
+    nx.draw_networkx(graph, labels=labels, pos=layout)
+
+    plt.show()
+    plt.show()
+
+
+class Forest:
+    def __init__(self):
+        self.trees = {}
+        self.num_exp = 0
+
+    def add_fhirpath(self, fhirpath: str) -> None:
+        splitted_fhirpath = split_fhirpath(fhirpath)
+        self.__add_splitted_fhirpath(splitted_fhirpath)
+
+    def simplify_trees(self):
+        new_trees = {}
+        for root, tree in self.trees.items():
+            tree.simplify_tree()
+            new_trees[tree.root] = tree
+        self.trees = new_trees
+
+    def parse_fhirpaths(self):
+        for tree in self.trees.values():
+            tree.parse_fhirpaths()
+
+    def __add_splitted_fhirpath(self, splitted_fhirpath=List[Node]):
+        root = splitted_fhirpath[0]
+        if root not in self.trees.keys():
+            self.trees[root] = Tree(root)
+        self.trees[root].add_edges_from_path(splitted_fhirpath, self.num_exp)
+        self.num_exp += 1
+
+    def create_forest_dict(self):
+        forest_dict = {}
+        for root, tree in self.trees.items():
+            nodes = tree.graph.nodes
+            edges = tree.graph.edges
+            column_idx = nx.get_node_attributes(tree.graph, "column_idx")
+
+            nodes_dict = {}
+            for node in nodes:
+                nodes_dict[str(hash(node))] = asdict(node)
+                nodes_dict[str(hash(node))]["column_idx"] = nodes[node]["column_idx"]
+
+            edges_array = []
+            for edge in edges:
+                edges_array.append([str(hash(edge[0])), str(hash(edge[1]))])
+
+            forest_dict[str(hash(root))] = {"nodes_dict": nodes_dict, "edges_array": edges_array}
+        return forest_dict
+
+
+class Tree:
+    def __init__(self, root: Node):
+        self.root = root
+        self.graph = nx.DiGraph()
+
+    def add_edges_from_path(self, path: list, column_idx: int):
+        for node in path:
+            if node in self.graph.nodes:
+                self.graph.nodes[node]["column_idx"].append(column_idx)
+            else:
+                self.graph.add_node(node, column_idx=[column_idx])
+        edges = []
+        for idx in range(len(path) - 1):
+            edges.append((path[idx], path[idx + 1]))
+        self.graph.add_edges_from(edges)
+
+    def parse_fhirpaths(self):
+        for node in nx.dfs_preorder_nodes(self.graph, self.root):
+            node.parsed_fhirpath = parse_fhirpath(node.fhirpath)
+
+    def simplify_tree(self):
+        tmp_root = self.root
+        final_root = self.root
+        new_graph = self.graph.copy()
+
+        previous_node_new_graph = None
+        previous_node_created_new_graph = None
+        column_idx = nx.get_node_attributes(self.graph, "column_idx")
+
+        for node_old_graph in nx.dfs_preorder_nodes(self.graph, self.root):
+            successors_old_graph = list(self.graph.successors(node_old_graph))
+            if len(successors_old_graph) == 1:
+                successor_old_graph = successors_old_graph[0]
+                if column_idx[successor_old_graph] == column_idx[node_old_graph]:
+                    if (
+                        previous_node_created_new_graph
+                        and column_idx[successor_old_graph] == column_idx[node_old_graph]
+                    ):
+                        previous_node_new_graph = previous_node_created_new_graph
+                    else:
+                        previous_node_new_graph = node_old_graph
+
+                    new_fhirpath = (
+                        f"{previous_node_new_graph.fhirpath}.{successor_old_graph.fhirpath}"
+                    )
+                    new_index = f"{previous_node_new_graph.index}-{successor_old_graph.index}"
+                    new_node_new_graph = Node(new_fhirpath, new_index)
+
+                    nx.relabel_nodes(
+                        new_graph, {successor_old_graph: new_node_new_graph}, copy=False
+                    )
+                    new_graph = nx.contracted_nodes(
+                        new_graph, new_node_new_graph, previous_node_new_graph, self_loops=False
+                    )
+                    previous_node_created_new_graph = new_node_new_graph
+                    if node_old_graph == tmp_root:
+                        tmp_root = successor_old_graph
+                        final_root = new_node_new_graph
+            else:
+                previous_node_created_new_graph = None
+        self.graph = new_graph
+        self.root = final_root
