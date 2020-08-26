@@ -165,7 +165,7 @@ def break_dot(exp: str):
 
 
 def split_fhirpath(fhirpath: str) -> List[Node]:
-    """Transforms a fhirpath into a list of sub-fhirpaths that run one after the other would give 
+    """Transforms a fhirpath into a list of sub-fhirpaths that run one after the other would give
     the same result as the initial fhirpath.
 
     Args:
@@ -174,7 +174,7 @@ def split_fhirpath(fhirpath: str) -> List[Node]:
     Returns:
         List[Node]: a list of Nodes representing the sub-fhirpaths described above
 
-    Examples: 
+    Examples:
         1. "Patient.name.given" becomes ["Patient","name","given"]
         1. "Patient.name | Practitioner.name" becomes ["Patient.name | Practitioner.name"]
         2. "Patient.(x | y).use" becomes ["Patient","(x | y)","use"]
@@ -225,9 +225,9 @@ class Forest:
     """class modeling the entire set of process trees
 
     Attributes:
-        trees (dict): dictionary where the key is the value of the root and the value of the 
+        trees (dict): dictionary where the key is the value of the root and the value of the
         associated complete tree
-        num_exp (int): total number of fhirpath that will be computed by this process tree forest 
+        num_exp (int): total number of fhirpath that will be computed by this process tree forest
     """
 
     def __init__(self):
@@ -236,9 +236,9 @@ class Forest:
 
     def add_fhirpath(self, fhirpath: str) -> None:
         """Adding a fhirpath to the forest is done in the following steps:
-            1. the fhirpath is divided into sub-fhirpaths which executed one after the other give 
+            1. the fhirpath is divided into sub-fhirpaths which executed one after the other give
             the same result as the execution of the whole fhirpath.
-            2. these subfhirpaths are added to the forest, each subfhirpath representing a node of 
+            2. these subfhirpaths are added to the forest, each subfhirpath representing a node of
             a tree. The interest is that if 2 fhirpaths share the same first sub-fhirpaths then they
             will share the same first nodes of the tree.
 
@@ -249,8 +249,8 @@ class Forest:
         self.__add_splitted_fhirpath(splitted_fhirpath)
 
     def simplify_trees(self):
-        """This function, executed once all the fhirpaths have been added, allows to reduce the 
-        trees in the forest. If a node has only one successor node and if they are tagged with 
+        """This function, executed once all the fhirpaths have been added, allows to reduce the
+        trees in the forest. If a node has only one successor node and if they are tagged with
         exactly the same column numbers (the same processes), then they will be merged.
         """
         new_trees = {}
@@ -260,14 +260,14 @@ class Forest:
         self.trees = new_trees
 
     def parse_fhirpaths(self):
-        """transforms each expression that corresponds to a sub fhirpath of a node into a parsed 
+        """transforms each expression that corresponds to a sub fhirpath of a node into a parsed
         version used by the fhirpath.js library.
         """
         for tree in self.trees.values():
             tree.parse_fhirpaths()
 
     def create_forest_dict(self):
-        """creates a dictionary modeling the forest understandable by the javascript function in 
+        """creates a dictionary modeling the forest understandable by the javascript function in
         the forest.js file
 
         Returns:
@@ -311,7 +311,7 @@ class Tree:
         self.graph = nx.DiGraph()
 
     def add_edges_from_splitted_fhirpath(self, splitted_fhirpath: list, column_idx: int):
-        """add splitted_fhirpath to the tree, each sub-part of the fhirpath representing a node of 
+        """add splitted_fhirpath to the tree, each sub-part of the fhirpath representing a node of
         the tree. The interest is that if 2 fhirpaths share the same first sub-fhirpaths then they
         will share the same first nodes of the tree
 
@@ -330,15 +330,15 @@ class Tree:
         self.graph.add_edges_from(edges)
 
     def parse_fhirpaths(self):
-        """transforms each expression that corresponds to a sub fhirpath of a node into a parsed 
+        """transforms each expression that corresponds to a sub fhirpath of a node into a parsed
         version used by the fhirpath.js library.
         """
         for node in nx.dfs_preorder_nodes(self.graph, self.root):
             node.parsed_fhirpath = parse_fhirpath(node.fhirpath)
 
     def simplify_tree(self):
-        """This function, executed once all the fhirpaths have been added, allows to reduce the 
-        tree. If a node has only one successor node and if they are tagged with exactly the same 
+        """This function, executed once all the fhirpaths have been added, allows to reduce the
+        tree. If a node has only one successor node and if they are tagged with exactly the same
         column numbers (the same processes), then they will be merged.
         """
         tmp_root = self.root
