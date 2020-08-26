@@ -171,15 +171,32 @@ class ApiGetter(CallApi):
                 "the current page doesnt have an entry keyword, therefore an empty df is created"
             )
         else:
+            print()
+            # print("elements")
+            # print(self.elements.elements)
+
             for json_resource in response.results:
                 resource = json_resource["resource"]
                 elements = self.elements.elements.copy()
+                # print("forest_dict")
+                # print(self.elements.forest_dict)
+                # print("resource")
+                # print(resource)
 
                 data_array = fhirpath_processus_tree(self.elements.forest_dict, resource)
+                # print("data_array")
+                # print(data_array)
                 for element_value, element in zip(data_array, elements):
                     element.value = element_value
+                # print("elements")
+                # print(elements)
                 df = self._flatten_item_results(elements)
                 self.df = pd.concat([self.df, df])
+                print(self.df)
+            # for data_dict in data_dicts:
+            #     elements = from_dict(data_class=Elements, data=data_dict)
+            #     df = self._flatten_item_results(elements)
+            #     self.df = pd.concat([self.df, df])
         return response.next_url
 
     @timing
