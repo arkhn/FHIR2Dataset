@@ -3,14 +3,11 @@
 import re
 import logging
 import networkx as nx
-
 import matplotlib.pyplot as plt
 from collections import defaultdict
 from pprint import pformat
 from dataclasses import dataclass, field, asdict
 from typing import Type, List, Optional
-from collections import defaultdict
-
 
 from fhir2dataset.visualization_tools import custom_repr
 from fhir2dataset.fhirpath import parse_fhirpath
