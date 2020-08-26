@@ -11,7 +11,7 @@ def timing(f):
         ts = time()
         result = f(*args, **kw)
         te = time()
-        logger.debug(f"func:{f.__qualname__}\nargs:{args},\nkargs:{kw}\ntook: {te-ts:2.6f} sec")
+        logger.debug(f"func:{f.__qualname__}\ntook: {te-ts:2.6f} sec")
         return result
 
     return wrap
