@@ -1,6 +1,7 @@
 """classes representing the different types of information manipulated in FHIR2Dataset
 """
 import re
+import random
 import logging
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -141,17 +142,14 @@ class SearchParameters:
                 )
 
 
-@dataclass(eq=True)
+@dataclass(eq=True, frozen=True)
 class Node:
     """Modeling a node of a process tree
     """
 
     fhirpath: str
     index: str
-    parsed_fhirpath: str = None
-
-    def __hash__(self):
-        return hash(self.fhirpath) ^ hash(self.index)
+    previous_node_hash: int = 0
 
 
 def break_parenthesis(exp: str):
@@ -205,20 +203,17 @@ def split_fhirpath(fhirpath: str) -> List[Node]:
                 tmp_word = ""
     if num_or != 0:
         tmps_list = [fhirpath]
-    node_list = [Node(fhirpath, str(idx)) for idx, fhirpath in enumerate(tmps_list)]
+
+    node_list = []
+    node = None
+    for idx, fhirpath in enumerate(tmps_list):
+        if node:
+            node = Node(fhirpath, str(idx), hash(node))
+        else:
+            node = Node(fhirpath, str(idx))
+        node_list.append(node)
     logger.debug(f"the fhirpath: {fhirpath} is parsed in {[node.fhirpath for node in node_list]}")
     return node_list
-
-
-def show_tree(graph, number):
-    plt.figure(figsize=(5, 5))
-    layout = nx.spring_layout(graph)
-    labels = nx.get_node_attributes(graph, "column_idx")
-    for key, fhirpath in labels.items():
-        labels[key] = f"{key.fhirpath}\n{fhirpath}"
-    nx.draw_networkx(graph, labels=labels, pos=layout)
-
-    plt.savefig(f"{number}.png")
 
 
 class Forest:
@@ -282,6 +277,7 @@ class Forest:
             for node in nodes:
                 nodes_dict[str(hash(node))] = asdict(node)
                 nodes_dict[str(hash(node))]["column_idx"] = nodes[node]["column_idx"]
+                nodes_dict[str(hash(node))]["parsed_fhirpath"] = nodes[node]["parsed_fhirpath"]
 
             edges_array = []
             for edge in edges:
@@ -334,7 +330,7 @@ class Tree:
         version used by the fhirpath.js library.
         """
         for node in nx.dfs_preorder_nodes(self.graph, self.root):
-            node.parsed_fhirpath = parse_fhirpath(node.fhirpath)
+            self.graph.nodes[node]["parsed_fhirpath"] = parse_fhirpath(node.fhirpath)
 
     def simplify_tree(self):
         """This function, executed once all the fhirpaths have been added, allows to reduce the
@@ -382,3 +378,89 @@ class Tree:
                 previous_node_created_new_graph = None
         self.graph = new_graph
         self.root = final_root
+
+
+def hierarchy_pos(G, root=None, width=1.0, vert_gap=0.2, vert_loc=0, xcenter=0.5):
+
+    """
+    From Joel's answer at https://stackoverflow.com/a/29597209/2966723.  
+    Licensed under Creative Commons Attribution-Share Alike 
+
+    If the graph is a tree this will return the positions to plot this in a 
+    hierarchical layout.
+
+    G: the graph (must be a tree)
+
+    root: the root node of current branch 
+    - if the tree is directed and this is not given, 
+      the root will be found and used
+    - if the tree is directed and this is given, then 
+      the positions will be just for the descendants of this node.
+    - if the tree is undirected and not given, 
+      then a random choice will be used.
+
+    width: horizontal space allocated for this branch - avoids overlap with other branches
+
+    vert_gap: gap between levels of hierarchy
+
+    vert_loc: vertical location of root
+
+    xcenter: horizontal location of root
+    """
+    if not nx.is_tree(G):
+        raise TypeError("cannot use hierarchy_pos on a graph that is not a tree")
+
+    if root is None:
+        if isinstance(G, nx.DiGraph):
+            root = next(
+                iter(nx.topological_sort(G))
+            )  # allows back compatibility with nx version 1.11
+        else:
+            root = random.choice(list(G.nodes))
+
+    def _hierarchy_pos(
+        G, root, width=1.0, vert_gap=0.2, vert_loc=0, xcenter=0.5, pos=None, parent=None
+    ):
+        """
+        see hierarchy_pos docstring for most arguments
+
+        pos: a dict saying where all nodes go if they have been assigned
+        parent: parent of this branch. - only affects it if non-directed
+
+        """
+
+        if pos is None:
+            pos = {root: (xcenter, vert_loc)}
+        else:
+            pos[root] = (xcenter, vert_loc)
+        children = list(G.neighbors(root))
+        if not isinstance(G, nx.DiGraph) and parent is not None:
+            children.remove(parent)
+        if len(children) != 0:
+            dx = width / len(children)
+            nextx = xcenter - width / 2 - dx / 2
+            for child in children:
+                nextx += dx
+                pos = _hierarchy_pos(
+                    G,
+                    child,
+                    width=dx,
+                    vert_gap=vert_gap,
+                    vert_loc=vert_loc - vert_gap,
+                    xcenter=nextx,
+                    pos=pos,
+                    parent=root,
+                )
+        return pos
+
+    return _hierarchy_pos(G, root, width, vert_gap, vert_loc, xcenter)
+
+
+def show_tree(graph, number=None):
+    plt.figure(figsize=(5, 5))
+    layout = hierarchy_pos(graph)
+    labels = nx.get_node_attributes(graph, "column_idx")
+    for key, fhirpath in labels.items():
+        labels[key] = f"{key.fhirpath}\n{fhirpath}"
+    nx.draw_networkx(graph, labels=labels, pos=layout)
+    plt.show()
