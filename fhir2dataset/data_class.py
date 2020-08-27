@@ -204,15 +204,20 @@ def split_fhirpath(fhirpath: str) -> List[Node]:
     if num_or != 0:
         tmps_list = [fhirpath]
 
+    node_list = _create_node_list(tmps_list)
+    logger.debug(f"the fhirpath: {fhirpath} is parsed in {[node.fhirpath for node in node_list]}")
+    return node_list
+
+
+def _create_node_list(sub_fhirpaths: List[str]):
     node_list = []
     node = None
-    for idx, fhirpath in enumerate(tmps_list):
+    for idx, fhirpath in enumerate(sub_fhirpaths):
         if node:
             node = Node(fhirpath, str(idx), hash(node))
         else:
             node = Node(fhirpath, str(idx))
         node_list.append(node)
-    logger.debug(f"the fhirpath: {fhirpath} is parsed in {[node.fhirpath for node in node_list]}")
     return node_list
 
 
@@ -383,20 +388,20 @@ class Tree:
 def hierarchy_pos(G, root=None, width=1.0, vert_gap=0.2, vert_loc=0, xcenter=0.5):
 
     """
-    From Joel's answer at https://stackoverflow.com/a/29597209/2966723.  
-    Licensed under Creative Commons Attribution-Share Alike 
+    From Joel's answer at https://stackoverflow.com/a/29597209/2966723.
+    Licensed under Creative Commons Attribution-Share Alike
 
-    If the graph is a tree this will return the positions to plot this in a 
+    If the graph is a tree this will return the positions to plot this in a
     hierarchical layout.
 
     G: the graph (must be a tree)
 
-    root: the root node of current branch 
-    - if the tree is directed and this is not given, 
+    root: the root node of current branch
+    - if the tree is directed and this is not given,
       the root will be found and used
-    - if the tree is directed and this is given, then 
+    - if the tree is directed and this is given, then
       the positions will be just for the descendants of this node.
-    - if the tree is undirected and not given, 
+    - if the tree is undirected and not given,
       then a random choice will be used.
 
     width: horizontal space allocated for this branch - avoids overlap with other branches
@@ -460,7 +465,7 @@ def show_tree(graph, number=None):
     plt.figure(figsize=(5, 5))
     layout = hierarchy_pos(graph)
     labels = nx.get_node_attributes(graph, "column_idx")
-    for key, fhirpath in labels.items():
-        labels[key] = f"{key.fhirpath}\n{fhirpath}"
+    for key, column_idx in labels.items():
+        labels[key] = f"{key.fhirpath}\n{column_idx}"
     nx.draw_networkx(graph, labels=labels, pos=layout)
     plt.show()
