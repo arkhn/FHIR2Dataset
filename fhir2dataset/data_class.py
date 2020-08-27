@@ -35,7 +35,7 @@ class Element:
 
     col_name: str
     fhirpath: str
-    goal: str = field(default="select",)
+    goal: str = field(default="select",)  # select, where or join
     value: Optional[list] = field(default=None,)
     concat_type: Optional[str] = field(default="cell",)
     search_parameter: Optional[SearchParameter] = field(default=None,)
