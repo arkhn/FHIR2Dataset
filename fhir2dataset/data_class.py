@@ -48,6 +48,12 @@ class Elements:
 
     elements: List[Element] = field(default_factory=list)
 
+    def get_element(self, i):
+        return self.elements[i]
+
+    def index(self, element):
+        return self.elements.index(element)
+
     def append(self, x):
         self.elements.append(x)
 

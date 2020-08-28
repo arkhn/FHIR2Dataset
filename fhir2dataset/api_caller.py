@@ -3,10 +3,12 @@ import requests
 import logging
 from itertools import product
 from typing import Type
+import networkx as nx
+import numpy as np
 
 from fhir2dataset.timer import timing
 from fhir2dataset.fhirpath import fhirpath_processus_tree
-from fhir2dataset.data_class import Elements
+from fhir2dataset.data_class import Elements, Forest, Tree, Element, Node
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +148,8 @@ class ApiGetter(CallApi):
         next_url = self.url
         while next_url:
             next_url = self.get_next(next_url)
+        self.clean_join_columns()
+        logger.info(f"df :{self.df}")
 
     @timing
     def get_next(self, next_url):
@@ -232,3 +236,125 @@ class ApiGetter(CallApi):
         for element in self.elements.elements:
             data[element.col_name] = []
         return pd.DataFrame(data)
+
+    def compute_degres(self, element: Type[Element]):
+        """input : Element element
+           output : dict_degre { keys : columns indices, values : degres between the element and the join element } dictionnary containing degres between element and the other element of the tree
+        """
+        dict_degre = dict()
+        logger.info(f"a join element is :{element}")
+        i = self.elements.index(element)
+        for root, tree in self.elements.forest.trees.items():
+            if i in tree.graph.nodes[root]["column_idx"]:
+                logger.info(f"a tree has been found")
+                dict_nodes = self.find_node(tree)
+                node_join = dict_nodes[i]
+                for idx, node in dict_nodes.items():
+                    dict_degre[idx] = self.compute_degres_nodes(tree, node, node_join)
+                dict_degre[i] = max(dict_degre[key] for key in dict_degre.keys())
+                logger.info(f"dict_degre[i] vaut {dict_degre[i]}")
+                if dict_degre[i] == 0:
+                    dict_degre[i] = 1
+        return dict_degre
+
+    def find_node(self, tree: Type[Tree]):
+        """associates each element of the tree to the last node where it goes
+        """
+        dict_nodes = dict()
+        for node in nx.dfs_preorder_nodes(tree.graph, tree.root):
+            for idx in tree.graph.nodes[node]["column_idx"]:
+                dict_nodes[idx] = node
+        return dict_nodes
+
+    def compute_degres_nodes(self, tree: Type[Tree], node: Type[Node], node_join: Type[Node]):
+        node_ancestor = nx.lowest_common_ancestor(tree.graph, node, node_join)
+        return nx.shortest_path_length(tree.graph, tree.root, node_ancestor)
+
+    def check_other_dict(self, elements, cols_dict, degres_dict, i, lst_cols):
+        for j in range(i + 1, len(elements)):
+            element2 = elements[j]
+            cols2 = cols_dict[element2]
+            for col in lst_cols:
+                if col in cols2:
+                    index = cols2.index(col)
+                    degres_dict[element2][index] = max(degres_dict[element2][index] - 1, 0)
+        return degres_dict
+
+    def compute_lst_cols(self, degres, cols, somme):
+        lst_cols = []
+        n = len(cols)
+        for j in range(n):
+            if degres[j] > 0:
+                if isinstance(self.df[cols[j]].iloc[0], list):
+                    lst_cols.append(cols[j])
+                    degres[j] = degres[j] - 1
+                else:
+                    degres[j] = degres[j] - 1
+                    somme = somme - 1
+        return (lst_cols, degres, somme)
+
+    def clean_join_columns(self):
+        """unnest join columns to allow the join 
+        - computes the degre (number of common nodes) between the join node(s) and all the other nodes :
+            1. Retrieves all join element of the current resource
+            2. Finds the tree containing the join element
+            3. Computes the degre between the join element and the other elements of the tree 
+        - for each dictionnary created ie each join element, calls explode(self.df,lst_cols) 
+        explode unnest the dataframe for columns nested to element join
+        """
+        degres_dict = dict()
+        cols_dict = dict()
+        elements = []
+        for element in self.elements.get_subset_elements(goal="join"):
+            dict_degre = self.compute_degres(element)
+            if dict_degre:
+                cols = [self.elements.get_element(i).col_name for i in dict_degre.keys()]
+                degres = [dict_degre[i] for i in dict_degre.keys()]
+                degres_dict[element.col_name] = degres
+                cols_dict[element.col_name] = cols
+                elements.append(element.col_name)
+
+        for i in range(len(elements)):
+            element = elements[i]
+            degres = degres_dict[element]
+            cols = cols_dict[element]
+            somme = 0
+            for degre in degres:
+                somme += degre
+            logger.info(f"the sum of degres is {somme}")
+            while somme > 0:
+                lst_cols, degres, somme = self.compute_lst_cols(degres, cols, somme)
+                logger.info(f"the list of columns nested to the join element are {lst_cols}")
+                if lst_cols:
+                    if i < len(elements) - 1:
+                        degres_dict = self.check_other_dict(
+                            elements, cols_dict, degres_dict, i, lst_cols
+                        )
+                    self.df = self.explode(self.df, lst_cols)
+                    somme = somme - len(lst_cols)
+
+    def explode(self, df, lst_cols):
+        # all columns except `lst_cols`
+        idx_cols = df.columns.difference(lst_cols)
+
+        lens = len(df[lst_cols[0]].iloc[0])
+
+        dic = self.to_list(df, lst_cols)
+
+        return (
+            pd.DataFrame({col: np.repeat(df[col].values, lens) for col in idx_cols})
+            .assign(**{col: dic[col] for col in lst_cols})
+            .loc[:, df.columns]
+        )
+
+    def to_list(self, df, lst_cols):
+        """explode the lists to rows 
+        """
+        dico = dict()
+        for col in lst_cols:
+            dico[col] = []
+        for index, row in df.iterrows():
+            for col in lst_cols:
+                for element in row[col]:
+                    dico[col].append(element)
+        return dico

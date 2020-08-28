@@ -141,9 +141,9 @@ class GraphQuery:
                         resource_type=type_parent, search_param=searchparam_parent,
                     )
                     if " | " in fhirpath_searchparam:
-                        fhirpath_ref = f"(({fhirpath_searchparam}).reference)"
+                        fhirpath_ref = f"({fhirpath_searchparam}).reference"
                     else:
-                        fhirpath_ref = f"({fhirpath_searchparam}.reference)"
+                        fhirpath_ref = f"{fhirpath_searchparam}.reference"
 
                     self.resources_alias_info[alias_parent].elements.append(
                         Element(
