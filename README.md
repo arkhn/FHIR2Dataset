@@ -23,7 +23,7 @@ pip install -r requirements.txt
 npm install --prefix ./fhir2dataset/metadata
 ```
 
-For usage, refer to this [turorial](https://htmlpreview.github.io/?https://github.com/arkhn/FHIR2Dataset/blob/query_tests/examples/tutorial.html) and then this [Jupyer Notebook](examples/example.ipynb)
+For usage, refer to this [tutorial](https://htmlpreview.github.io/?https://github.com/arkhn/FHIR2Dataset/blob/query_tests/examples/tutorial.html) and then this [Jupyter Notebook](examples/example.ipynb)
 
 ## Getting started
 
@@ -141,7 +141,7 @@ pre-commit clean
 
 ## Publish
 
-First, you need to have `twine` installedd
+First, you need to have `twine` installed
 
 ```
 pip install --user --upgrade twine
