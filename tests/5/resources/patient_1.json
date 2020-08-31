@@ -1,17 +1,18 @@
 {
-  "id": "frt2",  
-  "name": [
-      {
-        "use": "official",
-        "family": "Smith",
-        "given": [
-          "Darcy"
-        ]
-      }
+    "id": "frt2",
+    "name": [
+        {
+            "use": "official",
+            "family": "Smith",
+            "given": ["Darcy"]
+        },
+        {
+            "use": "nickname",
+            "family": "Smth",
+            "given": ["DD", "Mme D."]
+        }
     ],
     "gender": "female",
     "birthDate": "1976-01-01",
     "resourceType": "Patient"
-  }
-
-  
+}

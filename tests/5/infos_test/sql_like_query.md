@@ -1,4 +1,4 @@
-SELECT patient.family, patient.birthdate, patient.id, practitioner.family, practitioner.address, practitioner.id, allergy.code, allergy.id, condition.code, condition.severity, condition.id
+SELECT patient.Patient.name.family,patient.Patient.name.given,patient.Patient.birthDate,patient.Patient.id,practitioner.Practitioner.name.family,practitioner.Practitioner.address.use,practitioner.Practitioner.address.line,practitioner.Practitioner.address.city,practitioner.Practitioner.id,allergy.AllergyIntolerance.code.coding.display,allergy.AllergyIntolerance.id,condition.Condition.code.coding.display,condition.Condition.severity.coding.display,condition.Condition.id
 
 FROM AllergyIntolerance AS allergy
 INNER JOIN Patient AS patient ON allergy.patient = patient.id
