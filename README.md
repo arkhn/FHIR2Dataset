@@ -1,6 +1,6 @@
 # FHIR2Dataset
 
-Transform FHIR to dataset for ML applications
+Transform FHIR into datasets
 
 ## FHIR2Dataset in Detail
 
