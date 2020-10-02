@@ -82,11 +82,16 @@ class Parser:
         return re.split(split_mask_clauses, sql_string)
 
     def __to_dict(self) -> dict:
-        config = {"from": dict(self.__from), "select": dict(self.__select), "where": dict(self.__where), "join": {
-            "inner": dict(self.__inner_join),
-            "child": dict(self.__child_join),
-            "parent": dict(self.__parent_join)
-        }}
+        config = {
+            "from": dict(self.__from),
+            "select": dict(self.__select),
+            "where": dict(self.__where),
+            "join": {
+                "inner": dict(self.__inner_join),
+                "child": dict(self.__child_join),
+                "parent": dict(self.__parent_join)
+            }
+        }
         config["join"] = {key: value for key, value in config["join"].items() if value}
         return {key: value for key, value in config.items() if value}
 
