@@ -4,7 +4,7 @@
     "description": "",
     "main": "forest.js",
     "dependencies": {
-        "fhirpath": "^2.3.0",
+        "fhirpath": "2.4.0",
         "digraphe": "^1.0.5",
         "patch-package": "^6.2.2"
     },
