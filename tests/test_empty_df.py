@@ -5,14 +5,15 @@ import logging
 import pytest
 
 from fhir2dataset.query import Query
-from tools import delete_resource_test
+from tests.tools import delete_resource_test
 
 log_format = "[%(asctime)s] [%(levelname)s] - %(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
 
 
 @pytest.mark.parametrize(
-    "dirname, fhir_api_url", [("tests/empty", "http://hapi.fhir.org/baseR4/"),],
+    "dirname, fhir_api_url",
+    [("tests/empty", "http://hapi.fhir.org/baseR4/")],
 )
 def test_dataframe_empty(dirname, fhir_api_url):
     delete_resource_test(dirname, fhir_api_url=fhir_api_url)

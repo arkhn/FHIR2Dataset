@@ -6,7 +6,6 @@ import logging
 from subprocess import Popen, PIPE
 from typing import List
 
-from fhir2dataset.timer import timing
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,6 @@ wrapper = """
 """
 
 
-@timing
 def execute(code: str, args: list = None, g: dict = None):
     """Function to execute code written in javascript
 
@@ -62,7 +60,7 @@ def execute(code: str, args: list = None, g: dict = None):
     path = os.path.join(os.path.dirname(__file__), "metadata")
 
     prc = Popen(
-        "node", shell=False, stderr=PIPE, stdout=PIPE, stdin=PIPE, cwd=path, encoding="utf-8",
+        "node", shell=False, stderr=PIPE, stdout=PIPE, stdin=PIPE, cwd=path, encoding="utf-8"
     )
 
     result_keyword = "--FHIRPATH--"
@@ -81,15 +79,48 @@ def execute(code: str, args: list = None, g: dict = None):
         outs = outs["result"]
         return outs
     elif "error" in outs:
-        raise Exception((outs.get("error"), errs,))
+        raise Exception((outs.get("error"), errs))
     else:
         raise Exception(errs)
 
 
-@timing
+def parse_fhirpath(fhirpath: str):
+    result = execute(
+        """function test(fhirpath){
+        const fhirpath_module = require("fhirpath");
+        return JSON.stringify(fhirpath_module.parse(fhirpath))
+    }
+    """,
+        args=[fhirpath],
+    )
+    return result
+
+
+def fhirpath_processus_tree(forest_dict, resource):
+    result = execute(
+        """function test(args){
+            const graph = require('./forest')
+            forest_dict = args[0]
+            resource = args[1]
+            let result = []
+            for (const [root_id, tree_raw] of Object.entries(forest_dict)) {
+                nodes_dict_raw = tree_raw["nodes_dict"]
+                edges_array_raw = tree_raw["edges_array"]
+                graph.compute_fhirpaths(nodes_dict_raw, edges_array_raw, root_id, resource, result)
+            }
+            return result
+        }
+        """,
+        args=[[forest_dict, resource]],
+    )
+    return result
+
+
 def multiple_search_dict(resources: list, elements: dict) -> List[dict]:
-    """Returns the updated element instance on each element in the Resources list. These updated instances are stored in a list which is the element returned by the function.
-    The update consists for each element of the instance elements in the application of the fhirpath (element.fhirpath) on an instance of the Resources list and the storage of the response in element.value.
+    """Returns the updated element instance on each element in the Resources list. These updated
+    instances are stored in a list which is the element returned by the function.
+    The update consists for each element of the instance elements in the application of the fhirpath
+    (element.fhirpath) on an instance of the Resources list and the storage of the response in element.value.
 
     Args:
         resources (list): list composed of several instances of resources

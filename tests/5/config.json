@@ -1,9 +1,19 @@
 {
     "select": {
-        "patient": ["family", "birthdate", "id"],
-        "practitioner": ["family", "address", "id"],
-        "allergy": ["code", "id"],
-        "condition": ["code", "severity", "id"]
+        "patient": ["Patient.name.family", "Patient.name.given", "Patient.birthDate", "Patient.id"],
+        "practitioner": [
+            "Practitioner.name.family",
+            "Practitioner.address.use",
+            "Practitioner.address.line",
+            "Practitioner.address.city",
+            "Practitioner.id"
+        ],
+        "allergy": ["AllergyIntolerance.code.coding.display", "AllergyIntolerance.id"],
+        "condition": [
+            "Condition.code.coding.display",
+            "Condition.severity.coding.display",
+            "Condition.id"
+        ]
     },
     "from": {
         "allergy": "AllergyIntolerance",

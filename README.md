@@ -1,16 +1,28 @@
-# FHIR2Dataset
+# FHIR Query
 
-Transform FHIR to dataset for ML applications
+Query any FHIR api with SQL.
 
-## FHIR2Dataset in Detail
+## Usage
 
-This repo allows to make a SQL query on a FHIR API and to retrieve tabular data.
+```python
+import fhir2dataset as query
+sql_query = "SELECT p.name.family, p.address.city FROM Patient AS p WHERE p.birthdate=1944 AND p.gender = 'female'"
+query.sql(sql_query)
+```
+```
+100%|██████████| 1000/1000 [00:01<00:00, 162.94it/s]
 
-_FHIR2Dataset is still under active development!_
+    p.name.family             p.address.city
+--------------------------------------------
+0   [Hegmann834, Schumm995]   [Los Angeles]
+1   [Wilderman619, Wolff180]  [Chicago]
+2   [Smid, Smid]              [Paris]
+...
+```
+
+FHIR Query is still under active development, feedback and contributions are welcome!
 
 ## Installation
-
-### With pip
 
 `pip install fhir2dataset`
 
@@ -29,19 +41,11 @@ For usage, refer to this [tutorial](https://htmlpreview.github.io/?https://githu
 
 Two possible ways to enter the query : as a SQL query or as a JSON config file
 
-**SQL query as entry**
+**SQL query**
+
 
 ```
-from fhir2dataset import Query, FHIRRules, FHIR2DatasetParser
-
-fhir_api_url = 'http://hapi.fhir.org/baseR4/'
-fhir_rules = FHIRRules(fhir_api_url=fhir_api_url)
-query = Query(fhir_api_url, fhir_rules=fhir_rules)
-parser = FHIR2DatasetParser()
-```
-
-```
-sql_like_query = "SELECT (alias n°1).a, (alias n°1).b, (alias n°1).c, (alias n°2).a FROM (Resource type 1) as (alias n°1)
+sql_query = "SELECT (alias n°1).a, (alias n°1).b, (alias n°1).c, (alias n°2).a FROM (Resource type 1) as (alias n°1)
 INNER JOIN (Resource type 2) as (alias n°2)
 ON (alias n°1).d = (alias n°2)
 INNER JOIN (Resource type 3) as (alias n°3)
@@ -52,13 +56,11 @@ AND (alias n°3).b = "value 4""
 ```
 
 ```
-config_from_parser = parser.parse(sql_like_query)
-query.from_config(config_from_parser)
-query.execute()
-df = query.main_dataframe
+import fhir2dataset
+fhir2dataset.sql(sql_query)
 ```
 
-**JSON config file as entry**
+**JSON config file**
 
 ```
 from fhir2dataset.query import Query
@@ -137,19 +139,4 @@ If you ever want to delete them you just have to do:
 
 ```
 pre-commit clean
-```
-
-## Publish
-
-First, you need to have `twine` installed
-
-```
-pip install --user --upgrade twine
-```
-
-Make sure you have bumped the version number in `setup.py`, then run the following:
-
-```
-python setup.py sdist bdist_wheel
-python -m twine upload dist/*
 ```

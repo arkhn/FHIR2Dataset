@@ -1,16 +1,17 @@
+import numpy as np
 import pandas as pd
 import requests
 import logging
 from itertools import product
+import multiprocessing
 from typing import Type
-from dataclasses import asdict
-from dacite import from_dict
 
-from fhir2dataset.timer import timing
-from fhir2dataset.fhirpath import multiple_search_dict
+# from fhir2dataset.fhirpath import fhirpath_processus_tree
 from fhir2dataset.data_class import Elements
 
 logger = logging.getLogger(__name__)
+
+PAGE_SIZE = 300  # Return maximum 300 entities per query
 
 
 def concat_cell(dataset, cols_name, element):
@@ -43,9 +44,16 @@ def concat_row(dataset, cols_name, element):
 MAPPING_CONCAT = {"cell": concat_cell, "col": concat_col, "row": concat_row}
 
 
+def process_function(token, url):
+    """Function called by the different processes when doing parallel querying
+    of the API"""
+    auth = BearerAuth(token)
+    response = requests.get(url, auth=auth)
+    return response.json()
+
+
 class Response:
-    """class that contains the data retrieves from an url
-    """
+    """class that contains the data retrieves from an url"""
 
     def __init__(self):
         self.status_code = None
@@ -54,16 +62,14 @@ class Response:
 
 
 class CallApi:
-    """generic class that manages the sending and receiving of a url request to a FHIR API.
-    """
+    """generic class that manages the sending and receiving of a url request to a FHIR API."""
 
-    @timing
     def __init__(self, url: str, token: str = None):
         self.url = url
         self.total = None
         self.auth = BearerAuth(token)
+        self.parallel_requests = False
 
-    @timing
     def get_response(self, url: str):
         """sends the request and stores the elements of the response
 
@@ -73,29 +79,48 @@ class CallApi:
         if self.total is None:
             self.total = self._get_count(url)
             logger.info(f"there is {self.total} matching resources for {url}")
-        if self.total != 0:
-            # response_url contains the data returned by url
-            response_url = Response()
-            response = self._get_bundle_response(url)
-            response_url.status_code = response.status_code
-            if "entry" in response.json():
-                # if no resources match the request, response_url.results = None
-                logger.debug(f"status code of KeyError response:\n{response.status_code}")
-                logger.debug(f"content of the KeyError response:\n{response.content}")
-                response_url.results = response.json()["entry"]
-                links = response.json().get("link", [])
-                next_page = [l["url"] for l in links if l["relation"] == "next"]
-                if len(next_page) > 0:
-                    response_url.next_url = next_page[0]
-                else:
-                    logger.info("no next url was found")
-            else:
-                logger.info(f"Got a KeyError - There's no entry key in the json data we received.")
+
+        # response_url contains the data returned by url
+        response_url = Response()
+        if url[-1] == "?":
+            url = f"{url}_count={PAGE_SIZE}"
         else:
-            response_url = Response()
+            url = f"{url}&_count={PAGE_SIZE}"
+        response = self._get_bundle_response(url)
+        response_url.status_code = response.status_code
+        if "entry" in response.json():
+            # if no resources match the request, response_url.results = None
+            logger.debug(f"status code of KeyError response:\n{response.status_code}")
+            logger.debug(f"content of the KeyError response:\n{response.content}")
+            response_url.results = response.json()["entry"]
+            links = response.json().get("link", [])
+            next_page = [l["url"] for l in links if l["relation"] == "next"]
+            if len(next_page) > 0:
+                response_url.next_url = next_page[0]
+            else:
+                logger.info("no next url was found")
+        else:
+            logger.info(f"Got a KeyError - There's no entry key in the json data we received.")
+
         return response_url
 
-    @timing
+    def process_response(self, response):
+        """Put the json response in a Response object
+
+        Arguments:
+            response {dict} -- A dict with the jsonified response
+        """
+        # response_url contains the data returned by url
+        response_url = Response()
+        response_url.status_code = 200
+        if "entry" in response:
+            response_url.results = response["entry"]
+        else:
+            logger.info(f"Got a KeyError - There's no entry key in the json data we received.")
+            logger.info(response)
+
+        return response_url
+
     def _get_count(self, url):
         if url[-1] == "?":
             url_number = f"{url}_summary=count"
@@ -109,7 +134,6 @@ class CallApi:
             logger.warning(f"content of the failing response:\n{response.content}")
         return count
 
-    @timing
     def _get_bundle_response(self, url):
         logger.info(f"Get {url}")
         return requests.get(url, auth=self.auth)
@@ -126,33 +150,69 @@ class BearerAuth(requests.auth.AuthBase):
 
 
 class ApiGetter(CallApi):
-    """class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
+    """class that manages the sending and receiving of a url request to a FHIR API and then
+    transforms the answer into a tabular format
 
     Attributes:
-        elements (Elements): instance of the FHIR2Dataset Elements class that allows to list all the elements that need to be retrieved from the bundles returned in response to the request url
+        elements (Elements): instance of the FHIR2Dataset Elements class that allows to list
+            all the elements that need to be retrieved from the bundles returned in response to
+            the request url
         df (pd.DataFrame): dataframe containing the elements to be recovered in tabular format
+        pbar : tqdm progress bar object
+        time_frac (int): total amount of time allocated to this Api call
     """  # noqa
 
-    @timing
     def __init__(
-        self, url: str, elements: Type[Elements], token: str = None,
+        self, url: str, elements: Type[Elements], token: str = None, pbar=None, time_frac: int = 0
     ):
         CallApi.__init__(self, url, token)
         self.elements = elements
         self.df = self._init_data()
 
-    @timing
-    def get_all(self):
-        """collects all the data corresponding to the initial url request by calling the following pages
-        """  # noqa
-        next_url = self.url
-        while next_url:
-            next_url = self.get_next(next_url)
+        self.pbar = pbar
+        self.time_frac = time_frac
 
-    @timing
+    def get_all(self):
+        """collects all the data corresponding to the initial url request by calling the following pages"""  # noqa
+        if self.total is None:
+            self.total = self._get_count(self.url)
+            logger.info(f"there is {self.total} matching resources for {self.url}")
+            count_time = round(self.time_frac * 0.1)
+            self.pbar.update(count_time)
+            self.time_frac -= count_time
+
+        if self.total == 0:
+            return
+
+        number_calls = round(np.ceil(self.total / PAGE_SIZE))
+
+        urls = []
+        for i in range(number_calls):
+            urls.append(
+                (self.auth.token, f"{self.url}&_getpagesoffset={i*PAGE_SIZE}&_count={PAGE_SIZE}")
+            )
+
+        if self.parallel_requests:
+            p = multiprocessing.Pool()
+            responses = p.starmap(process_function, urls)
+            p.close()
+            self.pbar.update(self.time_frac)
+        else:
+            responses = []
+            # time is split between all urls
+            time_frac_per_url = round(self.time_frac / number_calls)
+            for url in urls:
+                responses.append(process_function(*url))
+                self.pbar.update(time_frac_per_url)
+            # fix rounding error
+            self.pbar.update(self.time_frac - time_frac_per_url * number_calls)
+
+        for response in responses:
+            response = self.process_response(response)
+            _ = self._get_data(response)
+
     def get_next(self, next_url):
-        """retrieves the responses contained in the following pages and stores the data in data attribute
-        """  # noqa
+        """retrieves the responses contained in the following pages and stores the data in data attribute"""  # noqa
         if next_url:
             response = self.get_response(next_url)
             next_url = self._get_data(response)
@@ -161,11 +221,27 @@ class ApiGetter(CallApi):
             logger.info("There is no more pages")
             return None
 
-    @timing
+    @classmethod
+    def rgetattr(cls, obj, keys):
+        """
+        Recursively get an element in nested dictionaries
+
+        Example:
+            >>> rgetattr(obj, ['attr1', 'attr2', 'attr3'])
+            [Out] obj[attr1][attr2][attr3]
+
+        """
+        if not isinstance(obj, list):
+            if len(keys) == 1:
+                return obj[keys[0]]
+            else:
+                first_key, *keys = keys
+                return cls.rgetattr(obj[first_key], keys)
+        else:
+            return [cls.rgetattr(o, keys) for o in obj]
+
     def _get_data(self, response: Type[Response]):
-        """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
-        """  # noqa
-        elements_empty = asdict(self.elements)
+        """retrieves the necessary information from the json instance of a resource and stores it in the data attribute"""  # noqa
         if not response.results:
             columns = [element.col_name for element in self.elements.elements]
             df = pd.DataFrame(columns=columns)
@@ -174,16 +250,38 @@ class ApiGetter(CallApi):
                 "the current page doesnt have an entry keyword, therefore an empty df is created"
             )
         else:
-            data_dicts = multiple_search_dict(
-                [json_resource["resource"] for json_resource in response.results], elements_empty
-            )
-            for data_dict in data_dicts:
-                elements = from_dict(data_class=Elements, data=data_dict)
-                df = self._flatten_item_results(elements)
-                self.df = pd.concat([self.df, df])
+            columns = [element.col_name for element in self.elements.elements]
+            filtered_resources = []
+            for json_resource in response.results:
+                resource = json_resource["resource"]
+                data_items = []
+                for element in self.elements.elements:
+                    fhirpath = element.fhirpath.replace("(", "").replace(")", "")
+                    sub_paths = fhirpath.split(".")
+                    if len(sub_paths) > 0 and sub_paths[0] == resource["resourceType"]:
+                        try:
+                            # Try to get recursively the keys from sub_paths[1:]
+                            data_item = ApiGetter.rgetattr(resource, sub_paths[1:])
+                        except KeyError:
+                            data_item = None
+                    elif fhirpath == "id":
+                        data_item = resource["id"]
+                    else:
+                        raise ValueError(f"Invalid fhirpath {fhirpath}")
+                    data_items.append(data_item)
+
+                filtered_resources.append(data_items)
+
+                # elements = self.elements.elements.copy()
+                # data_array = fhirpath_processus_tree(self.elements.forest_dict, resource)
+                # for element_value, element in zip(data_array, elements):
+                #     element.value = element_value
+                # df = self._flatten_item_results(elements)
+            df = pd.DataFrame(filtered_resources, columns=columns)
+            self.df = pd.concat([self.df, df])
+
         return response.next_url
 
-    @timing
     def _flatten_item_results(self, elements: Type[Elements]):
         """creates the tabular version of the elements given as input argument.
         For each element of elements, at least one column is added according to the following process.
@@ -194,13 +292,13 @@ class ApiGetter(CallApi):
             * col: len(element.value) column are created. Each column contains a single cell composed of an element from the element.value list.
 
         2. The second step is to produce the product of all possible combinations between columns.
-        For example, if at the end of step 1, the table is : 
+        For example, if at the end of step 1, the table is :
         Col_1 | Col_2 | Col_3
         pat_1 | Pete  | Ginger
         pat_1 | P.    | Ginger
               | Peter | G.
 
-        The table resulting from step 2 will be : 
+        The table resulting from step 2 will be :
         Col_1 | Col_2 | Col_3
         pat_1 | Pete  | Ginger
         pat_1 | Pete  | G.
@@ -218,7 +316,7 @@ class ApiGetter(CallApi):
         cols_name = []
         dataset = []
 
-        for element in elements.elements:
+        for element in elements:
             MAPPING_CONCAT[element.concat_type](dataset, cols_name, element)
 
         df = pd.DataFrame(list(product(*dataset)), columns=cols_name)
@@ -230,7 +328,7 @@ class ApiGetter(CallApi):
         Returns:
             dict -- dictionary described above
         """  # noqa
-        data = dict()
+        data = {}
         for element in self.elements.elements:
             data[element.col_name] = []
         return pd.DataFrame(data)
