@@ -180,7 +180,9 @@ class Parser:
                 len(condition_parsed) == 3
             ), f"The WHERE condition {where_condition} couldn't be parsed properly"
             alias, where_rule = re.split(r"\.", condition_parsed[0], 1)
-            value = re.search(r"^['\"](.*)['\"]$", condition_parsed[2]).group(1)
+            quotes_match = re.search(r"^['\"](.*)['\"]$", condition_parsed[2])
+            value = quotes_match.group(1) if quotes_match else condition_parsed[2]
+
             if condition_parsed[1] in PREFIX:
                 prefix = condition_parsed[1]
                 self.__where[alias][where_rule] = {prefix: value}
