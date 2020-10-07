@@ -1,5 +1,6 @@
 import pandas as pd
 import logging
+import tqdm
 
 from fhir2dataset.graphquery import GraphQuery
 from fhir2dataset.fhirrules_getter import FHIRRules
@@ -147,18 +148,22 @@ class Query:
         """  # noqa
         self.graph_query = GraphQuery(fhir_api_url=self.fhir_api_url, fhir_rules=self.fhir_rules)
         self.graph_query.execute(**self.config)
-        for resource_alias in self.graph_query.resources_alias_info.keys():
-            resource_alias_info = self.graph_query.resources_alias_info[resource_alias]
-            elements = resource_alias_info.elements
-            url_builder = URLBuilder(
-                fhir_api_url=self.fhir_api_url,
-                graph_query=self.graph_query,
-                main_resource_alias=resource_alias,
-            )
-            url = url_builder.compute()
-            call = ApiGetter(url=url, elements=elements, token=self.token)
-            call.get_all()
-            self.dataframes[resource_alias] = call.df
+        with tqdm.tqdm(total=1000) as pbar:
+            time_frac = round(1000 / len(self.graph_query.resources_alias_info))
+            for resource_alias in self.graph_query.resources_alias_info.keys():
+                resource_alias_info = self.graph_query.resources_alias_info[resource_alias]
+                elements = resource_alias_info.elements
+                url_builder = URLBuilder(
+                    fhir_api_url=self.fhir_api_url,
+                    graph_query=self.graph_query,
+                    main_resource_alias=resource_alias,
+                )
+                url = url_builder.compute()
+                call = ApiGetter(
+                    url=url, elements=elements, token=self.token, pbar=pbar, time_frac=time_frac
+                )
+                call.get_all()
+                self.dataframes[resource_alias] = call.df
         self._clean_columns()
         for resource_alias, dataframe in self.dataframes.items():
             logger.debug(f"{resource_alias} dataframe builded head - \n{dataframe.to_string()}")

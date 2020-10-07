@@ -71,7 +71,7 @@ class CallApi:
         self.url = url
         self.total = None
         self.auth = BearerAuth(token)
-        self.parallel_requests = True
+        self.parallel_requests = False
 
     @timing
     def get_response(self, url: str):
@@ -157,18 +157,28 @@ class BearerAuth(requests.auth.AuthBase):
 
 
 class ApiGetter(CallApi):
-    """class that manages the sending and receiving of a url request to a FHIR API and then transforms the answer into a tabular format
+    """class that manages the sending and receiving of a url request to a FHIR API and then
+    transforms the answer into a tabular format
 
     Attributes:
-        elements (Elements): instance of the FHIR2Dataset Elements class that allows to list all the elements that need to be retrieved from the bundles returned in response to the request url
+        elements (Elements): instance of the FHIR2Dataset Elements class that allows to list
+            all the elements that need to be retrieved from the bundles returned in response to
+            the request url
         df (pd.DataFrame): dataframe containing the elements to be recovered in tabular format
+        pbar : tqdm progress bar object
+        time_frac (int): total amount of time allocated to this Api call
     """  # noqa
 
     @timing
-    def __init__(self, url: str, elements: Type[Elements], token: str = None):
+    def __init__(
+        self, url: str, elements: Type[Elements], token: str = None, pbar=None, time_frac: int = 0
+    ):
         CallApi.__init__(self, url, token)
         self.elements = elements
         self.df = self._init_data()
+
+        self.pbar = pbar
+        self.time_frac = time_frac
 
     @timing
     def get_all(self):
@@ -189,8 +199,16 @@ class ApiGetter(CallApi):
             p = multiprocessing.Pool()
             responses = p.starmap(process_function, urls)
             p.close()
+            self.pbar.update(self.time_frac)
         else:
-            responses = [process_function(*url) for url in urls]
+            responses = []
+            # time is split between all urls
+            time_frac_per_url = round(self.time_frac / number_calls)
+            for url in urls:
+                responses.append(process_function(*url))
+                self.pbar.update(time_frac_per_url)
+            # fix rounding error
+            self.pbar.update(self.time_frac - time_frac_per_url * number_calls)
 
         for response in responses:
             response = self.process_response(response)
