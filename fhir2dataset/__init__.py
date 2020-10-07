@@ -6,10 +6,8 @@ import re
 
 
 def sql(sql_query):
-    parser = Parser()
-    config = parser.from_sql(sql_query)
-    query = Query()
-    query.from_config(config)
+    config = Parser().from_sql(sql_query)
+    query = Query().from_config(config)
     query.execute()
     df = query.main_dataframe
     df = df.reset_index(drop=True)
