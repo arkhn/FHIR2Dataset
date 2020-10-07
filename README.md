@@ -35,7 +35,7 @@ pip install -r requirements.txt
 npm install --prefix ./fhir2dataset/metadata
 ```
 
-For usage, refer to this [turtrial](https://htmlpreview.github.io/?https://github.com/arkhn/FHIR2Dataset/blob/query_tests/examples/tutorial.html) and then this [Jupyter Notebook](examples/example.ipynb)
+For usage, refer to this [tutorial](https://htmlpreview.github.io/?https://github.com/arkhn/FHIR2Dataset/blob/query_tests/examples/tutorial.html) and then this [Jupyter Notebook](examples/example.ipynb)
 
 ## Getting started
 
