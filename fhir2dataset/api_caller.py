@@ -182,6 +182,9 @@ class ApiGetter(CallApi):
             self.pbar.update(count_time)
             self.time_frac -= count_time
 
+        if self.total == 0:
+            return
+
         number_calls = round(np.ceil(self.total / PAGE_SIZE))
 
         urls = []

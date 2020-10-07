@@ -5,7 +5,7 @@ import logging
 import pytest
 
 from fhir2dataset.query import Query
-from tools import delete_resource_test
+from tests.tools import delete_resource_test
 
 log_format = "[%(asctime)s] [%(levelname)s] - %(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
