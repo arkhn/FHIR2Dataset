@@ -134,6 +134,7 @@ class Query:
             "where_dict": config.get("where", None),
             "join_dict": config.get("join", None),
         }
+        return self
 
     def execute(self, debug: bool = False):
         """Executes the complete query
