@@ -1,8 +1,10 @@
+import numpy as np
 import pandas as pd
 import requests
 import logging
 import functools
 from itertools import product
+import multiprocessing
 from typing import Type
 
 from fhir2dataset.timer import timing
@@ -10,6 +12,8 @@ from fhir2dataset.fhirpath import fhirpath_processus_tree
 from fhir2dataset.data_class import Elements
 
 logger = logging.getLogger(__name__)
+
+PAGE_SIZE = 300  # Return maximum 300 entities per query
 
 
 def concat_cell(dataset, cols_name, element):
@@ -42,6 +46,14 @@ def concat_row(dataset, cols_name, element):
 MAPPING_CONCAT = {"cell": concat_cell, "col": concat_col, "row": concat_row}
 
 
+def process_function(token, url):
+    """Function called by the different processes when doing parallel querying
+    of the API"""
+    auth = BearerAuth(token)
+    response = requests.get(url, auth=auth)
+    return response.json()
+
+
 class Response:
     """class that contains the data retrieves from an url"""
 
@@ -59,6 +71,7 @@ class CallApi:
         self.url = url
         self.total = None
         self.auth = BearerAuth(token)
+        self.parallel_requests = True
 
     @timing
     def get_response(self, url: str):
@@ -70,30 +83,47 @@ class CallApi:
         if self.total is None:
             self.total = self._get_count(url)
             logger.info(f"there is {self.total} matching resources for {url}")
-        if self.total != 0:
-            # response_url contains the data returned by url
-            response_url = Response()
-            if url[-1] == "?":
-                url = f"{url}_count=300"
-            else:
-                url = f"{url}&_count=300"
-            response = self._get_bundle_response(url)
-            response_url.status_code = response.status_code
-            if "entry" in response.json():
-                # if no resources match the request, response_url.results = None
-                logger.debug(f"status code of KeyError response:\n{response.status_code}")
-                logger.debug(f"content of the KeyError response:\n{response.content}")
-                response_url.results = response.json()["entry"]
-                links = response.json().get("link", [])
-                next_page = [l["url"] for l in links if l["relation"] == "next"]
-                if len(next_page) > 0:
-                    response_url.next_url = next_page[0]
-                else:
-                    logger.info("no next url was found")
-            else:
-                logger.info(f"Got a KeyError - There's no entry key in the json data we received.")
+
+        # response_url contains the data returned by url
+        response_url = Response()
+        if url[-1] == "?":
+            url = f"{url}_count={PAGE_SIZE}"
         else:
-            response_url = Response()
+            url = f"{url}&_count={PAGE_SIZE}"
+        response = self._get_bundle_response(url)
+        response_url.status_code = response.status_code
+        if "entry" in response.json():
+            # if no resources match the request, response_url.results = None
+            logger.debug(f"status code of KeyError response:\n{response.status_code}")
+            logger.debug(f"content of the KeyError response:\n{response.content}")
+            response_url.results = response.json()["entry"]
+            links = response.json().get("link", [])
+            next_page = [l["url"] for l in links if l["relation"] == "next"]
+            if len(next_page) > 0:
+                response_url.next_url = next_page[0]
+            else:
+                logger.info("no next url was found")
+        else:
+            logger.info(f"Got a KeyError - There's no entry key in the json data we received.")
+
+        return response_url
+
+    @timing
+    def process_response(self, response):
+        """Put the json response in a Response object
+
+        Arguments:
+            response {dict} -- A dict with the jsonified response
+        """
+        # response_url contains the data returned by url
+        response_url = Response()
+        response_url.status_code = 200
+        if "entry" in response:
+            response_url.results = response["entry"]
+        else:
+            logger.info(f"Got a KeyError - There's no entry key in the json data we received.")
+            logger.info(response)
+
         return response_url
 
     @timing
@@ -143,9 +173,28 @@ class ApiGetter(CallApi):
     @timing
     def get_all(self):
         """collects all the data corresponding to the initial url request by calling the following pages"""  # noqa
-        next_url = self.url
-        while next_url:
-            next_url = self.get_next(next_url)
+        if self.total is None:
+            self.total = self._get_count(self.url)
+            logger.info(f"there is {self.total} matching resources for {self.url}")
+
+        number_calls = round(np.ceil(self.total / PAGE_SIZE))
+
+        urls = []
+        for i in range(number_calls):
+            urls.append(
+                (self.auth.token, f"{self.url}&_getpagesoffset={i*PAGE_SIZE}&_count={PAGE_SIZE}")
+            )
+
+        if self.parallel_requests:
+            p = multiprocessing.Pool()
+            responses = p.starmap(process_function, urls)
+            p.close()
+        else:
+            responses = [process_function(*url) for url in urls]
+
+        for response in responses:
+            response = self.process_response(response)
+            _ = self._get_data(response)
 
     @timing
     def get_next(self, next_url):
