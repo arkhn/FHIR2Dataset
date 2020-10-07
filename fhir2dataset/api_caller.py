@@ -1,6 +1,7 @@
 import pandas as pd
 import requests
 import logging
+import functools
 from itertools import product
 from typing import Type
 
@@ -42,8 +43,7 @@ MAPPING_CONCAT = {"cell": concat_cell, "col": concat_col, "row": concat_row}
 
 
 class Response:
-    """class that contains the data retrieves from an url
-    """
+    """class that contains the data retrieves from an url"""
 
     def __init__(self):
         self.status_code = None
@@ -52,8 +52,7 @@ class Response:
 
 
 class CallApi:
-    """generic class that manages the sending and receiving of a url request to a FHIR API.
-    """
+    """generic class that manages the sending and receiving of a url request to a FHIR API."""
 
     @timing
     def __init__(self, url: str, token: str = None):
@@ -74,6 +73,10 @@ class CallApi:
         if self.total != 0:
             # response_url contains the data returned by url
             response_url = Response()
+            if url[-1] == "?":
+                url = f"{url}_count=300"
+            else:
+                url = f"{url}&_count=300"
             response = self._get_bundle_response(url)
             response_url.status_code = response.status_code
             if "entry" in response.json():
@@ -132,25 +135,21 @@ class ApiGetter(CallApi):
     """  # noqa
 
     @timing
-    def __init__(
-        self, url: str, elements: Type[Elements], token: str = None,
-    ):
+    def __init__(self, url: str, elements: Type[Elements], token: str = None):
         CallApi.__init__(self, url, token)
         self.elements = elements
         self.df = self._init_data()
 
     @timing
     def get_all(self):
-        """collects all the data corresponding to the initial url request by calling the following pages
-        """  # noqa
+        """collects all the data corresponding to the initial url request by calling the following pages"""  # noqa
         next_url = self.url
         while next_url:
             next_url = self.get_next(next_url)
 
     @timing
     def get_next(self, next_url):
-        """retrieves the responses contained in the following pages and stores the data in data attribute
-        """  # noqa
+        """retrieves the responses contained in the following pages and stores the data in data attribute"""  # noqa
         if next_url:
             response = self.get_response(next_url)
             next_url = self._get_data(response)
@@ -159,10 +158,28 @@ class ApiGetter(CallApi):
             logger.info("There is no more pages")
             return None
 
+    @classmethod
+    def rgetattr(cls, obj, keys):
+        """
+        Recursively get an element in nested dictionaries
+
+        Example:
+            >>> rgetattr(obj, ['attr1', 'attr2', 'attr3'])
+            [Out] obj[attr1][attr2][attr3]
+
+        """
+        if not isinstance(obj, list):
+            if len(keys) == 1:
+                return obj[keys[0]]
+            else:
+                first_key, *keys = keys
+                return cls.rgetattr(obj[first_key], keys)
+        else:
+            return [cls.rgetattr(o, keys) for o in obj]
+
     @timing
     def _get_data(self, response: Type[Response]):
-        """retrieves the necessary information from the json instance of a resource and stores it in the data attribute
-        """  # noqa
+        """retrieves the necessary information from the json instance of a resource and stores it in the data attribute"""  # noqa
         if not response.results:
             columns = [element.col_name for element in self.elements.elements]
             df = pd.DataFrame(columns=columns)
@@ -171,14 +188,36 @@ class ApiGetter(CallApi):
                 "the current page doesnt have an entry keyword, therefore an empty df is created"
             )
         else:
+            columns = [element.col_name for element in self.elements.elements]
+            filtered_resources = []
             for json_resource in response.results:
                 resource = json_resource["resource"]
-                elements = self.elements.elements.copy()
-                data_array = fhirpath_processus_tree(self.elements.forest_dict, resource)
-                for element_value, element in zip(data_array, elements):
-                    element.value = element_value
-                df = self._flatten_item_results(elements)
-                self.df = pd.concat([self.df, df])
+                data_items = []
+                for element in self.elements.elements:
+                    fhirpath = element.fhirpath.replace("(", "").replace(")", "")
+                    sub_paths = fhirpath.split(".")
+                    if len(sub_paths) > 0 and sub_paths[0] == resource["resourceType"]:
+                        try:
+                            # Try to get recursively the attributes in cmd = "<attr1>.<attr2>.<attr3>..."
+                            data_item = ApiGetter.rgetattr(resource, sub_paths[1:])
+                        except KeyError:
+                            data_item = None
+                    elif fhirpath == "id":
+                        data_item = resource["id"]
+                    else:
+                        raise ValueError(f"Invalid fhirpath {fhirpath}")
+                    data_items.append(data_item)
+
+                filtered_resources.append(data_items)
+
+                # elements = self.elements.elements.copy()
+                # data_array = fhirpath_processus_tree(self.elements.forest_dict, resource)
+                # for element_value, element in zip(data_array, elements):
+                #     element.value = element_value
+                # df = self._flatten_item_results(elements)
+            df = pd.DataFrame(filtered_resources, columns=columns)
+            self.df = pd.concat([self.df, df])
+
         return response.next_url
 
     @timing
@@ -192,13 +231,13 @@ class ApiGetter(CallApi):
             * col: len(element.value) column are created. Each column contains a single cell composed of an element from the element.value list.
 
         2. The second step is to produce the product of all possible combinations between columns.
-        For example, if at the end of step 1, the table is : 
+        For example, if at the end of step 1, the table is :
         Col_1 | Col_2 | Col_3
         pat_1 | Pete  | Ginger
         pat_1 | P.    | Ginger
               | Peter | G.
 
-        The table resulting from step 2 will be : 
+        The table resulting from step 2 will be :
         Col_1 | Col_2 | Col_3
         pat_1 | Pete  | Ginger
         pat_1 | Pete  | G.

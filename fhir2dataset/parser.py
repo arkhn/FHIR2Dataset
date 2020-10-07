@@ -8,15 +8,15 @@ PREFIX = ["eq", "ne", "gt", "lt", "ge", "le", "sa", "eb", "ap"]
 
 
 def create_mask(
-        separators,
-        keep_separators=False,
-        case_insensitive: bool = True,
-        can_start_sentence: bool = False,
-        optional_space_before: bool = False,
-        optional_space_after: bool = False,
+    separators,
+    keep_separators=False,
+    case_insensitive: bool = True,
+    can_start_sentence: bool = False,
+    optional_space_before: bool = False,
+    optional_space_after: bool = False,
 ):
     assert not (
-            can_start_sentence and optional_space_before
+        can_start_sentence and optional_space_before
     ), "Can't set to true both can_start_sentence and optional_space_before optional arguments"
     if isinstance(separators, str):
         mask = separators
@@ -49,13 +49,13 @@ def create_mask(
 class Parser:
     def __init__(self):
         self.CLAUSES = {
-                "FROM": self.__from_parser,
-                "INNER JOIN": self.__inner_join_parser,
-                "CHILD JOIN": self.__child_join_parser,
-                "PARENT JOIN": self.__parent_join_parser,
-                "SELECT": self.__select_parser,
-                "WHERE": self.__where_parser,
-            }
+            "FROM": self.__from_parser,
+            "INNER JOIN": self.__inner_join_parser,
+            "CHILD JOIN": self.__child_join_parser,
+            "PARENT JOIN": self.__parent_join_parser,
+            "SELECT": self.__select_parser,
+            "WHERE": self.__where_parser,
+        }
 
         self.__select = defaultdict(list)
         self.__from = defaultdict(str)
@@ -89,17 +89,14 @@ class Parser:
             "join": {
                 "inner": dict(self.__inner_join),
                 "child": dict(self.__child_join),
-                "parent": dict(self.__parent_join)
-            }
+                "parent": dict(self.__parent_join),
+            },
         }
         config["join"] = {key: value for key, value in config["join"].items() if value}
         return {key: value for key, value in config.items() if value}
 
     def __select_parser(self, string):
-        item_parsed = re.split(
-            create_mask(",", optional_space_before=True),
-            string
-        )
+        item_parsed = re.split(create_mask(",", optional_space_before=True), string)
         for item in item_parsed:
             alias, select_rule = re.split(r"\.", item, 1)
             assert alias in self.__from.keys()
@@ -164,8 +161,7 @@ class Parser:
         item_parsed = re.split(create_mask("AND"), string)
         for where_condition in item_parsed:
             condition_parsed = re.split(
-                create_mask(PREFIX + ["="], keep_separators=True),
-                where_condition
+                create_mask(PREFIX + ["="], keep_separators=True), where_condition
             )
             assert len(condition_parsed) == 3
             alias, where_rule = re.split(r"\.", condition_parsed[0], 1)

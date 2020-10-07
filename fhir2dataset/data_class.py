@@ -19,11 +19,11 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SearchParameter:
-    code: Optional[str] = field(default=None,)
-    fhirpath: Optional[str] = field(default=None,)
-    resource_types: Optional[List[str]] = field(default=None,)
-    prefix: Optional[str] = field(default=None,)
-    value: Optional[str] = field(default=None,)
+    code: Optional[str] = field(default=None)
+    fhirpath: Optional[str] = field(default=None)
+    resource_types: Optional[List[str]] = field(default=None)
+    prefix: Optional[str] = field(default=None)
+    value: Optional[str] = field(default=None)
 
 
 @dataclass
@@ -35,16 +35,15 @@ class Element:
 
     col_name: str
     fhirpath: str
-    goal: str = field(default="select",)  # select, where or join
-    value: Optional[list] = field(default=None,)
-    concat_type: Optional[str] = field(default="cell",)
-    search_parameter: Optional[SearchParameter] = field(default=None,)
+    goal: str = field(default="select")  # select, where or join
+    value: Optional[list] = field(default=None)
+    concat_type: Optional[str] = field(default="cell")
+    search_parameter: Optional[SearchParameter] = field(default=None)
 
 
 @dataclass
 class Elements:
-    """collection allowing to group together elements
-    """
+    """collection allowing to group together elements"""
 
     elements: List[Element] = field(default_factory=list)
 
@@ -80,9 +79,9 @@ class ResourceAliasInfo(ResourceAliasInfoBasic):
 class EdgeInfo:
     parent: str
     child: str
-    searchparam_parent: Optional[str] = field(default=None,)
-    join_how: str = field(default="inner",)
-    searchparam_prefix: Optional[dict] = field(default=None,)
+    searchparam_parent: Optional[str] = field(default=None)
+    join_how: str = field(default="inner")
+    searchparam_prefix: Optional[dict] = field(default=None)
 
 
 class SearchParameters:
@@ -108,14 +107,17 @@ class SearchParameters:
             )
 
     def searchparam_to_fhirpath(self, search_param: str, resource_type: str = "all"):
-        """retrieves the fhirpath that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
+        """Retrieve the fhirpath that allows to retrieve the element that is the object of
+        a searchparam in a json instance (after the 'resource' key) of a resource of a certain
+        type
 
         Arguments:
             resource_type {str} -- name of a resource type (e.g. 'Organization')
             search_param {str} -- name of a searchparam of this resource type (e.g. 'address-postalcode')
 
         Returns:
-            str -- the fhirpath for retrieving the element that is the subject of the searchparam (e.g. 'address.postalCode')
+            str -- the fhirpath for retrieving the element that is the subject of the searchparam
+            (e.g. 'address.postalCode')
         """  # noqa
         try:
             return self._data[search_param][resource_type]
@@ -144,8 +146,7 @@ class SearchParameters:
 
 @dataclass(eq=True, frozen=True)
 class Node:
-    """Modeling a node of a process tree
-    """
+    """Modeling a node of a process tree"""
 
     fhirpath: str
     index: str
@@ -154,11 +155,6 @@ class Node:
 
 def break_parenthesis(exp: str):
     sublist = re.split(r"(\(|\))", exp)
-    return sublist
-
-
-def break_dot(exp: str):
-    sublist = re.split(r"\.", exp)
     return sublist
 
 
@@ -177,30 +173,25 @@ def split_fhirpath(fhirpath: str) -> List[Node]:
         1. "Patient.name | Practitioner.name" becomes ["Patient.name | Practitioner.name"]
         2. "Patient.(x | y).use" becomes ["Patient","(x | y)","use"]
     """
-    list_dot = break_dot(fhirpath)
-    if "" in list_dot:
-        list_dot.remove("")
+    sub_paths = [sub_path for sub_path in fhirpath.split(".") if sub_path != ""]
 
     tmps_list = []
     tmp_word = ""
     num_brackets = 0
     num_or = fhirpath.count("|")
 
-    for idx in range(len(list_dot)):
-        curr_word = list_dot[idx]
-
-        if curr_word:
-            tmp_word = f"{tmp_word}.{curr_word}" if tmp_word else curr_word
-            for character in curr_word:
-                if character == "(":
-                    num_brackets += 1
-                elif character == ")":
-                    num_brackets -= 1
-                elif character == "|" and num_brackets % 2 == 1:
-                    num_or -= 1
-            if not num_brackets:
-                tmps_list.append(tmp_word)
-                tmp_word = ""
+    for sub_path in sub_paths:
+        tmp_word = f"{tmp_word}.{sub_path}" if tmp_word else sub_path
+        for character in sub_path:
+            if character == "(":
+                num_brackets += 1
+            elif character == ")":
+                num_brackets -= 1
+            elif character == "|" and num_brackets % 2 == 1:
+                num_or -= 1
+        if not num_brackets:
+            tmps_list.append(tmp_word)
+            tmp_word = ""
     if num_or != 0:
         tmps_list = [fhirpath]
 
@@ -214,9 +205,9 @@ def _create_node_list(sub_fhirpaths: List[str]):
     node = None
     for idx, fhirpath in enumerate(sub_fhirpaths):
         if node:
-            node = Node(fhirpath, str(idx), hash(node))
+            node = Node(fhirpath=fhirpath, index=str(idx), previous_node_hash=hash(node))
         else:
-            node = Node(fhirpath, str(idx))
+            node = Node(fhirpath=fhirpath, index=str(idx))
         node_list.append(node)
     return node_list
 

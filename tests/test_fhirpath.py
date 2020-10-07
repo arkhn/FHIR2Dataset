@@ -81,7 +81,7 @@ def elements():
     elements = Elements(
         [
             Element(col_name="code", fhirpath="Observation.code"),
-            Element(col_name="subject reference", fhirpath="Observation.subject.reference",),
+            Element(col_name="subject reference", fhirpath="Observation.subject.reference"),
         ]
     )
     return elements

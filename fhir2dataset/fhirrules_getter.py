@@ -57,7 +57,7 @@ class FHIRRules:
         self.searchparameters = self._get_searchparameters()
 
     @timing
-    @lru_cache(maxsize=200)
+    @lru_cache(maxsize=10000)
     def searchparam_to_fhirpath(self, search_param: str, resource_type: str = "all"):
         """retrieves the fhirpath that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
 
@@ -69,7 +69,17 @@ class FHIRRules:
             str -- the fhirpath for retrieving the element that is the subject of the searchparam (e.g. 'address.postalCode')
         """  # noqa
         try:
-            return self.searchparameters.searchparam_to_fhirpath(search_param, resource_type)
+            fhirpath = self.searchparameters.searchparam_to_fhirpath(search_param, resource_type)
+            if resource_type != "all" and fhirpath != {}:
+                params = fhirpath.split(" | ")
+                filtered_params = []
+                for param in params:
+                    if resource_type in param:
+                        filtered_params.append(param)
+                fhirpath = " | ".join(filtered_params)
+                if len(filtered_params) == 0:
+                    return ValueError
+            return fhirpath
         except KeyError:
             logger.warning(f"The searchparam '{search_param}' doesn't exist in the rules")
             return None
@@ -85,31 +95,20 @@ class FHIRRules:
             SearchParameters -- instance described above
         """  # noqa
         bundle = self._get_from_file(self.path, self.searchparameters_filename)
-        elements_empty = Elements(
-            elements=[
-                Element(col_name="code", fhirpath="SearchParameter.code",),
-                Element(col_name="expression", fhirpath="SearchParameter.expression",),
-                Element(col_name="base", fhirpath="SearchParameter.base",),
-            ]
-        )
-        elements_empty = asdict(elements_empty)
+
         resources = [resource["resource"] for resource in bundle["entry"]]
-        raw_list_elements = multiple_search_dict(resources, elements_empty)
+
         search_parameters = SearchParameters()
-        for idx, raw_elements in enumerate(raw_list_elements):
-            elements = from_dict(data_class=Elements, data=raw_elements)
-            search_param = SearchParameter()
-            for element in elements.elements:
-                MAPPING_SEARCHPARAMS[element.col_name](search_param, element.value)
-            if search_param.fhirpath and search_param.resource_types:
-                search_parameters.add(search_param)
-            else:
-                logger.warning(
-                    f"\nthe instance of SearchParameter named "
-                    f"{search_param.code}"
-                    f" has no fhirpath associated"
+        for resource in resources:
+            if "expression" in resource:
+                search_parameters.add(
+                    SearchParameter(
+                        code=resource["code"],
+                        fhirpath=resource["expression"],
+                        resource_types=resource["base"],
+                    )
                 )
-                logger.debug(f"{resources[idx]}\n")
+
         return search_parameters
 
     @timing

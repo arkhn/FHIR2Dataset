@@ -62,7 +62,7 @@ def execute(code: str, args: list = None, g: dict = None):
     path = os.path.join(os.path.dirname(__file__), "metadata")
 
     prc = Popen(
-        "node", shell=False, stderr=PIPE, stdout=PIPE, stdin=PIPE, cwd=path, encoding="utf-8",
+        "node", shell=False, stderr=PIPE, stdout=PIPE, stdin=PIPE, cwd=path, encoding="utf-8"
     )
 
     result_keyword = "--FHIRPATH--"
@@ -81,7 +81,7 @@ def execute(code: str, args: list = None, g: dict = None):
         outs = outs["result"]
         return outs
     elif "error" in outs:
-        raise Exception((outs.get("error"), errs,))
+        raise Exception((outs.get("error"), errs))
     else:
         raise Exception(errs)
 
@@ -122,8 +122,10 @@ def fhirpath_processus_tree(forest_dict, resource):
 
 @timing
 def multiple_search_dict(resources: list, elements: dict) -> List[dict]:
-    """Returns the updated element instance on each element in the Resources list. These updated instances are stored in a list which is the element returned by the function.
-    The update consists for each element of the instance elements in the application of the fhirpath (element.fhirpath) on an instance of the Resources list and the storage of the response in element.value.
+    """Returns the updated element instance on each element in the Resources list. These updated
+    instances are stored in a list which is the element returned by the function.
+    The update consists for each element of the instance elements in the application of the fhirpath
+    (element.fhirpath) on an instance of the Resources list and the storage of the response in element.value.
 
     Args:
         resources (list): list composed of several instances of resources

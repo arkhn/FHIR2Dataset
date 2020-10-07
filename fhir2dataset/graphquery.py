@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 
 class GraphQuery:
     """Class for storing query information in the form of a graph.
-    
+
     Attributes:
         resources_alias_graph {nx.Graph} -- The nodes correspond to the aliases involved in the query (filled in the "from") and stops the reference link between 2 aliases (filled in the "join").
-        resources_alias_info {dict} -- Dictionary storing information about each alias: 
+        resources_alias_info {dict} -- Dictionary storing information about each alias:
                                         * the type of the associated resource
                                         * the elements that must be retrieved from the json of a resource
                                         * a boolean indicating whether to return the number of instances of the resource that meets all these criteria or not
@@ -36,9 +36,7 @@ class GraphQuery:
             fhir_rules {type(FHIRRules)} -- an instance of a FHIRRules-type object. If the instance is not filled a default version will be used. (default: {None})
         """  # noqa
         self.fhir_api_url = fhir_api_url
-        if not fhir_rules:
-            fhir_rules = FHIRRules(fhir_api_url=self.fhir_api_url)
-        self.fhir_rules = fhir_rules
+        self.fhir_rules = fhir_rules or FHIRRules(fhir_api_url=self.fhir_api_url)
 
         # to represent the relationships (references) between resources
         self.resources_alias_graph = nx.Graph()
@@ -53,7 +51,7 @@ class GraphQuery:
         where_dict: dict = None,
         default_element_concat_type: str = "cell",
     ):
-        """Populates the attributes resources_alias_graph and resources_alias_info according to the information filled in 
+        """Populates the attributes resources_alias_graph and resources_alias_info according to the information filled in
 
         Arguments:
             select_dict {dict} -- dictionary containing the elements to be selected from the different resources
@@ -101,7 +99,7 @@ class GraphQuery:
         Keyword Arguments:
             **resource_type_alias: the key corresponds to the alias and the value to the type of the resource.
         """  # noqa
-        for (resource_alias, resource_type,) in resource_type_alias.items():
+        for (resource_alias, resource_type) in resource_type_alias.items():
             elements = Elements(
                 [
                     Element(
@@ -134,11 +132,11 @@ class GraphQuery:
             assert join_how in ["inner", "child", "parent", "one"], "Precise how to join"
             for (alias_parent, searchparam_dict) in relationships_dict.items():
                 type_parent = self.resources_alias_info[alias_parent].resource_type
-                for (searchparam_parent, alias_child,) in searchparam_dict.items():
+                for (searchparam_parent, alias_child) in searchparam_dict.items():
 
                     # Update element to have in table
                     fhirpath_searchparam = self.fhir_rules.searchparam_to_fhirpath(
-                        resource_type=type_parent, search_param=searchparam_parent,
+                        resource_type=type_parent, search_param=searchparam_parent
                     )
                     if " | " in fhirpath_searchparam:
                         fhirpath_ref = f"(({fhirpath_searchparam}).reference)"
@@ -221,7 +219,7 @@ class GraphQuery:
             for col_name in col_names:
                 fhirpath = self._check_searchparam_or_fhirpath(resource_alias, col_name)
                 self.resources_alias_info[resource_alias].elements.append(
-                    Element(goal="select", col_name=col_name, fhirpath=fhirpath,)
+                    Element(goal="select", col_name=col_name, fhirpath=fhirpath)
                 )
 
     @timing
@@ -237,7 +235,8 @@ class GraphQuery:
         """  # noqa
         resource_type = self.resources_alias_info[resource_alias].resource_type
         searchparam_to_element = self.fhir_rules.searchparam_to_fhirpath(
-            resource_type=resource_type, search_param=searchparam_or_fhirpath,
+            resource_type=resource_type,
+            search_param=searchparam_or_fhirpath,
         )
         if searchparam_to_element:
             element = searchparam_to_element
@@ -247,8 +246,7 @@ class GraphQuery:
 
     @timing
     def draw_relations(self):
-        """draws the resources_alias_graph attribute
-        """
+        """draws the resources_alias_graph attribute"""
         import matplotlib.pyplot as plt
 
         edge_labels = dict()
