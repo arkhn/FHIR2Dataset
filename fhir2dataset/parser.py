@@ -96,7 +96,9 @@ class Parser:
         return {key: value for key, value in config.items() if value}
 
     def __select_parser(self, string):
-        item_parsed = re.split(create_mask(",", optional_space_before=True), string)
+        item_parsed = re.split(
+            create_mask(",", optional_space_before=True, optional_space_after=True), string
+        )
         for item in item_parsed:
             alias, select_rule = re.split(r"\.", item, 1)
             assert alias in self.__from.keys()

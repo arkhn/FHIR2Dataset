@@ -194,11 +194,14 @@ class Query:
         df = self.main_dataframe
         for column in df.columns:
             lengths = df[column].str.len()
-            if all(len < 2 for len in lengths):
-                df[column] = df[column].apply(lambda x: x[0] if isinstance(x, list) else x)
-                logger.info(
-                    f"extraction of the unique element from the lists composing the {column} column"
-                )
+            try:
+                if all(len < 2 for len in lengths):
+                    df[column] = df[column].apply(lambda x: x[0] if isinstance(x, list) else x)
+                    logger.info(
+                        f"extraction of the unique element from the lists composing the {column} column"
+                    )
+            except Exception:
+                pass
         self.main_dataframe = df
 
     def _join(self) -> pd.DataFrame:
