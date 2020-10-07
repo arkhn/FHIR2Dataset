@@ -15,5 +15,5 @@ def sql(sql_query):
     df = df.reset_index(drop=True)
     # rename the columns to match the sql syntax
     # patient:Patient.name.given -> patient.name.given
-    df = df.rename(lambda x: re.sub("\:\w+\.", ".", x), axis="columns")
+    df = df.rename(lambda x: re.sub("\:\w+\.", ".", x), axis="columns")  # noqa
     return df.reset_index(drop=True)

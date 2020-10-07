@@ -239,7 +239,7 @@ class GraphQuery:
         """draws the resources_alias_graph attribute"""
         import matplotlib.pyplot as plt
 
-        edge_labels = dict()
+        edge_labels = {}
         for i in self.resources_alias_graph.edges(data=True):
             edge_infos = custom_repr(i[2]["info"].__repr__())
             edge_labels[i[0:2]] = edge_infos

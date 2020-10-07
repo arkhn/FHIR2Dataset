@@ -119,7 +119,7 @@ class Query:
 
         self.config = None
         self.graph_query = None
-        self.dataframes = dict()
+        self.dataframes = {}
         self.main_dataframe = None
 
     def from_config(self, config: dict):
@@ -198,14 +198,16 @@ class Query:
                 if all(len < 2 for len in lengths):
                     df[column] = df[column].apply(lambda x: x[0] if isinstance(x, list) else x)
                     logger.info(
-                        f"extraction of the unique element from the lists composing the {column} column"
+                        f"extraction of the unique element from the lists composing "
+                        f"the {column} column"
                     )
             except Exception:
                 pass
         self.main_dataframe = df
 
     def _join(self) -> pd.DataFrame:
-        """executes the joins one after the other in the order specified by the join_path function.
+        """Execute the joins one after the other in the order specified by the
+        join_path function.
 
         Returns:
             pd.DataFrame -- dataframe containing all joined resources
@@ -236,7 +238,7 @@ class Query:
         result = []
         for list_cell in column:
             if isinstance(list_cell, list):
-                result.extend([value for value in list_cell])
+                result.extend(list_cell)
             else:
                 result.append(list_cell)
         return result

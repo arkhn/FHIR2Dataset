@@ -2,11 +2,8 @@ import os
 import json
 import logging
 from functools import lru_cache
-from dataclasses import asdict
-from dacite import from_dict
 
-from fhir2dataset.fhirpath import multiple_search_dict
-from fhir2dataset.data_class import SearchParameters, SearchParameter, Elements, Element
+from fhir2dataset.data_class import SearchParameters, SearchParameter
 
 logger = logging.getLogger(__name__)
 

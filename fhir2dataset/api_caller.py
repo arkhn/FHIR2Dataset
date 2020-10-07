@@ -2,12 +2,11 @@ import numpy as np
 import pandas as pd
 import requests
 import logging
-import functools
 from itertools import product
 import multiprocessing
 from typing import Type
 
-from fhir2dataset.fhirpath import fhirpath_processus_tree
+# from fhir2dataset.fhirpath import fhirpath_processus_tree
 from fhir2dataset.data_class import Elements
 
 logger = logging.getLogger(__name__)
@@ -261,7 +260,7 @@ class ApiGetter(CallApi):
                     sub_paths = fhirpath.split(".")
                     if len(sub_paths) > 0 and sub_paths[0] == resource["resourceType"]:
                         try:
-                            # Try to get recursively the attributes in cmd = "<attr1>.<attr2>.<attr3>..."
+                            # Try to get recursively the keys from sub_paths[1:]
                             data_item = ApiGetter.rgetattr(resource, sub_paths[1:])
                         except KeyError:
                             data_item = None
@@ -329,7 +328,7 @@ class ApiGetter(CallApi):
         Returns:
             dict -- dictionary described above
         """  # noqa
-        data = dict()
+        data = {}
         for element in self.elements.elements:
             data[element.col_name] = []
         return pd.DataFrame(data)

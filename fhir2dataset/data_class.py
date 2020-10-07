@@ -376,7 +376,7 @@ class Tree:
         self.root = final_root
 
 
-def hierarchy_pos(G, root=None, width=1.0, vert_gap=0.2, vert_loc=0, xcenter=0.5):
+def hierarchy_pos(G, root=None, width=1.0, vert_gap=0.2, vert_loc=0, xcenter=0.5):  # noqa
 
     """
     From Joel's answer at https://stackoverflow.com/a/29597209/2966723.
@@ -415,7 +415,7 @@ def hierarchy_pos(G, root=None, width=1.0, vert_gap=0.2, vert_loc=0, xcenter=0.5
             root = random.choice(list(G.nodes))
 
     def _hierarchy_pos(
-        G, root, width=1.0, vert_gap=0.2, vert_loc=0, xcenter=0.5, pos=None, parent=None
+        G, root, width=1.0, vert_gap=0.2, vert_loc=0, xcenter=0.5, pos=None, parent=None  # noqa
     ):
         """
         see hierarchy_pos docstring for most arguments

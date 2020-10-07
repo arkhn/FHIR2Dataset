@@ -79,7 +79,7 @@ class Parser:
 
     def __split_sql_string(self, sql_string: str) -> List[str]:
         sql_string = sql_string.replace("\n", " ")
-        _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
+        _RE_COMBINE_WHITESPACE = re.compile(r"\s+")  # noqa
         sql_string = _RE_COMBINE_WHITESPACE.sub(" ", sql_string).strip()
         split_mask_clauses = create_mask(
             self.CLAUSES.keys(), can_start_sentence=True, keep_separators=True
