@@ -6,7 +6,6 @@ import logging
 from subprocess import Popen, PIPE
 from typing import List
 
-from fhir2dataset.timer import timing
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,6 @@ wrapper = """
 """
 
 
-@timing
 def execute(code: str, args: list = None, g: dict = None):
     """Function to execute code written in javascript
 
@@ -86,7 +84,6 @@ def execute(code: str, args: list = None, g: dict = None):
         raise Exception(errs)
 
 
-@timing
 def parse_fhirpath(fhirpath: str):
     result = execute(
         """function test(fhirpath){
@@ -99,7 +96,6 @@ def parse_fhirpath(fhirpath: str):
     return result
 
 
-@timing
 def fhirpath_processus_tree(forest_dict, resource):
     result = execute(
         """function test(args){
@@ -120,7 +116,6 @@ def fhirpath_processus_tree(forest_dict, resource):
     return result
 
 
-@timing
 def multiple_search_dict(resources: list, elements: dict) -> List[dict]:
     """Returns the updated element instance on each element in the Resources list. These updated
     instances are stored in a list which is the element returned by the function.

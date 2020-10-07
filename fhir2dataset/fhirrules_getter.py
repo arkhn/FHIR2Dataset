@@ -5,7 +5,6 @@ from functools import lru_cache
 from dataclasses import asdict
 from dacite import from_dict
 
-from fhir2dataset.timer import timing
 from fhir2dataset.fhirpath import multiple_search_dict
 from fhir2dataset.data_class import SearchParameters, SearchParameter, Elements, Element
 
@@ -36,7 +35,6 @@ class FHIRRules:
         searchparameters {dict} -- an instance json of a SearchParameters resource
     """  # noqa
 
-    @timing
     def __init__(
         self,
         path: str = None,
@@ -56,7 +54,6 @@ class FHIRRules:
         self.searchparameters_filename = searchparameters_filename
         self.searchparameters = self._get_searchparameters()
 
-    @timing
     @lru_cache(maxsize=10000)
     def searchparam_to_fhirpath(self, search_param: str, resource_type: str = "all"):
         """retrieves the fhirpath that allows to retrieve the element that is the object of a searchparam in a json instance (after the 'resource' key) of a resource of a certain type
@@ -84,7 +81,6 @@ class FHIRRules:
             logger.warning(f"The searchparam '{search_param}' doesn't exist in the rules")
             return None
 
-    @timing
     def _get_searchparameters(self) -> dict:
         """builds an instance of SearchParameters storing all the possible searchparameters (instance of SearchParameter) whose information comes from a bundle composed only of FHIR resources of type SearchParameter according to the following process:
         1. Retrieves information of interest in each instance of the bundle. For each instance of the bundle are retrieved: the code, the expression (=fhirpath) and the base (=the types of resources on which these fhirpaths can be applied)
@@ -111,7 +107,6 @@ class FHIRRules:
 
         return search_parameters
 
-    @timing
     def _get_from_file(self, path: str, filename: str) -> dict:
         """Get a json (dict) from a file
 

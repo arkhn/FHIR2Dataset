@@ -7,8 +7,6 @@ from fhir2dataset.fhirrules_getter import FHIRRules
 from fhir2dataset.api_caller import ApiGetter
 from fhir2dataset.url_builder import URLBuilder
 from fhir2dataset.graph_tools import join_path
-from fhir2dataset.timer import timing
-
 
 logger = logging.getLogger(__name__)
 
@@ -98,8 +96,12 @@ class Query:
         df = query.main_dataframe
     """  # noqa
 
-    @timing
-    def __init__(self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None, token: str = None):
+    def __init__(
+        self,
+        fhir_api_url: str = "http://hapi.fhir.org/baseR4/",
+        fhir_rules: type(FHIRRules) = None,
+        token: str = None,
+    ):
         """Requestor's initialisation
 
         Arguments:
@@ -120,7 +122,6 @@ class Query:
         self.dataframes = dict()
         self.main_dataframe = None
 
-    @timing
     def from_config(self, config: dict):
         """Executes the query from a dictionary in the format of a configuration file
 
@@ -134,7 +135,6 @@ class Query:
             "join_dict": config.get("join", None),
         }
 
-    @timing
     def execute(self, debug: bool = False):
         """Executes the complete query
 
@@ -181,7 +181,6 @@ class Query:
             self._select_columns()
             self._remove_lists()
 
-    @timing
     def _select_columns(self):
         """Clean the final dataframe to keep only the columns of the select"""
         final_columns = []
@@ -190,7 +189,6 @@ class Query:
                 final_columns.append(f"{resource_alias}:{element.col_name}")
         self.main_dataframe = self.main_dataframe[final_columns]
 
-    @timing
     def _remove_lists(self):
         """Remove lists from columns with only single elements"""
         df = self.main_dataframe
@@ -203,7 +201,6 @@ class Query:
                 )
         self.main_dataframe = df
 
-    @timing
     def _join(self) -> pd.DataFrame:
         """executes the joins one after the other in the order specified by the join_path function.
 
@@ -219,7 +216,6 @@ class Query:
             main_df = self._join_2_df(alias_1, alias_2, df_1, df_2)
         return main_df
 
-    @timing
     def _group_lines(self, df, col_name):
         logger.debug(f"dataframe before being grouped \n{df.to_string()}")
         if not df.empty:
@@ -233,7 +229,6 @@ class Query:
             logger.debug(f"dataframe after being grouped on {cols_group}:\n{df.to_string()}")
         return df
 
-    @timing
     def _concatenate(self, column):
         result = []
         for list_cell in column:
@@ -243,7 +238,6 @@ class Query:
                 result.append(list_cell)
         return result
 
-    @timing
     def _join_2_df(
         self, alias_1: str, alias_2: str, df_1: pd.DataFrame, df_2: pd.DataFrame
     ) -> pd.DataFrame:
@@ -291,7 +285,6 @@ class Query:
             )
         return df_merged_inner
 
-    @timing
     def _clean_columns(self):
         """performs preprocessing on all dataframes harvested in the dataframe attribute:
         * adds the resource type in front of an element id so that the resource id matches the references of its parent resource references

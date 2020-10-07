@@ -5,7 +5,6 @@ from pprint import pformat
 from collections import defaultdict
 
 from fhir2dataset.fhirrules_getter import FHIRRules
-from fhir2dataset.timer import timing
 from fhir2dataset.visualization_tools import custom_repr
 
 from fhir2dataset.data_class import SearchParameter, ResourceAliasInfo, Element, Elements, EdgeInfo
@@ -25,7 +24,6 @@ class GraphQuery:
         fhir_rules {Type(FHIRRules)} -- an instance of an FHIRRules object which contains information specific to the FHIR standard and the API used (for example the fhirpaths associated with the search param of a resource).
     """  # noqa
 
-    @timing
     def __init__(self, fhir_api_url: str, fhir_rules: type(FHIRRules) = None) -> None:
         """Instantiate the class and create the query object
 
@@ -42,7 +40,6 @@ class GraphQuery:
         self.resources_alias_graph = nx.Graph()
         self.resources_alias_info = defaultdict(Type[ResourceAliasInfo])
 
-    @timing
     def execute(
         self,
         select_dict: dict,
@@ -78,7 +75,6 @@ class GraphQuery:
         logger.info("The information gathered for each node is:")
         logger.info(pformat(self.resources_alias_info))
 
-    @timing
     def from_config(self, config: dict):
         """Populates the attributes resources_alias_graph and resources_alias_info according to the information given in the configuration file
 
@@ -92,7 +88,6 @@ class GraphQuery:
             join_dict=config.get("join"),
         )
 
-    @timing
     def _from(self, **resource_type_alias):
         """Initializes the graph nodes contained in resources_alias_graph and the dictionary of resources_alias_info information of the aliases listed in resource_type_alias
 
@@ -117,7 +112,6 @@ class GraphQuery:
                 alias=resource_alias, resource_type=resource_type, elements=elements
             )
 
-    @timing
     def _join(self, **join_as):
         """Builds the reference links between the aliases involved in the query
         1. fills in the elements in attribute resources_alias_info to be retrieved from the json resource file to be able to make the joins
@@ -176,7 +170,6 @@ class GraphQuery:
 
                     self.resources_alias_graph.add_edge(alias_parent, alias_child, info=edge_info)
 
-    @timing
     def _where(self, **wheres):
         """updates the resources_alias_info attribute with the conditions that each alias must meet
 
@@ -208,7 +201,6 @@ class GraphQuery:
                     )
                 )
 
-    @timing
     def _select(self, **selects):
         """updates the resources_alias_info attribute with the elements that must be retrieved for each alias
 
@@ -222,7 +214,6 @@ class GraphQuery:
                     Element(goal="select", col_name=col_name, fhirpath=fhirpath)
                 )
 
-    @timing
     def _check_searchparam_or_fhirpath(self, resource_alias: str, searchparam_or_fhirpath: str):
         """transforms searchparam_or_fhirpath into its fhirpath if it's a searchparam, otherwise it returns the argument as it was entered.
 
@@ -244,7 +235,6 @@ class GraphQuery:
             element = searchparam_or_fhirpath
         return element
 
-    @timing
     def draw_relations(self):
         """draws the resources_alias_graph attribute"""
         import matplotlib.pyplot as plt

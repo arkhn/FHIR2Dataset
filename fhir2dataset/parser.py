@@ -165,7 +165,7 @@ class Parser:
             )
             assert len(condition_parsed) == 3
             alias, where_rule = re.split(r"\.", condition_parsed[0], 1)
-            value = re.search(r"^'(.*)'$", condition_parsed[2]).group(1)
+            value = re.search(r"^['\"](.*)['\"]$", condition_parsed[2]).group(1)
             if condition_parsed[1] in PREFIX:
                 prefix = condition_parsed[1]
                 self.__where[alias][where_rule] = {prefix: value}

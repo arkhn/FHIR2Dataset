@@ -7,7 +7,6 @@ from itertools import product
 import multiprocessing
 from typing import Type
 
-from fhir2dataset.timer import timing
 from fhir2dataset.fhirpath import fhirpath_processus_tree
 from fhir2dataset.data_class import Elements
 
@@ -66,14 +65,12 @@ class Response:
 class CallApi:
     """generic class that manages the sending and receiving of a url request to a FHIR API."""
 
-    @timing
     def __init__(self, url: str, token: str = None):
         self.url = url
         self.total = None
         self.auth = BearerAuth(token)
         self.parallel_requests = False
 
-    @timing
     def get_response(self, url: str):
         """sends the request and stores the elements of the response
 
@@ -108,7 +105,6 @@ class CallApi:
 
         return response_url
 
-    @timing
     def process_response(self, response):
         """Put the json response in a Response object
 
@@ -126,7 +122,6 @@ class CallApi:
 
         return response_url
 
-    @timing
     def _get_count(self, url):
         if url[-1] == "?":
             url_number = f"{url}_summary=count"
@@ -140,7 +135,6 @@ class CallApi:
             logger.warning(f"content of the failing response:\n{response.content}")
         return count
 
-    @timing
     def _get_bundle_response(self, url):
         logger.info(f"Get {url}")
         return requests.get(url, auth=self.auth)
@@ -169,7 +163,6 @@ class ApiGetter(CallApi):
         time_frac (int): total amount of time allocated to this Api call
     """  # noqa
 
-    @timing
     def __init__(
         self, url: str, elements: Type[Elements], token: str = None, pbar=None, time_frac: int = 0
     ):
@@ -180,12 +173,14 @@ class ApiGetter(CallApi):
         self.pbar = pbar
         self.time_frac = time_frac
 
-    @timing
     def get_all(self):
         """collects all the data corresponding to the initial url request by calling the following pages"""  # noqa
         if self.total is None:
             self.total = self._get_count(self.url)
             logger.info(f"there is {self.total} matching resources for {self.url}")
+            count_time = round(self.time_frac * 0.1)
+            self.pbar.update(count_time)
+            self.time_frac -= count_time
 
         number_calls = round(np.ceil(self.total / PAGE_SIZE))
 
@@ -214,7 +209,6 @@ class ApiGetter(CallApi):
             response = self.process_response(response)
             _ = self._get_data(response)
 
-    @timing
     def get_next(self, next_url):
         """retrieves the responses contained in the following pages and stores the data in data attribute"""  # noqa
         if next_url:
@@ -244,7 +238,6 @@ class ApiGetter(CallApi):
         else:
             return [cls.rgetattr(o, keys) for o in obj]
 
-    @timing
     def _get_data(self, response: Type[Response]):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute"""  # noqa
         if not response.results:
@@ -287,7 +280,6 @@ class ApiGetter(CallApi):
 
         return response.next_url
 
-    @timing
     def _flatten_item_results(self, elements: Type[Elements]):
         """creates the tabular version of the elements given as input argument.
         For each element of elements, at least one column is added according to the following process.
