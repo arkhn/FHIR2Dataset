@@ -14,7 +14,12 @@ def create_mask(
     can_start_sentence: bool = False,
     optional_space_before: bool = False,
     optional_space_after: bool = False,
+    optional_spaces: bool = None,
 ):
+    if optional_spaces is not None:
+        optional_space_before = optional_spaces
+        optional_space_after = optional_spaces
+
     assert not (
         can_start_sentence and optional_space_before
     ), "Can't set to true both can_start_sentence and optional_space_before optional arguments"
@@ -96,12 +101,12 @@ class Parser:
         return {key: value for key, value in config.items() if value}
 
     def __select_parser(self, string):
-        item_parsed = re.split(
-            create_mask(",", optional_space_before=True, optional_space_after=True), string
-        )
+        item_parsed = re.split(create_mask(",", optional_spaces=True), string)
         for item in item_parsed:
             alias, select_rule = re.split(r"\.", item, 1)
-            assert alias in self.__from.keys()
+            assert (
+                alias in self.__from.keys()
+            ), f"Ressource {alias} was used in SELECT {item} but was not defined"
             self.__select[alias].append(f"{self.__from[alias]}.{select_rule}")
 
     def __from_parser(self, string):
@@ -115,7 +120,7 @@ class Parser:
             alias = item_parsed[0]
             self.__from[alias] = resource_type
         else:
-            raise ValueError
+            raise ValueError(f"The FROM clause {string} couldn't be parsed properly")
 
     def __inner_join_parser(self, string):
         alias_parent, searchparam_parent, alias_child = self.__join_parser(string)
@@ -131,11 +136,13 @@ class Parser:
 
     def __join_parser(self, string):
         item_parsed = re.split(create_mask("ON"), string)
-        assert len(item_parsed) == 2
+        assert len(item_parsed) == 2, f"There was a problem with the JOIN statement: {string}"
         self.__from_parser(item_parsed[0])
 
-        join_conditions = re.split(create_mask("="), item_parsed[1])
-        assert len(join_conditions) == 2
+        join_conditions = re.split(create_mask("=", optional_spaces=True), item_parsed[1])
+        assert (
+            len(join_conditions) == 2
+        ), f"The JOIN condition {join_conditions} couldn't be parsed properly"
 
         alias_parent = None
         searchparam_parent = None
@@ -163,9 +170,15 @@ class Parser:
         item_parsed = re.split(create_mask("AND"), string)
         for where_condition in item_parsed:
             condition_parsed = re.split(
-                create_mask(PREFIX + ["="], keep_separators=True), where_condition
+                create_mask("=", keep_separators=True, optional_spaces=True), where_condition
             )
-            assert len(condition_parsed) == 3
+            if len(condition_parsed) != 3:
+                condition_parsed = re.split(
+                    create_mask(PREFIX, keep_separators=True), where_condition
+                )
+            assert (
+                len(condition_parsed) == 3
+            ), f"The WHERE condition {where_condition} couldn't be parsed properly"
             alias, where_rule = re.split(r"\.", condition_parsed[0], 1)
             value = re.search(r"^['\"](.*)['\"]$", condition_parsed[2]).group(1)
             if condition_parsed[1] in PREFIX:
