@@ -60,6 +60,10 @@ class Parser:
             "PARENT JOIN": self.__parent_join_parser,
             "SELECT": self.__select_parser,
             "WHERE": self.__where_parser,
+            "ORDER BY": self.__order_by_parser,
+            "GROUP BY": self.__group_by_parser,
+            "UNION": self.__union_parser,
+            "LIMIT": self.__limit_parser,
         }
 
         self.__select = defaultdict(list)
@@ -188,3 +192,15 @@ class Parser:
                 self.__where[alias][where_rule] = {prefix: value}
             else:
                 self.__where[alias][where_rule] = value
+
+    def __order_by_parser(self, string):
+        raise NotImplementedError("The ORDER BY keyword is not supported for the moment.")
+
+    def __group_by_parser(self, string):
+        raise NotImplementedError("The ORDER BY keyword is not supported for the moment.")
+
+    def __union_parser(self, string):
+        raise NotImplementedError("The UNION keyword is not supported for the moment.")
+
+    def __limit_parser(self, string):
+        raise NotImplementedError("The LIMIT keyword is not supported for the moment.")
