@@ -1,6 +1,6 @@
 # FHIR Query
 
-Query any FHIR api with SQL.
+Query any FHIR api using SQL.
 
 ## Usage
 
@@ -30,39 +30,43 @@ FHIR Query is still under active development, feedback and contributions are wel
 
 After cloning this repository, you can install the required dependencies
 
-```
+```bash
 pip install -r requirements.txt
 npm install --prefix ./fhir2dataset/metadata
 ```
 
-For usage, refer to this [tutorial](https://htmlpreview.github.io/?https://github.com/arkhn/FHIR2Dataset/blob/query_tests/examples/tutorial.html) and then this [Jupyter Notebook](examples/example.ipynb)
-
 ## Getting started
 
-Two possible ways to enter the query : as a SQL query or as a JSON config file
+There are two possible ways to enter the query: as a SQL query or as a JSON config file
 
 **SQL query**
 
-
-```
-sql_query = "SELECT (alias n°1).a, (alias n°1).b, (alias n°1).c, (alias n°2).a FROM (Resource type 1) as (alias n°1)
-INNER JOIN (Resource type 2) as (alias n°2)
-ON (alias n°1).d = (alias n°2)
-INNER JOIN (Resource type 3) as (alias n°3)
-ON (alias n°2).b = (alias n°3) WHERE (alias n°2).c = "value 1"
+You can define SQL queries of the following form:
+```sql
+sql_query = """
+SELECT (alias n°1).a, (alias n°1).b, (alias n°2).a 
+FROM (Resource type 1) as (alias n°1)
+INNER JOIN (Resource type 2) as (alias n°2) ON (alias n°1).d = (alias n°2)
+WHERE (alias n°2).c = "value 1"
 AND (alias n°2).d = "value 2"
-AND (alias n°3).a = "value 3"
-AND (alias n°3).b = "value 4""
+"""
 ```
+Note that we only support a subset of SQL keywords.
 
-```
-import fhir2dataset
-fhir2dataset.sql(sql_query)
+By default, FHIR Query will use the HAPI FHIR Api. But you can use your own api using the following syntax:
+
+```python
+import fhir2dataset as query
+
+fhir_api_url = 'https://api.awesome.fhir.org/baseR4/'
+query.sql(sql_query, fhir_api_url=fhir_api_url)
 ```
 
 **JSON config file**
 
-```
+You can also use JSON configuration files
+
+```python
 from fhir2dataset.query import Query
 from fhir2dataset.fhirrules_getter import FHIRRules
 
@@ -71,7 +75,7 @@ fhir_rules = FHIRRules(fhir_api_url=fhir_api_url)
 query = Query(fhir_api_url, fhir_rules=fhir_rules)
 ```
 
-config.json :
+`config.json`:
 
 ```json
 {
@@ -107,7 +111,7 @@ config.json :
 }
 ```
 
-```
+```python
 # Enter in dirname the path of config.json
 filename_config = 'config.json'
 
@@ -119,7 +123,10 @@ query.execute()
 df = query.main_dataframe
 ```
 
-## Examples
+For extended usage, you can refer to this [tutorial](https://htmlpreview.github.io/?https://github.com/arkhn/FHIR2Dataset/blob/query_tests/examples/tutorial.html) and then this [Jupyter Notebook](examples/example.ipynb)
+
+
+### More Examples
 
 Check out examples of queries and how they are transformed in call to the FHIR api!
 
@@ -130,13 +137,13 @@ Check out examples of queries and how they are transformed in call to the FHIR a
 
 The following commands on a terminal and in your virtual environment allow you to do some minimal local testing before each commit:
 
-```
+```bash
 pip install -r requirements-dev.txt
 pre-commit install
 ```
 
 If you ever want to delete them you just have to do:
 
-```
+```bash
 pre-commit clean
 ```

@@ -98,7 +98,7 @@ class Query:
 
     def __init__(
         self,
-        fhir_api_url: str = "http://hapi.fhir.org/baseR4/",
+        fhir_api_url: str = None,
         fhir_rules: type(FHIRRules) = None,
         token: str = None,
     ):
@@ -111,7 +111,7 @@ class Query:
             fhir_rules {type(FHIRRules)} -- an instance of a FHIRRules-type object. If the instance is not filled a default version will be used. (default: {None})
             token {str} -- bearer token authentication if necessary (default: {None})
         """  # noqa
-        self.fhir_api_url = fhir_api_url
+        self.fhir_api_url = fhir_api_url or "http://hapi.fhir.org/baseR4/"
         if not fhir_rules:
             fhir_rules = FHIRRules(fhir_api_url=self.fhir_api_url)
         self.fhir_rules = fhir_rules
