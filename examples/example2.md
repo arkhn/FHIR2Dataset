@@ -33,9 +33,9 @@ Config file :
         ]
     },
     "from": {
-        "Condition": "condition",
-        "Encounter": "encounter",
-        "Patient": "patient"
+        "condition": "Condition",
+        "encounter": "Encounter",
+        "patient": "Patient"
     },
     "join": {
         "inner": {
