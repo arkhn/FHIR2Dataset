@@ -184,13 +184,19 @@ class ApiGetter(CallApi):
         if self.total == 0:
             return
 
-        number_calls = int(round(np.ceil(self.total / PAGE_SIZE)))
+        number_calls = int(np.ceil(self.total / PAGE_SIZE))
 
-        urls = []
-        for i in range(number_calls):
-            urls.append(
-                (self.auth.token, f"{self.url}&_getpagesoffset={i*PAGE_SIZE}&_count={PAGE_SIZE}")
-            )
+        if number_calls == 1:
+            urls = [(self.auth.token, self.url)]
+        else:
+            urls = []
+            for i in range(number_calls):
+                urls.append(
+                    (
+                        self.auth.token,
+                        f"{self.url}&_getpagesoffset={i*PAGE_SIZE}&_count={PAGE_SIZE}",
+                    )
+                )
 
         if self.parallel_requests:
             p = multiprocessing.Pool()
