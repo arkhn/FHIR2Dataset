@@ -5,9 +5,9 @@ from fhir2dataset.parser import Parser  # noqa
 import re
 
 
-def sql(sql_query, fhir_api_url=None):
+def sql(sql_query, fhir_api_url=None, token=None):
     config = Parser().from_sql(sql_query)
-    query = Query(fhir_api_url).from_config(config)
+    query = Query(fhir_api_url=fhir_api_url, token=token).from_config(config)
     query.execute()
     df = query.main_dataframe
     df = df.reset_index(drop=True)
