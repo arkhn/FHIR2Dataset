@@ -184,7 +184,7 @@ class ApiGetter(CallApi):
         if self.total == 0:
             return
 
-        number_calls = round(np.ceil(self.total / PAGE_SIZE))
+        number_calls = int(round(np.ceil(self.total / PAGE_SIZE)))
 
         urls = []
         for i in range(number_calls):

@@ -33,7 +33,7 @@ setup(
     cmdclass={"build_py": MyBuildCommand, "sdist": MySdistCommand},
     name="fhir2dataset",
     packages=find_packages(),
-    include_package_data=True,  
+    include_package_data=True,
     version="0.1.3",
     license="Apache License 2.0",
     description="Transform FHIR to Dataset",
