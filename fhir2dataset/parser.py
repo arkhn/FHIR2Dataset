@@ -114,17 +114,22 @@ class Parser:
             self.__select[alias].append(f"{self.__from[alias]}.{select_rule}")
 
     def __from_parser(self, string):
-        item_parsed = re.split(create_mask("AS"), string)
-        if len(item_parsed) == 2:
-            resource_type = item_parsed[0]
-            alias = item_parsed[1]
-            self.__from[alias] = resource_type
-        elif len(item_parsed) == 1:
-            resource_type = item_parsed[0]
-            alias = item_parsed[0]
-            self.__from[alias] = resource_type
+        if "," not in string:
+            table_aliases = [string]
         else:
-            raise ValueError(f"The FROM clause {string} couldn't be parsed properly")
+            table_aliases = string.split(",")
+        for table_alias in table_aliases:
+            item_parsed = re.split(create_mask("AS"), table_alias)
+            if len(item_parsed) == 2:
+                resource_type = item_parsed[0]
+                alias = item_parsed[1]
+                self.__from[alias] = resource_type
+            elif len(item_parsed) == 1:
+                resource_type = item_parsed[0]
+                alias = item_parsed[0]
+                self.__from[alias] = resource_type
+            else:
+                raise ValueError(f"The FROM sub-clause {table_alias} couldn't be parsed properly")
 
     def __inner_join_parser(self, string):
         alias_parent, searchparam_parent, alias_child = self.__join_parser(string)
