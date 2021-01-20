@@ -192,19 +192,18 @@ class Query:
 
     def _remove_lists(self):
         """Remove lists from columns with only single elements"""
+
+        def unlist(x):
+            """Auxiliary function to squeeze lists with one element"""
+            if isinstance(x, list) and len(x) == 1:
+                return unlist(x[0])
+            else:
+                return x
+
         if len(self.main_dataframe) > 0:
             df = self.main_dataframe.copy()
             for column in df.columns:
-                lengths = df[column].str.len()
-                try:
-                    if all(len < 2 for len in lengths):
-                        df[column] = df[column].apply(lambda x: x[0] if isinstance(x, list) else x)
-                        logger.info(
-                            f"extraction of the unique element from the lists composing "
-                            f"the {column} column"
-                        )
-                except Exception:
-                    pass
+                df[column] = df[column].apply(unlist)
             self.main_dataframe = df
 
     def _join(self) -> pd.DataFrame:
