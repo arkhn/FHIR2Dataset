@@ -82,6 +82,7 @@ class Parser:
         return self.__to_dict()
 
     def __split_sql_string(self, sql_string: str) -> List[str]:
+        sql_string = sql_string.replace(";", "")
         sql_string = sql_string.replace("\n", " ")
         _RE_COMBINE_WHITESPACE = re.compile(r"\s+")  # noqa
         sql_string = _RE_COMBINE_WHITESPACE.sub(" ", sql_string).strip()
