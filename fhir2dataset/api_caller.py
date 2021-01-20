@@ -135,10 +135,10 @@ class CallApi:
         count = response.json().get("total")
         if count is None:
             raise ValueError(
-                    f"Request: {url_number}\n"
-                    f"Status code of failing response: {response.status_code}\n"
-                    f"Content of the failing response:\n{json.loads(response.content)}"
-                )
+                f"Request: {url_number}\n"
+                f"Status code of failing response: {response.status_code}\n"
+                f"Content of the failing response:\n{json.loads(response.content)}"
+            )
         return count
 
     def _get_bundle_response(self, url):
@@ -215,8 +215,7 @@ class ApiGetter(CallApi):
             next_url = self.url
             while next_url:
                 response = requests.get(
-                    f"{next_url}&_count={PAGE_SIZE}",
-                    auth=BearerAuth(self.auth.token)
+                    f"{next_url}&_count={PAGE_SIZE}", auth=BearerAuth(self.auth.token)
                 ).json()
                 responses.append(response)
                 next_url = self.next_url(response)
@@ -234,8 +233,8 @@ class ApiGetter(CallApi):
         Check if the response contains the url to the next page. If it does, return this url,
         else, return False.
         """
-        for link in response['link']:
-            if link['relation'] == "next":
+        for link in response["link"]:
+            if link["relation"] == "next":
                 return link["url"]
         return False
 
