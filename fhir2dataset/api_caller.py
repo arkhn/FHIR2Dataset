@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 import json
 import logging
+import tqdm
 from itertools import product
 import multiprocessing
 from typing import Type
@@ -46,8 +47,10 @@ MAPPING_CONCAT = {"cell": concat_cell, "col": concat_col, "row": concat_row}
 
 
 def process_function(token, url):
-    """Function called by the different processes when doing parallel querying
-    of the API"""
+    """
+    Make a call to a remote API.
+    Function called by the different processes when doing parallel querying of the API
+    """
     auth = BearerAuth(token)
     response = requests.get(url, auth=auth)
     return response.json()
@@ -132,10 +135,10 @@ class CallApi:
         count = response.json().get("total")
         if count is None:
             raise ValueError(
-                    f"Request: {url_number}\n"
-                    f"Status code of failing response: {response.status_code}\n"
-                    f"Content of the failing response:\n{json.loads(response.content)}"
-                )
+                f"Request: {url_number}\n"
+                f"Status code of failing response: {response.status_code}\n"
+                f"Content of the failing response:\n{json.loads(response.content)}"
+            )
         return count
 
     def _get_bundle_response(self, url):
@@ -173,7 +176,7 @@ class ApiGetter(CallApi):
         self.elements = elements
         self.df = self._init_data()
 
-        self.pbar = pbar
+        self.pbar = pbar or tqdm.tqdm(total=1000)
         self.time_frac = time_frac
 
     def get_all(self):
@@ -190,9 +193,7 @@ class ApiGetter(CallApi):
 
         number_calls = int(np.ceil(self.total / PAGE_SIZE))
 
-        if number_calls == 1:
-            urls = [(self.auth.token, self.url)]
-        else:
+        if self.parallel_requests:
             urls = []
             for i in range(number_calls):
                 urls.append(
@@ -202,7 +203,6 @@ class ApiGetter(CallApi):
                     )
                 )
 
-        if self.parallel_requests:
             p = multiprocessing.Pool()
             responses = p.starmap(process_function, urls)
             p.close()
@@ -211,15 +211,32 @@ class ApiGetter(CallApi):
             responses = []
             # time is split between all urls
             time_frac_per_url = round(self.time_frac / number_calls)
-            for url in urls:
-                responses.append(process_function(*url))
+
+            next_url = self.url
+            while next_url:
+                response = requests.get(
+                    f"{next_url}&_count={PAGE_SIZE}", auth=BearerAuth(self.auth.token)
+                ).json()
+                responses.append(response)
+                next_url = self.next_url(response)
                 self.pbar.update(time_frac_per_url)
+
             # fix rounding error
             self.pbar.update(self.time_frac - time_frac_per_url * number_calls)
 
         for response in responses:
             response = self.process_response(response)
             _ = self._get_data(response)
+
+    def next_url(self, response):
+        """
+        Check if the response contains the url to the next page. If it does, return this url,
+        else, return False.
+        """
+        for link in response["link"]:
+            if link["relation"] == "next":
+                return link["url"]
+        return False
 
     def get_next(self, next_url):
         """retrieves the responses contained in the following pages and stores the data in data attribute"""  # noqa
@@ -255,7 +272,7 @@ class ApiGetter(CallApi):
         if not response.results:
             columns = [element.col_name for element in self.elements.elements]
             df = pd.DataFrame(columns=columns)
-            self.df = pd.concat([self.df, df])
+            self.df = pd.concat([self.df, df]).reset_index(drop=True)
             logger.info(
                 "the current page doesnt have an entry keyword, therefore an empty df is created"
             )
@@ -288,7 +305,7 @@ class ApiGetter(CallApi):
                 #     element.value = element_value
                 # df = self._flatten_item_results(elements)
             df = pd.DataFrame(filtered_resources, columns=columns)
-            self.df = pd.concat([self.df, df])
+            self.df = pd.concat([self.df, df]).reset_index(drop=True)
 
         return response.next_url
 
