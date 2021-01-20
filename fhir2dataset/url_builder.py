@@ -4,7 +4,6 @@ from typing import Type
 
 from collections import defaultdict
 from posixpath import join as urljoin
-from urllib.parse import urlencode
 from fhir2dataset.graphquery import GraphQuery
 from fhir2dataset.data_class import SearchParameter
 
@@ -47,7 +46,7 @@ class URLBuilder:
         Returns:
             str -- corresponding API request url
         """  # noqa
-        params = f"{self._graph_query.resources_alias_info[self.main_resource_alias].resource_type}?"
+        params = f"{self._graph_query.resources_alias_info[self.main_resource_alias].resource_type}?"  # noqa
 
         for key, values in self._params.items():
             if not isinstance(values, list):
