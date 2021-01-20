@@ -47,10 +47,17 @@ class URLBuilder:
         Returns:
             str -- corresponding API request url
         """  # noqa
-        params = (
-            f"{self._graph_query.resources_alias_info[self.main_resource_alias].resource_type}?"
-            f"{urlencode(self._params , doseq=True)}"
-        )
+        params = f"{self._graph_query.resources_alias_info[self.main_resource_alias].resource_type}?"
+
+        for key, values in self._params.items():
+            if not isinstance(values, list):
+                values = [values]
+            for value in values:
+                params += f"{key}={value}&"
+
+        # Rm last '&'
+        params = params[:-1]
+
         search_query_url = urljoin(self.fhir_api_url, params)
         logger.info(f"the computed url is {search_query_url}")
         return search_query_url
@@ -96,4 +103,7 @@ class URLBuilder:
     ):
         key = f"{searchparam_prefixe}{search_param.code}"
         value = f"{search_param.prefix or ''}{search_param.value}"
-        self._params[key] = value
+
+        if key not in self._params:
+            self._params[key] = []
+        self._params[key].append(value)

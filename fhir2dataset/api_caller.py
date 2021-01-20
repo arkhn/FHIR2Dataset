@@ -305,6 +305,9 @@ class ApiGetter(CallApi):
                 #     element.value = element_value
                 # df = self._flatten_item_results(elements)
             df = pd.DataFrame(filtered_resources, columns=columns)
+
+            # Drop duplicate columns (when you have two where clauses on a parameter)
+            df = df.loc[:, ~df.columns.duplicated()]
             self.df = pd.concat([self.df, df]).reset_index(drop=True)
 
         return response.next_url
