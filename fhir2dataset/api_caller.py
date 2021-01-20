@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import requests
+import json
 import logging
 from itertools import product
 import multiprocessing
@@ -130,8 +131,11 @@ class CallApi:
         response = requests.get(url_number, auth=self.auth)
         count = response.json().get("total")
         if count is None:
-            logger.warning(f"status code of failing response:\n{response.status_code}")
-            logger.warning(f"content of the failing response:\n{response.content}")
+            raise ValueError(
+                    f"Request: {url_number}\n"
+                    f"Status code of failing response: {response.status_code}\n"
+                    f"Content of the failing response:\n{json.loads(response.content)}"
+                )
         return count
 
     def _get_bundle_response(self, url):

@@ -34,6 +34,7 @@ After cloning this repository, you can install the required dependencies
 pip install -r requirements.txt
 npm install --prefix ./fhir2dataset/metadata
 ```
+Check that the version of antlr4 is 4.8: `npm view antlr4 version`. If not, run `cd fhir2dataset/metadata && npm install antlr4@4.8.0`.
 
 ## Getting started
 
@@ -58,13 +59,24 @@ By default, FHIR Query will use the HAPI FHIR Api. But you can use your own api 
 ```python
 import fhir2dataset as query
 
-fhir_api_url = 'https://api.awesome.fhir.org/baseR4/'
-query.sql(sql_query, fhir_api_url=fhir_api_url)
+sql_query = "SELECT ..."
+
+query.sql(
+    sql_query=sql_query,
+    fhir_api_url="https://api.awesome.fhir.org/baseR4/",
+    token="<my token>"
+)
+```
+
+To have more infos about the execution, you can enable logging:
+```python
+import logging
+logging.basicConfig(level=logging.INFO)
 ```
 
 **JSON config file**
 
-You can also use JSON configuration files
+You can also use JSON configuration files.
 
 ```python
 from fhir2dataset.query import Query
