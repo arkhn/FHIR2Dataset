@@ -193,11 +193,14 @@ class Parser:
             quotes_match = re.search(r"^['\"](.*)['\"]$", condition_parsed[2])
             value = quotes_match.group(1) if quotes_match else condition_parsed[2]
 
+            if where_rule not in self.__where[alias]:
+                self.__where[alias][where_rule] = []
+
             if condition_parsed[1] in PREFIX:
                 prefix = condition_parsed[1]
-                self.__where[alias][where_rule] = {prefix: value}
-            else:
-                self.__where[alias][where_rule] = value
+                value = {prefix: value}
+
+            self.__where[alias][where_rule].append(value)
 
     def __order_by_parser(self, string):
         raise NotImplementedError("The ORDER BY keyword is not supported for the moment.")

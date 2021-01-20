@@ -177,29 +177,34 @@ class GraphQuery:
             **wheres: the key is an alias, the value is a dictionary containing itself keys which are searchparams and whose values must be respected by the associated search params.
         """  # noqa
         for resource_alias, conditions in wheres.items():
-            for search_param, value_full in conditions.items():
-
-                # handles the case where a prefix has been specified
-                # value_full={"ge": "1970"}
-                if type(value_full) is dict:
-                    for k, v in value_full.items():
-                        prefix = k
-                        value = v
-                else:
-                    prefix = None
-                    value = value_full
-
+            for search_param, list_value_full in conditions.items():
                 fhirpath = self._check_searchparam_or_fhirpath(resource_alias, search_param)
+                if not isinstance(list_value_full, list):
+                    list_value_full = [list_value_full]
 
-                search_param = SearchParameter(code=search_param, prefix=prefix, value=value)
-                self.resources_alias_info[resource_alias].elements.append(
-                    Element(
-                        goal="where",
-                        col_name=f"where_{search_param.code}",
-                        fhirpath=fhirpath,
-                        search_parameter=search_param,
+                for value_full in list_value_full:
+
+                    # handles the case where a prefix has been specified
+                    # value_full={"ge": "1970"}
+                    if type(value_full) is dict:
+                        for k, v in value_full.items():
+                            prefix = k
+                            value = v
+                    else:
+                        prefix = None
+                        value = value_full
+
+                    search_param_obj = SearchParameter(
+                        code=search_param, prefix=prefix, value=value
                     )
-                )
+                    self.resources_alias_info[resource_alias].elements.append(
+                        Element(
+                            goal="where",
+                            col_name=f"where_{search_param_obj.code}",
+                            fhirpath=fhirpath,
+                            search_parameter=search_param_obj,
+                        )
+                    )
 
     def _select(self, **selects):
         """updates the resources_alias_info attribute with the elements that must be retrieved for each alias
