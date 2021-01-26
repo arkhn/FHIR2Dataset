@@ -219,14 +219,17 @@ class ApiGetter(CallApi):
             next_url = self.url
             while next_url:
 
-                # Enforce that the base URL is not changed
-                if self.url not in next_url:
-                    next_url = re.sub(
-                        r"^(?:http:\/\/|www\.|https:\/\/)([^\/]+)", self.url, next_url  # hackalert
-                    )
+                if "arkhn" in next_url:
+                    # Enforce that the base URL is not changed
+                    if self.url not in next_url:
+                        next_url = re.sub(
+                            r"^(?:http:\/\/|www\.|https:\/\/)([^\/]+)",
+                            self.url,
+                            next_url,  # hackalert
+                        )
 
-                # Append _count info
-                next_url = f"{next_url}?_count={PAGE_SIZE}"
+                    # Append _count info
+                    next_url = f"{next_url}?_count={PAGE_SIZE}"
 
                 next_url = self.fix_url(next_url)
 
@@ -275,10 +278,16 @@ class ApiGetter(CallApi):
         Check if the response contains the url to the next page. If it does, return this url,
         else, return False.
         """
-        if len(response["entry"]) > 0:  # If the cursor returns an empty page
+        if (
+            "entry" in response and len(response["entry"]) == 0
+        ):  # If the cursor returns an empty page
+            return False
+
+        if "link" in response:
             for link in response["link"]:
                 if link["relation"] == "next":
                     return link["url"]
+
         return False
 
     def get_next(self, next_url):
