@@ -302,7 +302,18 @@ class ApiGetter(CallApi):
 
         """
         if not isinstance(obj, list):
-            if len(keys) == 1:
+            # TODO: Fix because ( ) were removed
+            if keys[0].startswith("where"):
+                attr, value = keys[0][5:].split("=")
+                value = value.replace('"', "").replace("'", "")
+                if attr in obj and obj[attr] == value:
+                    keys = keys[1:]
+                else:
+                    return None  # FIXME: nothing should be added to a list of contacts
+
+            if len(keys) == 0:
+                return obj
+            elif len(keys) == 1:
                 return obj[keys[0]]
             else:
                 first_key, *keys = keys
