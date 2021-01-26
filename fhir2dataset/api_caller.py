@@ -218,8 +218,6 @@ class ApiGetter(CallApi):
 
             next_url = self.url
             while next_url:
-                # Remove noisy "%3D"
-                next_url = next_url.replace("%3D", "")
 
                 # Enforce that the base URL is not changed
                 if self.url not in next_url:
@@ -227,25 +225,10 @@ class ApiGetter(CallApi):
                         r"^(?:http:\/\/|www\.|https:\/\/)([^\/]+)", self.url, next_url  # hackalert
                     )
 
-                # Hot fix in syntax
-                next_url = next_url.replace("/?", "?")
-
                 # Append _count info
                 next_url = f"{next_url}?_count={PAGE_SIZE}"
 
-                # Hot fix to change several '?' in the url in 1 '?' and '&' after
-                seen = False
-                clean_next_url = ""
-                for char in next_url:
-                    if char == "?":
-                        if not seen:
-                            seen = True
-                            clean_next_url += "?"
-                        else:
-                            clean_next_url += "&"
-                    else:
-                        clean_next_url += char
-                next_url = clean_next_url
+                next_url = self.fix_url(next_url)
 
                 response = requests.get(next_url, auth=BearerAuth(self.auth.token)).json()
 
@@ -259,6 +242,33 @@ class ApiGetter(CallApi):
         for response in responses:
             response = self.process_response(response)
             _ = self._get_data(response)
+
+    def fix_url(self, url):
+        """
+        Apply a set of hot fixes on the url
+        """
+
+        # Hot fix: remove noisy "%3D"
+        url = url.replace("%3D", "")
+
+        # Hot fix in syntax
+        url = url.replace("/?", "?")
+
+        # Hot fix to change several '?' in the url in 1 '?' and '&' after
+        seen = False
+        clean_url = ""
+        for char in url:
+            if char == "?":
+                if not seen:
+                    seen = True
+                    clean_url += "?"
+                else:
+                    clean_url += "&"
+            else:
+                clean_url += char
+        url = clean_url
+
+        return url
 
     def next_url(self, response):
         """
