@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import requests
 import json
+import re
 import logging
 import tqdm
 from itertools import product
@@ -126,8 +127,8 @@ class CallApi:
         return response_url
 
     def _get_count(self, url):
-        if url[-1] == "?":
-            url_number = f"{url}_summary=count"
+        if "?" not in url:
+            url_number = f"{url}?_summary=count"
         else:
             url_number = f"{url}&_summary=count"
         logger.info(f"Get {url_number}")
@@ -152,7 +153,10 @@ class BearerAuth(requests.auth.AuthBase):
 
     def __call__(self, r):
         if self.token:
-            r.headers["Authorization"] = "Bearer " + self.token
+            if "Bearer" not in self.token:
+                self.token = "Bearer " + self.token
+
+            r.headers["Authorization"] = self.token
         return r
 
 
@@ -214,9 +218,37 @@ class ApiGetter(CallApi):
 
             next_url = self.url
             while next_url:
-                response = requests.get(
-                    f"{next_url}&_count={PAGE_SIZE}", auth=BearerAuth(self.auth.token)
-                ).json()
+                # Remove noisy "%3D"
+                next_url = next_url.replace("%3D", "")
+
+                # Enforce that the base URL is not changed
+                if self.url not in next_url:
+                    next_url = re.sub(
+                        r"^(?:http:\/\/|www\.|https:\/\/)([^\/]+)", self.url, next_url  # hackalert
+                    )
+
+                # Hot fix in syntax
+                next_url = next_url.replace("/?", "?")
+
+                # Append _count info
+                next_url = f"{next_url}?_count={PAGE_SIZE}"
+
+                # Hot fix to change several '?' in the url in 1 '?' and '&' after
+                seen = False
+                clean_next_url = ""
+                for char in next_url:
+                    if char == "?":
+                        if not seen:
+                            seen = True
+                            clean_next_url += "?"
+                        else:
+                            clean_next_url += "&"
+                    else:
+                        clean_next_url += char
+                next_url = clean_next_url
+
+                response = requests.get(next_url, auth=BearerAuth(self.auth.token)).json()
+
                 responses.append(response)
                 next_url = self.next_url(response)
                 self.pbar.update(time_frac_per_url)
@@ -233,9 +265,10 @@ class ApiGetter(CallApi):
         Check if the response contains the url to the next page. If it does, return this url,
         else, return False.
         """
-        for link in response["link"]:
-            if link["relation"] == "next":
-                return link["url"]
+        if len(response["entry"]) > 0:  # If the cursor returns an empty page
+            for link in response["link"]:
+                if link["relation"] == "next":
+                    return link["url"]
         return False
 
     def get_next(self, next_url):
@@ -271,7 +304,7 @@ class ApiGetter(CallApi):
         """retrieves the necessary information from the json instance of a resource and stores it in the data attribute"""  # noqa
         if not response.results:
             columns = [element.col_name for element in self.elements.elements]
-            df = pd.DataFrame(columns=columns)
+            df = pd.DataFrame(columns=self.df.columns)  # hackalert?
             self.df = pd.concat([self.df, df]).reset_index(drop=True)
             logger.info(
                 "the current page doesnt have an entry keyword, therefore an empty df is created"
