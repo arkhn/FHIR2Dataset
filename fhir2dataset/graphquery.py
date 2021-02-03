@@ -4,7 +4,7 @@ from typing import Type
 from pprint import pformat
 from collections import defaultdict
 
-from fhir2dataset.fhirrules_getter import FHIRRules
+from fhir2dataset.fhirrules import FHIRRules
 from fhir2dataset.visualization_tools import custom_repr
 
 from fhir2dataset.data_class import SearchParameter, ResourceAliasInfo, Element, Elements, EdgeInfo

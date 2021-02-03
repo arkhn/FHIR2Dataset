@@ -2,20 +2,23 @@ import re
 from collections import defaultdict
 from collections.abc import Iterable
 
-from typing import List
+from typing import List, Union
 
 PREFIX = ["eq", "ne", "gt", "lt", "ge", "le", "sa", "eb", "ap"]
 
 
 def create_mask(
-    separators,
-    keep_separators=False,
+    masks: Union[Iterable, str],
+    keep_separators: bool = False,
     case_insensitive: bool = True,
     can_start_sentence: bool = False,
     optional_space_before: bool = False,
     optional_space_after: bool = False,
     optional_spaces: bool = None,
 ):
+    """
+    Utility function: create regex masks to catch one or multiple works (or masks)
+    """
     if optional_spaces is not None:
         optional_space_before = optional_spaces
         optional_space_after = optional_spaces
@@ -23,12 +26,12 @@ def create_mask(
     assert not (
         can_start_sentence and optional_space_before
     ), "Can't set to true both can_start_sentence and optional_space_before optional arguments"
-    if isinstance(separators, str):
-        mask = separators
-    elif isinstance(separators, Iterable):
-        mask = "|".join(separators)
+    if isinstance(masks, str):
+        mask = masks
+    elif isinstance(masks, Iterable):
+        mask = "|".join(masks)
     else:
-        raise ValueError
+        raise ValueError(f"masks should be an Iterable or a string, but {type(masks)} was given.")
 
     if keep_separators:
         mask = fr"({mask})"
@@ -74,18 +77,23 @@ class Parser:
         self.__where = defaultdict(dict)
 
     def from_sql(self, sql_string: str) -> dict:
+        """Convert a SQL string query into a dict of logical clauses"""
+        # Clean the sql query string
+        sql_string = self.__preprocess_sql_string(sql_string)
+
+        # Split the sql query string by clauses
         items = self.__split_sql_string(sql_string)
+
+        # Transform the list of alternating clause names and clause values into a dict
         for clause in self.CLAUSES.keys():
             for idx, item in enumerate(items):
                 if item.upper() == clause:
-                    self.CLAUSES[item.upper()](items[idx + 1])
+                    clause_value = items[idx + 1]
+                    self.CLAUSES[clause](clause_value)
         return self.__to_dict()
 
     def __split_sql_string(self, sql_string: str) -> List[str]:
-        sql_string = sql_string.replace(";", "")
-        sql_string = sql_string.replace("\n", " ")
-        _RE_COMBINE_WHITESPACE = re.compile(r"\s+")  # noqa
-        sql_string = _RE_COMBINE_WHITESPACE.sub(" ", sql_string).strip()
+        sql_string = self.__preprocess_sql_string(sql_string)
         split_mask_clauses = create_mask(
             self.CLAUSES.keys(), can_start_sentence=True, keep_separators=True
         )
@@ -111,7 +119,7 @@ class Parser:
             alias, select_rule = re.split(r"\.", item, 1)
             assert (
                 alias in self.__from.keys()
-            ), f"Ressource {alias} was used in SELECT {item} but was not defined"
+            ), f"Resource {alias} was used in SELECT {item} but was not defined"
             self.__select[alias].append(f"{self.__from[alias]}.{select_rule}")
 
     def __from_parser(self, string):
@@ -206,10 +214,21 @@ class Parser:
         raise NotImplementedError("The ORDER BY keyword is not supported for the moment.")
 
     def __group_by_parser(self, string):
-        raise NotImplementedError("The ORDER BY keyword is not supported for the moment.")
+        raise NotImplementedError("The GROUP BY keyword is not supported for the moment.")
 
     def __union_parser(self, string):
         raise NotImplementedError("The UNION keyword is not supported for the moment.")
 
     def __limit_parser(self, string):
         raise NotImplementedError("The LIMIT keyword is not supported for the moment.")
+
+    @staticmethod
+    def __preprocess_sql_string(sql_string: str) -> str:
+        """
+        Remove ending ';', line breaks, multiple spaces, etc
+        """
+        sql_string = sql_string.replace(";", "")
+        sql_string = sql_string.replace("\n", " ")
+        _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
+        sql_string = _RE_COMBINE_WHITESPACE.sub(" ", sql_string).strip()
+        return sql_string
