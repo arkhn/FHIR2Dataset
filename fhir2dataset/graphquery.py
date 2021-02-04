@@ -1,7 +1,6 @@
 import logging
 from collections import defaultdict
 from pprint import pformat
-from typing import Type
 
 import networkx as nx
 

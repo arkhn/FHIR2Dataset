@@ -11,14 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 class URLBuilder:
-    """class that allows to build the url of a query that will be made for an alias 
+    """class that allows to build the url of a query that will be made for an alias
     of a FHIR resource to a FHIR api
 
     Attributes:
         fhir_api_url (str): The Service Base URL (e.g. http://hapi.fhir.org/baseR4/)
-        graph_query (GraphQuery): instance of a GraphQuery object that gives a graphical 
+        graph_query (GraphQuery): instance of a GraphQuery object that gives a graphical
             representation of the global query
-        main_resource_alias (str): alias given to a set of fhir resources of a certain type 
+        main_resource_alias (str): alias given to a set of fhir resources of a certain type
             which are the subject of the api query
     """  # noqa
 
@@ -28,7 +28,7 @@ class URLBuilder:
         """
         Arguments:
             fhir_api_url (str): The Service Base URL (e.g. http://hapi.fhir.org/baseR4/)
-            graph_query (GraphQuery): instance of a GraphQuery object that gives a graphical 
+            graph_query (GraphQuery): instance of a GraphQuery object that gives a graphical
                 representation of the global query
             main_resource_alias (str): alias given to a set of fhir resources of a certain type
         """  # noqa
@@ -43,8 +43,8 @@ class URLBuilder:
         return self._compute_url()
 
     def _compute_url(self) -> str:
-        """Generates the url which will make it possible to recover the resources of the type 
-        of main_alias respecting as well as possible the conditions where on itself and on its 
+        """Generates the url which will make it possible to recover the resources of the type
+        of main_alias respecting as well as possible the conditions where on itself and on its
         neighbors.
 
         Returns:
@@ -66,12 +66,10 @@ class URLBuilder:
     def _update_url_params(self):
         """retrieves the portions of the url that specify search parameters
 
-        The FHIR API makes union when "where conditions" are requested for neighbouring resources 
+        The FHIR API makes union when "where conditions" are requested for neighbouring resources
         Only one "where condition" on every neighbouring resource is taken into account
         """  # noqa
-        for resource_alias in self.graph_query.resources_graph.neighbors(
-            self.main_resource_alias
-        ):
+        for resource_alias in self.graph_query.resources_graph.neighbors(self.main_resource_alias):
             edge_info = self.graph_query.resources_graph.edges[
                 self.main_resource_alias, resource_alias
             ]["info"]

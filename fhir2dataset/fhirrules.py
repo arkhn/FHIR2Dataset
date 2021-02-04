@@ -3,7 +3,7 @@ import logging
 import os
 from collections import defaultdict
 from functools import lru_cache
-from typing import List, Optional
+from typing import List
 
 from fhir2dataset.data_class import SearchParameter
 
