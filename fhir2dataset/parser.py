@@ -1,7 +1,6 @@
 import re
 from collections import defaultdict
 from collections.abc import Iterable
-
 from typing import List, Union
 
 PREFIX = ["eq", "ne", "gt", "lt", "ge", "le", "sa", "eb", "ap"]

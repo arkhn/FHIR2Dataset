@@ -1,10 +1,10 @@
-import pytest
-import sys
 from dataclasses import asdict
+
+import pytest
 from dacite import from_dict
 
-from fhir2dataset.data_class import Elements, Element
-from fhir2dataset.fhirpath import multiple_search_dict
+from fhir2dataset.data_class import Element, Elements
+from fhir2dataset.tools.fhirpath import multiple_search_dict
 
 
 @pytest.fixture()

@@ -1,7 +1,8 @@
-import os
 import json
-import sys
 import logging
+import os
+import sys
+
 import pytest
 
 from fhir2dataset.query import Query

@@ -1,8 +1,9 @@
-import requests
 import json
+import logging
 import os
 import sys
-import logging
+
+import requests
 
 
 def update_resource(fhir_api_url, body, filename, path_info):

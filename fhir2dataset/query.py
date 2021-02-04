@@ -1,12 +1,13 @@
-import pandas as pd
 import logging
+
+import pandas as pd
 import tqdm
 
-from fhir2dataset.graphquery import GraphQuery
-from fhir2dataset.fhirrules import FHIRRules
 from fhir2dataset.api import ApiRequest
-from fhir2dataset.url_builder import URLBuilder
+from fhir2dataset.fhirrules import FHIRRules
+from fhir2dataset.graphquery import GraphQuery
 from fhir2dataset.tools.graph import join_path
+from fhir2dataset.url_builder import URLBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +82,10 @@ class Query:
 
     Attributes:
         config (dict): dictionary storing the initial request
-        graph_query (GraphQuery): instance of a GraphQuery object that gives a graphical representation of the query
-        dataframes (dict): dictionary storing for each alias the resources requested on the api in tabular format
+        graph_query (GraphQuery): instance of a GraphQuery object that gives a graphical
+            representation of the query
+        dataframes (dict): dictionary storing for each alias the resources requested on
+            the api in tabular format
         main_dataframe (DataFrame): pandas dataframe storing the final result table
     """  # noqa
 
@@ -143,21 +146,21 @@ class Query:
         self.graph_query.build(**self.config)
 
         with tqdm.tqdm(total=1000) as pbar:
-            time_frac = round(1000 / len(self.graph_query.resources_alias_info))
-            for resource_alias in self.graph_query.resources_alias_info.keys():
-                resource_alias_info = self.graph_query.resources_alias_info[resource_alias]
-                elements = resource_alias_info.elements
-                url_builder = URLBuilder(
+            time_frac = round(1000 / len(self.graph_query.resources_by_alias))
+            for resource_alias, resource in self.graph_query.resources_by_alias.items():
+                url = URLBuilder(
                     fhir_api_url=self.fhir_api_url,
                     graph_query=self.graph_query,
                     main_resource_alias=resource_alias,
-                )
-                url = url_builder.compute()
+                ).compute()
                 call = ApiRequest(
-                    url=url, elements=elements, token=self.token, pbar=pbar, time_frac=time_frac
+                    url=url,
+                    elements=resource.elements,
+                    token=self.token,
+                    pbar=pbar,
+                    time_frac=time_frac,
                 )
-                call.get_all()
-                self.dataframes[resource_alias] = call.df
+                self.dataframes[resource_alias] = call.get_all()
 
         self._clean_columns()
 
@@ -201,10 +204,13 @@ class Query:
 
         The join key is the id of the child resource.
         This id is contained in :
-            * in the column child_alias:id of the child resource table named child_alias (e.g. parent:id for a parent dataframe)
-            * in the alias_parent:searchparam_parent column of the parent resource table named alias_parent (e.g. condition:subject.reference for a condition dataframe)
+            * in the column child_alias:id of the child resource table named child_alias
+              (e.g. parent:id for a parent dataframe)
+            * in the alias_parent:searchparam_parent column of the parent resource table
+               named alias_parent (e.g. condition:subject.reference for a condition dataframe)
 
-        The function is in charge of finding out who is the mother resource and who is the daughter resource.
+        The function is in charge of finding out who is the mother resource and who is the
+        daughter resource.
 
         Arguments:
             alias_1 (str): df_1 alias
@@ -212,7 +218,8 @@ class Query:
             df_1 (pd.DataFrame): dataframe containing the elements of a resource
             df_2 (pd.DataFrame): dataframe containing the elements of a resource
         Returns:
-            pd.DataFrame: dataframe containing the elements of the 2 resources according to an inner join
+            pd.DataFrame: dataframe containing the elements of the 2 resources according to
+                an inner join
         """  # noqa
         edge_info = self.graph_query.resources_alias_graph.edges[alias_1, alias_2]["info"]
         alias_parent = edge_info.parent
@@ -254,7 +261,7 @@ class Query:
             return df
 
         for resource_alias, df in self.dataframes.items():
-            resource_type = self.graph_query.resources_alias_info[resource_alias].resource_type
+            resource_type = self.graph_query.resources_by_alias[resource_alias].resource_type
 
             df = df.pipe(_add_resource_type_to_id, resource_type=resource_type)
 
@@ -263,8 +270,8 @@ class Query:
     def __select_columns(self):
         """Clean the final dataframe to keep only the columns of the select"""
         final_columns = []
-        for resource_alias, resource_alias_info in self.graph_query.resources_alias_info.items():
-            for element in resource_alias_info.elements.get_subset_elements(goal="select"):
+        for resource_alias, resource in self.graph_query.resources_by_alias.items():
+            for element in resource.elements.where(goal="select"):
                 final_columns.append(f"{resource_alias}:{element.col_name}")
         self.main_dataframe = self.main_dataframe[final_columns]
 

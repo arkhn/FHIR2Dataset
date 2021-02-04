@@ -1,9 +1,8 @@
-from collections import defaultdict
-from dataclasses import dataclass, field
-from functools import lru_cache
 import json
 import logging
 import os
+from collections import defaultdict
+from functools import lru_cache
 from typing import List, Optional
 
 from fhir2dataset.data_class import SearchParameter

@@ -1,15 +1,16 @@
+import json
+import logging
+import multiprocessing
+import pprint
+import re
+from itertools import product
+from json import JSONDecodeError
+from typing import List, Optional
+
 import numpy as np
 import pandas as pd
 import requests
-import json
-from json import JSONDecodeError
-import re
-import logging
-import pprint
 import tqdm
-from itertools import product
-import multiprocessing
-from typing import List, Optional
 
 # from fhir2dataset.fhirpath import fhirpath_processus_tree
 from fhir2dataset.data_class import Elements
@@ -250,6 +251,8 @@ class ApiRequest(ApiCall):
         for result in results:
             self._get_data(result)
 
+        return self.df
+
     @classmethod
     def rgetattr(cls, obj, keys):
         """
@@ -312,6 +315,7 @@ class ApiRequest(ApiCall):
 
                 filtered_resources.append(data_items)
 
+                # FIXME: Need FHIR2Dataset#96
                 # elements = self.elements.elements.copy()
                 # data_array = fhirpath_processus_tree(self.elements.forest_dict, resource)
                 # for element_value, element in zip(data_array, elements):
@@ -323,16 +327,21 @@ class ApiRequest(ApiCall):
             df = df.loc[:, ~df.columns.duplicated()]
             self.df = pd.concat([self.df, df]).reset_index(drop=True)
 
+    # FIXME: Need FHIR2Dataset#96
     # def _flatten_item_results(self, elements: Elements):
     #     """creates the tabular version of the elements given as input argument.
-    #     For each element of elements, at least one column is added according to the following process.
+    #     For each element of elements, at least one column is added according to the
+    #     following process.
     #     1. The first step is to reproduce the type of concatenation desired for each element
     #     If the concatenation type of the element is:
-    #         * cell: a single column is created with a single row. The single cell is therefore of the same type of element.value, i.e. a list.
-    #         * row: a single column is created and creates a row for each element in the element.value list.
-    #         * col: len(element.value) column are created. Each column contains a single cell composed of an element from the element.value list.
+    #         * cell: a single column is created with a single row. The single cell is therefore
+    #           of the same type of element.value, i.e. a list.
+    #         * row: a single column is created and creates a row for each element in the
+    #           element.value list.
+    #         * col: len(element.value) column are created. Each column contains a single cell
+    #           composed of an element from the element.value list.
     #
-    #     2. The second step is to produce the product of all possible combinations between columns.
+    #     2. The second step is to produce the product of all possible combinations between columns
     #     For example, if at the end of step 1, the table is :
     #     Col_1 | Col_2 | Col_3
     #     pat_1 | Pete  | Ginger
