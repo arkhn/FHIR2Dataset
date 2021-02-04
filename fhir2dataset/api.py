@@ -110,13 +110,14 @@ class ApiCall:
             failed = True
 
         if not failed:
+            results = response_content.get("entry")
             links = response_content.get("link", [])
             next_pages = [link["url"] for link in links if link["relation"] == "next"]
 
             response = Response(
-                total=response_content.get("total"),
-                results=response_content.get("entry"),
-                next_url=next_pages[0] if next_pages else None,
+                total=response_content.get("total", 0),
+                results=results,
+                next_url=next_pages[0] if next_pages and results else None,
             )
             return response
         else:
@@ -132,6 +133,22 @@ class ApiCall:
 
         response = self._get_response(url_count)
         return response.total
+
+    def _fix_next_url(self, next_url):
+        """Apply a set of fixes for the next_url of the Arkhn Api"""
+        if "arkhn" in next_url:
+            # Enforce that the base URL is not changed
+            if self.url not in next_url:
+                next_url = re.sub(
+                    r"^(?:http:\/\/|www\.|https:\/\/)([^\/]+)",
+                    self.url,
+                    next_url,  # hackalert
+                )
+
+            # Append _count info
+            next_url = f"{next_url}?_count={PAGE_SIZE}"
+
+        return next_url
 
     @staticmethod
     def __fix_url(url):
@@ -192,9 +209,6 @@ class ApiRequest(ApiCall):
         if self.total is None:
             self.total = self._get_count(self.url)
             logger.info(f"there is {self.total} matching resources for {self.url}")
-            count_time = round(self.time_frac * 0.1)
-            self.pbar.update(count_time)
-            self.time_frac -= count_time
 
         if self.total == 0:
             return
@@ -222,19 +236,7 @@ class ApiRequest(ApiCall):
 
             next_url = self.url
             while next_url:
-
-                if "arkhn" in next_url:
-                    # Enforce that the base URL is not changed
-                    if self.url not in next_url:
-                        next_url = re.sub(
-                            r"^(?:http:\/\/|www\.|https:\/\/)([^\/]+)",
-                            self.url,
-                            next_url,  # hackalert
-                        )
-
-                    # Append _count info
-                    next_url = f"{next_url}?_count={PAGE_SIZE}"
-
+                next_url = self._fix_next_url(next_url)
                 response = self._get_response(next_url)
 
                 results.append(response.results)

@@ -1,8 +1,34 @@
+import networkx as nx
+
 OPEN_CHAR = ["[", "{", "("]
 CLOSE_CHAR = ["]", "}", ")"]
 SAFE_CHAR = ["'", '"']
 DEFAULT_BREAKLINE_CHAR = "\n"
 DEFAULT_INDENT_CHAR = " "
+
+
+def draw_graphquery(resources_alias_graph):
+    """draws the resources_alias_graph attribute"""
+    import matplotlib.pyplot as plt
+
+    edge_labels = {}
+    for i in resources_alias_graph.edges(data=True):
+        edge_infos = custom_repr(i[2]["info"].__repr__())
+        edge_labels[i[0:2]] = edge_infos
+
+    plt.figure(figsize=(15, 15))
+    layout = nx.spring_layout(resources_alias_graph)
+    nx.draw_networkx(resources_alias_graph, pos=layout)
+    nx.draw_networkx_labels(resources_alias_graph, pos=layout)
+    nx.draw_networkx_edge_labels(
+        resources_alias_graph,
+        pos=layout,
+        edge_labels=edge_labels,
+        font_size=10,
+        rotate=False,
+        horizontalalignment="left",
+    )
+    plt.show()
 
 
 def custom_repr(

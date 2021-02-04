@@ -4,9 +4,9 @@ import tqdm
 
 from fhir2dataset.graphquery import GraphQuery
 from fhir2dataset.fhirrules import FHIRRules
-from fhir2dataset.api_caller import ApiRequest
+from fhir2dataset.api import ApiRequest
 from fhir2dataset.url_builder import URLBuilder
-from fhir2dataset.graph_tools import join_path
+from fhir2dataset.tools.graph import join_path
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +140,7 @@ class Query:
                 kept in the final dataframe. (default: {False})
         """  # noqa
         self.graph_query = GraphQuery(fhir_api_url=self.fhir_api_url, fhir_rules=self.fhir_rules)
-        self.graph_query.execute(**self.config)
+        self.graph_query.build(**self.config)
 
         with tqdm.tqdm(total=1000) as pbar:
             time_frac = round(1000 / len(self.graph_query.resources_alias_info))

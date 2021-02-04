@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from dataclasses import dataclass, field, asdict
 from typing import List, Optional
 
-from fhir2dataset.visualization_tools import custom_repr
+from fhir2dataset.tools.visualization import custom_repr
 from fhir2dataset.fhirpath import parse_fhirpath
 
 

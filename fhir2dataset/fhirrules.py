@@ -44,11 +44,13 @@ class SearchParameters:
         Returns:
             str: the fhirpath associated to the searchparam (e.g. 'address.postalCode')
         """  # noqa
-        try:
-            return self._data[search_param][resource_type]
-        except KeyError:
+        fhirpath = self._data[search_param][resource_type]
+
+        if fhirpath == {}:  # self._data is a defaultdict of dict: so it never KeyErrors
             logger.warning(f"The searchparam '{search_param}' doesn't exist in the rules")
             return None
+
+        return fhirpath
 
     def _add_data(self, search_parameter: SearchParameter):
         """Fill the _data store dict with information from a searchparam"""
@@ -101,7 +103,7 @@ class FHIRRules:
         """  # noqa
         fhirpath = self.searchparameters.searchparam_to_fhirpath(search_param, resource_type)
 
-        if resource_type != "all" and fhirpath != {}:
+        if fhirpath and resource_type != "all":
             params = fhirpath.split(" | ")
             filtered_params = []
             for param in params:
