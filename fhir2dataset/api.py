@@ -8,14 +8,14 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 import requests
-import tqdm
 
 # from fhir2dataset.fhirpath import fhirpath_processus_tree
 from fhir2dataset.data_class import Elements
+from fhir2dataset.tools.progressbar import progressbar
 
 logger = logging.getLogger(__name__)
 
-PAGE_SIZE = 300  # Return maximum 300 entities per query
+PAGE_SIZE = 100  # Return maximum 300 entities per query
 
 
 # def concat_cell(dataset, cols_name, element):
@@ -93,8 +93,8 @@ class ApiCall:
     def __init__(self, url: str, token: str = None):
         self.url = url
         self.auth = BearerAuth(token)
-        self.total = None
 
+    @progressbar
     def _get_response(self, url: str) -> Response:
         logger.info(f"Get {url}")
 
@@ -144,6 +144,7 @@ class ApiCall:
                     next_url,  # hackalert
                 )
 
+        if "_count" not in next_url:
             # Append _count info
             next_url = f"{next_url}?_count={PAGE_SIZE}"
 
@@ -188,35 +189,44 @@ class ApiRequest(ApiCall):
             all the elements that need to be retrieved from the bundles returned in response to
             the request url
         df (pd.DataFrame): dataframe containing the elements to be recovered in tabular format
+        parallel_requests (bool) if true, perform queries in get_all() in parallel using an
+            offset functionality of some FHIR Apis
         pbar : tqdm progress bar object
-        time_frac (int): total amount of time allocated to this Api call
+        bar_frac (int): total amount of time allocated to this Api call
     """  # noqa
 
     def __init__(
-        self, url: str, elements: Elements, token: str = None, pbar=None, time_frac: int = 0
+        self,
+        url: str,
+        elements: Elements,
+        token: str = None,
+        parallel_requests: bool = False,
+        pbar=None,
+        bar_frac: int = 0,
     ):
         ApiCall.__init__(self, url, token)
         self.elements = elements
         self.df = self._init_data()
 
-        self.parallel_requests = False
-        self.pbar = pbar or tqdm.tqdm(total=1000)
-        self.time_frac = time_frac
+        self.parallel_requests = parallel_requests
+
+        self.pbar = pbar
+        self.bar_frac = bar_frac
+        self.number_calls = None
 
     def get_all(self):
         """collects all the data corresponding to the initial url request by calling the following pages"""  # noqa
-        if self.total is None:
-            self.total = self._get_count(self.url)
-            logger.info(f"there is {self.total} matching resources for {self.url}")
+        if self.number_calls is None:
+            total_resources = self._get_count(self.url)
+            logger.info(f"there are {total_resources} matching resources for {self.url}")
+            self.number_calls = int(np.ceil(total_resources / PAGE_SIZE))
 
-        if self.total == 0:
+        if self.number_calls == 0:
             return
-
-        number_calls = int(np.ceil(self.total / PAGE_SIZE))
 
         if self.parallel_requests:
             urls = []
-            for i in range(number_calls):
+            for i in range(self.number_calls):
                 urls.append(
                     (
                         self.auth.token,
@@ -227,37 +237,90 @@ class ApiRequest(ApiCall):
             p = multiprocessing.Pool()
             results = p.starmap(process_function, urls)
             p.close()
-            self.pbar.update(self.time_frac)
+            self.pbar.update(self.bar_frac)
         else:
             results = []
-            # time is split between all urls
-            time_frac_per_url = round(self.time_frac / number_calls)
 
             next_url = self.url
             while next_url:
                 next_url = self._fix_next_url(next_url)
                 response = self._get_response(next_url)
+                page_results = self._get_data(response.results)
 
-                results.append(response.results)
+                results.append(page_results)
                 next_url = response.next_url
 
-                self.pbar.update(time_frac_per_url)
-
-            # fix rounding error
-            self.pbar.update(self.time_frac - time_frac_per_url * number_calls)
-
-        for result in results:
-            self._get_data(result)
+        self._concat(results)
 
         return self.df
 
+    def _get_data(self, results: List) -> pd.DataFrame:
+        """Retrieves the information from the json instance of a resource that is relevant
+        to the query (ie listed in self.elements) and put it in a Dataframe
+
+        Arguments:
+            results: list of json resources
+
+        Returns:
+            pd.DataFrame: with data extracted from the json resources
+        """
+
+        columns = [element.col_name for element in self.elements.elements]
+        filtered_resources = []
+        for json_resource in results:
+            resource = json_resource["resource"]
+            data_items = []
+            for element in self.elements.elements:
+                fhirpath = element.fhirpath.replace("(", "").replace(
+                    ")", ""
+                )  # TODO: analyze this: breaks .where()
+                sub_paths = fhirpath.split(".")
+                if len(sub_paths) > 0 and sub_paths[0] == resource["resourceType"]:
+                    try:
+                        # Try to get recursively the keys from sub_paths[1:]
+                        data_item = ApiRequest._rgetattr(resource, sub_paths[1:])
+                    except KeyError:
+                        data_item = None
+                elif fhirpath == "id":
+                    data_item = resource["id"]
+                else:
+                    raise ValueError(f"Invalid fhirpath {fhirpath}")
+                data_items.append(data_item)
+
+            filtered_resources.append(data_items)
+
+            # FIXME: Need FHIR2Dataset#96
+            # elements = self.elements.elements.copy()
+            # data_array = fhirpath_processus_tree(self.elements.forest_dict, resource)
+            # for element_value, element in zip(data_array, elements):
+            #     element.value = element_value
+            # df = self._flatten_item_results(elements)
+        df = pd.DataFrame(filtered_resources, columns=columns)
+
+        # Drop duplicate columns (when you have two where clauses on a parameter)
+        df = df.loc[:, ~df.columns.duplicated()]
+
+        return df
+
+    def _concat(self, results: List[pd.DataFrame]) -> pd.DataFrame:
+        """Recursively concat the results of all the pages together
+
+        Arguments:
+            results: the list of the dataframes returned by each call
+
+        Returns:
+            pd.Dataframe: a consolidated dataframe containing all the results
+        """
+        self.df = pd.concat([self.df, *results]).reset_index(drop=True)
+        return self.df
+
     @classmethod
-    def rgetattr(cls, obj, keys):
+    def _rgetattr(cls, obj, keys):
         """
         Recursively get an element in nested dictionaries
 
         Example:
-            >>> rgetattr(obj, ['attr1', 'attr2', 'attr3'])
+            >>> ApiRequest._rgetattr(obj, ['attr1', 'attr2', 'attr3'])
             [Out] obj[attr1][attr2][attr3]
 
         """
@@ -277,55 +340,11 @@ class ApiRequest(ApiCall):
                 return obj[keys[0]]
             else:
                 first_key, *keys = keys
-                return cls.rgetattr(obj[first_key], keys)
+                return cls._rgetattr(obj[first_key], keys)
         else:
-            return [cls.rgetattr(o, keys) for o in obj]
+            return [cls._rgetattr(o, keys) for o in obj]
 
-    def _get_data(self, results: List):
-        """retrieves the necessary information from the json instance of a resource and stores it in the data attribute"""  # noqa
-        if not results:
-            columns = [element.col_name for element in self.elements.elements]
-            df = pd.DataFrame(columns=self.df.columns)  # hackalert?
-            self.df = pd.concat([self.df, df]).reset_index(drop=True)
-            logger.info(
-                "the current page doesnt have an entry keyword, therefore an empty df is created"
-            )
-        else:
-            columns = [element.col_name for element in self.elements.elements]
-            filtered_resources = []
-            for json_resource in results:
-                resource = json_resource["resource"]
-                data_items = []
-                for element in self.elements.elements:
-                    fhirpath = element.fhirpath.replace("(", "").replace(")", "")
-                    sub_paths = fhirpath.split(".")
-                    if len(sub_paths) > 0 and sub_paths[0] == resource["resourceType"]:
-                        try:
-                            # Try to get recursively the keys from sub_paths[1:]
-                            data_item = ApiRequest.rgetattr(resource, sub_paths[1:])
-                        except KeyError:
-                            data_item = None
-                    elif fhirpath == "id":
-                        data_item = resource["id"]
-                    else:
-                        raise ValueError(f"Invalid fhirpath {fhirpath}")
-                    data_items.append(data_item)
-
-                filtered_resources.append(data_items)
-
-                # FIXME: Need FHIR2Dataset#96
-                # elements = self.elements.elements.copy()
-                # data_array = fhirpath_processus_tree(self.elements.forest_dict, resource)
-                # for element_value, element in zip(data_array, elements):
-                #     element.value = element_value
-                # df = self._flatten_item_results(elements)
-            df = pd.DataFrame(filtered_resources, columns=columns)
-
-            # Drop duplicate columns (when you have two where clauses on a parameter)
-            df = df.loc[:, ~df.columns.duplicated()]
-            self.df = pd.concat([self.df, df]).reset_index(drop=True)
-
-    # FIXME: Need FHIR2Dataset#96
+    # INFO: Disabled as we prefere keep lists for the moment
     # def _flatten_item_results(self, elements: Elements):
     #     """creates the tabular version of the elements given as input argument.
     #     For each element of elements, at least one column is added according to the
@@ -378,5 +397,6 @@ class ApiRequest(ApiCall):
         """  # noqa
         data = {}
         for element in self.elements.elements:
-            data[element.col_name] = []
+            if element.col_name not in data:  # Drop duplicates
+                data[element.col_name] = []
         return pd.DataFrame(data)

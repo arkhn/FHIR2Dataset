@@ -46,7 +46,7 @@ class SearchParameters:
         fhirpath = self._data[search_param][resource_type]
 
         if fhirpath == {}:  # self._data is a defaultdict of dict: so it never KeyErrors
-            logger.warning(f"The searchparam '{search_param}' doesn't exist in the rules")
+            logger.info(f"The searchparam '{search_param}' doesn't exist in the rules")
             return None
 
         return fhirpath

@@ -5,7 +5,27 @@ from fhir2dataset.api import ApiRequest
 from fhir2dataset.data_class import Element, Elements
 
 
-def test_get_all():
+def test_bearer_auth():
+    pass
+
+
+def test_api_call_get_response():
+    pass
+
+
+def test_api_call_get_count():
+    pass
+
+
+def test_api_call_fix_next_url():
+    pass
+
+
+def test_api_fix_url():
+    pass
+
+
+def test_api_request_get_all():
     """
     Test that the next link is used correctly
     """
@@ -25,3 +45,11 @@ def test_get_all():
         )
 
     query.api.PAGE_SIZE = PAGE_SIZE
+
+
+def test_api_request_rgetattr():
+    pass
+
+
+def test_api_get_data():
+    pass

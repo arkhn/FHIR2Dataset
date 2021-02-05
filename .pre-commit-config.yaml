@@ -1,24 +1,40 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.3.0
+    hooks:
+      - id: check-added-large-files # Prevent giant files from being committed
+      - id: check-ast # Check whether the files parse as valid python
+      - id: check-json # Check json files for parseable syntax
+      - id: check-merge-conflict # Check for files that contain merge conflict strings
+      - id: check-toml # Checks toml files for parseable syntax
+      - id: check-yaml # Check yaml files for parseable syntax
+      - id: debug-statements # Check for debugger imports and `breakpoint()` calls in python
+      - id: detect-private-key # Detect the presence of private keys
+      - id: end-of-file-fixer # Ensures that files end with a newline
+      - id: name-tests-test # Verify that test files are named correctly
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.2.1
+    hooks:
+      - id: prettier
+
   - repo: https://github.com/psf/black
     rev: 20.8b1
     hooks:
       - id: black
-        args: [--safe, --quiet, --line-length, "100"]
-        language_version: python3
-  - repo: https://gitlab.com/pycqa/flake8
-    rev: "3.7.9"
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.6.4
+    hooks:
+      - id: isort
+
+  - repo: https://gitlab.com/PyCQA/flake8
+    rev: 3.8.4
     hooks:
       - id: flake8
-        args:
-          [
-            --count,
-            --select,
-            "E9,F63,F7,F82",
-            --show-source,
-            --statistics,
-            --max-complexity,
-            "10",
-            --max-line-length,
-            "100",
-          ]
-        language_version: python3
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.6.2
+    hooks:
+      - id: bandit
+        args: [--exclude, tests]

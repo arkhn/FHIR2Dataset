@@ -145,8 +145,10 @@ class Query:
         self.graph_query = GraphQuery(fhir_api_url=self.fhir_api_url, fhir_rules=self.fhir_rules)
         self.graph_query.build(**self.config)
 
-        with tqdm.tqdm(total=1000) as pbar:
-            time_frac = round(1000 / len(self.graph_query.resources_by_alias))
+        with tqdm.tqdm(
+            total=1, unit_scale=100, bar_format="{l_bar}{bar}| {n:.02f}/{total:.02f}"
+        ) as pbar:
+            bar_frac = 1 / len(self.graph_query.resources_by_alias)
             for resource_alias, resource in self.graph_query.resources_by_alias.items():
                 url = URLBuilder(
                     fhir_api_url=self.fhir_api_url,
@@ -158,7 +160,7 @@ class Query:
                     elements=resource.elements,
                     token=self.token,
                     pbar=pbar,
-                    time_frac=time_frac,
+                    bar_frac=bar_frac,
                 )
                 self.dataframes[resource_alias] = call.get_all()
 
@@ -173,6 +175,8 @@ class Query:
         else:
             self.main_dataframe = list(self.dataframes.values())[0]
 
+        self.main_dataframe = self.main_dataframe.reset_index(drop=True)
+
         logger.debug(
             f"Main dataframe builded head before columns selection-"
             f"\n{self.main_dataframe.to_string()}"
@@ -180,6 +184,8 @@ class Query:
         if not debug:
             self.__select_columns()
             self.__remove_lists()
+
+        return self.main_dataframe
 
     def _join(self) -> pd.DataFrame:
         """Execute the joins one after the other in the order specified by the
