@@ -69,12 +69,13 @@ class Response:
 
 class BearerAuth(requests.auth.AuthBase):
     def __init__(self, token):
+        if token is not None and "Bearer" not in token:
+            token = "Bearer " + token
+
         self.token = token
 
     def __call__(self, r):
         if self.token:
-            if "Bearer" not in self.token:
-                self.token = "Bearer " + self.token
 
             r.headers["Authorization"] = self.token
         return r
@@ -105,6 +106,9 @@ class ApiCall:
         failed = False
         try:
             response_content = response.json()
+            # One of these entries should be found
+            if "entry" not in response_content and "total" not in response_content:
+                failed = True
         except JSONDecodeError:
             failed = True
 
@@ -126,14 +130,14 @@ class ApiCall:
                 f"Content of the failing response:\n{pprint.pformat(response.__dict__)}"
             )
 
-    def _get_count(self, url):
+    def _get_count(self, url: str) -> int:
         url_count = f"{url}?_summary=count"
         logger.info(f"Get {url_count}")
 
         response = self._get_response(url_count)
         return response.total
 
-    def _fix_next_url(self, next_url):
+    def _fix_next_url(self, next_url: str) -> str:
         """Apply a set of fixes for the next_url of the Arkhn Api"""
         if "arkhn" in next_url:
             # Enforce that the base URL is not changed

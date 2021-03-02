@@ -10,9 +10,10 @@ def progressbar(func):
     def _progressbar(self, *args, **kwargs):
         result = func(self, *args, **kwargs)
 
-        if self.number_calls is not None:
-            bar_frac_per_call = self.bar_frac / self.number_calls
-            self.pbar.update(bar_frac_per_call)
+        if self.pbar is not None:
+            if hasattr(self, "number_calls") and self.number_calls is not None:
+                bar_frac_per_call = self.bar_frac / self.number_calls
+                self.pbar.update(bar_frac_per_call)
 
         return result
 
