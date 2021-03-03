@@ -9,7 +9,7 @@ from fhir2dataset.data_class import SearchParameter
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_METADATA_DIR = "metadata"
+DEFAULT_METADATA_DIR = "tools/metadata"
 
 
 class SearchParameters:

@@ -28,11 +28,11 @@ def test_select(sql_query):
 
 def test_from():
     sql_query = "SELECT Patient.name.family FROM Patient AS p"
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         Parser().from_sql(sql_query)
 
     sql_query = "SELECT p.Patient.name.family FROM Patient"
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         Parser().from_sql(sql_query)
 
 

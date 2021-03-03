@@ -37,7 +37,7 @@ After cloning this repository, you can install the required dependencies
 
 ```bash
 pip install -r requirements.txt
-npm install --prefix ./fhir2dataset/metadata
+npm install --prefix ./fhir2dataset/tools/metadata
 ```
 
 Check that the version of antlr4 is 4.8: `npm view antlr4 version`. If not, run `cd fhir2dataset/metadata && npm install antlr4@4.8.0`.

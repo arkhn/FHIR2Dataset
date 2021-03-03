@@ -226,7 +226,7 @@ class ApiRequest(ApiCall):
             self.number_calls = int(np.ceil(total_resources / PAGE_SIZE))
 
         if self.number_calls == 0:
-            return
+            return self._get_data([])
 
         if self.parallel_requests:
             urls = []

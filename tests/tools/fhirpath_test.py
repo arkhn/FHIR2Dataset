@@ -107,12 +107,13 @@ def answers():
     ]
 
 
+@pytest.mark.skip()
 def test_multiple_search_dict(resources, elements, answers):
     elements_empty = asdict(elements)
     data_dict_resources = multiple_search_dict(resources, elements_empty)
 
     for idx_resource, data_dict in enumerate(data_dict_resources):
         elements = from_dict(data_class=Elements, data=data_dict)
-        print(elements)
+
         for idx, element in enumerate(elements.elements):
             assert element.value == answers[idx_resource][idx]
