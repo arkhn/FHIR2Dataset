@@ -22,9 +22,10 @@ def create_mask(
         optional_space_before = optional_spaces
         optional_space_after = optional_spaces
 
-    assert not (
-        can_start_sentence and optional_space_before
-    ), "Can't set to true both can_start_sentence and optional_space_before optional arguments"
+    if can_start_sentence and optional_space_before:
+        raise ValueError(
+            "Can't set to true both can_start_sentence and optional_space_before optional arguments"
+        )
     if isinstance(masks, str):
         mask = masks
     elif isinstance(masks, Iterable):
@@ -116,9 +117,8 @@ class Parser:
         item_parsed = re.split(create_mask(",", optional_spaces=True), string)
         for item in item_parsed:
             alias, select_rule = re.split(r"\.", item, 1)
-            assert (
-                alias in self.__from.keys()
-            ), f"Resource {alias} was used in SELECT {item} but was not defined"
+            if alias not in self.__from.keys():
+                raise ValueError(f"Resource {alias} was used in SELECT {item} but was not defined")
             self.__select[alias].append(f"{self.__from[alias]}.{select_rule}")
 
     def __from_parser(self, string):
@@ -152,32 +152,44 @@ class Parser:
         self.__parent_join[alias_parent][searchparam_parent] = alias_child
 
     def __join_parser(self, string):
+        helper = """
+You should join as such:
+SELECT ...
+FROM Resource_1
+INNER JOIN Resource_2
+ON Resource_1.<ref_attribute> = Resource_2.id
+WHERE ...
+        """
+
         item_parsed = re.split(create_mask("ON"), string)
-        assert len(item_parsed) == 2, f"There was a problem with the JOIN statement: {string}"
+        if len(item_parsed) != 2:
+            raise ValueError(f"There was a problem with the JOIN statement: {string}" + helper)
         self.__from_parser(item_parsed[0])
 
         join_conditions = re.split(create_mask("=", optional_spaces=True), item_parsed[1])
-        assert (
-            len(join_conditions) == 2
-        ), f"The JOIN condition {join_conditions} couldn't be parsed properly"
+        if len(join_conditions) != 2:
+            raise ValueError(
+                f"The JOIN condition {join_conditions} couldn't be parsed properly" + helper
+            )
 
         alias_parent = None
         searchparam_parent = None
         alias_child = None
         for join_condition in join_conditions:
             alias, join_rule = re.split(r"\.", join_condition, 1)
-            assert alias in self.__from.keys(), (
-                f"The {alias} alias used in the {join_condition} join must have been referenced "
-                "behind a FROM, INNER JOIN, PARENT JOIN or CHILD JOIN. "
-                f"The only aliases referenced are here: {self.__from}"
-            )
+            if alias not in self.__from.keys():
+                raise ValueError(
+                    f"The {alias} alias used in the {join_condition} join must have been "
+                    "referenced behind a FROM, INNER JOIN, PARENT JOIN or CHILD JOIN. "
+                    f"The only aliases referenced are here: {self.__from}"
+                )
             if join_rule.strip() == "id":
                 if alias_child:
-                    raise ValueError
+                    raise ValueError(helper)
                 alias_child = alias
             else:
                 if alias_parent or searchparam_parent:
-                    raise ValueError
+                    raise ValueError(helper)
                 alias_parent = alias
                 searchparam_parent = join_rule
 
@@ -193,9 +205,8 @@ class Parser:
                 condition_parsed = re.split(
                     create_mask(PREFIX, keep_separators=True), where_condition
                 )
-            assert (
-                len(condition_parsed) == 3
-            ), f"The WHERE condition {where_condition} couldn't be parsed properly"
+            if len(condition_parsed) != 3:
+                raise ValueError(f"The WHERE condition {where_condition} couldn't be parsed")
             alias, where_rule = re.split(r"\.", condition_parsed[0], 1)
             quotes_match = re.search(r"^['\"](.*)['\"]$", condition_parsed[2])
             value = quotes_match.group(1) if quotes_match else condition_parsed[2]

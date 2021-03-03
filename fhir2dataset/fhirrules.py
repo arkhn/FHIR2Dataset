@@ -153,7 +153,7 @@ class FHIRRules:
 
         Arguments:
             path (str): path to the folder containing the filename
-            filename {(str): filename of the json
+            filename (str): filename of the json
 
         Returns:
             dict: dict containing the json
