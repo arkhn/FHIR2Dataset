@@ -1,15 +1,22 @@
 [tool.black]
-target-version = ['py36']
 line-length = 100
+target-version = ['py36', 'py37', 'py38']
+include = '\.pyi?$'
 exclude = '''
-(
-    \.git
-    | \.mypy_cache
-    | \.tox
-    | \.venv
-    | \.eggs\/
-    | build
-    | dist
-    | venv\/
-)
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
 '''
+
+[tool.isort]
+profile = 'black'
+line_length = 100

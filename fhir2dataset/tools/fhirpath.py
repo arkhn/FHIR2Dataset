@@ -1,11 +1,10 @@
 """set of functions allowing to use the javascript coded library on the repository https://github.com/HL7/fhirpath.js
 """  # noqa
-import os
 import json
 import logging
-from subprocess import Popen, PIPE
+import os
+from subprocess import PIPE, Popen
 from typing import List
-
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,9 @@
 import os
-from setuptools import setup, find_packages
+from subprocess import call
+
+from setuptools import find_packages, setup
 from setuptools.command.build_py import build_py
 from setuptools.command.sdist import sdist
-
-from subprocess import call
 
 with open(
     os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.md"), encoding="utf-8"
