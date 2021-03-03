@@ -81,7 +81,6 @@ class GraphQuery:
             elements = Elements(
                 [
                     Element(
-                        goal="additional_resource",
                         col_name="from_id",
                         fhirpath="id",
                         concat_type="row",
@@ -107,18 +106,25 @@ class GraphQuery:
                 containing in the key the search parameter leading to the reference, and in the
                 value the alias of the child resource.
         """  # noqa
-        # TODO : review naming : element not very precise
+
         for join_how, relationships_dict in join_as.items():
             join_how = join_how.lower()
-            assert join_how in ["inner", "child", "parent", "one"], "Precise how to join"
+            if join_how not in ["inner", "child", "parent"]:
+                raise ValueError("Invalid join: joins should be of type: inner, child or parent")
+
             for (alias_parent, searchparam_dict) in relationships_dict.items():
                 type_parent = self.resources_by_alias[alias_parent].resource_type
                 for (searchparam_parent, alias_child) in searchparam_dict.items():
-
                     # Update element to have in table
                     fhirpath = self.fhir_rules.searchparam_to_fhirpath(
                         resource_type=type_parent, search_param=searchparam_parent
                     )
+                    if fhirpath is None:
+                        raise ValueError(
+                            f"The reference attribute in the JOIN clause should be a valid "
+                            f"gaisearchparameter, but got '{searchparam_parent}'."
+                        )
+
                     if " | " in fhirpath:
                         fhirpath_ref = f"(({fhirpath}).reference)"
                     else:
@@ -173,7 +179,7 @@ class GraphQuery:
                 for value in values:
                     prefix = None
 
-                    # handles the case where a prefix has been specified
+                    # handle the case where a prefix has been specified
                     # value_full={"ge": "1970"}
                     if type(value) is dict:
                         for key, val in value.items():

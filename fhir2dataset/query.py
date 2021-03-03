@@ -21,18 +21,18 @@ class Query:
         ```
         {
             "from": {
-                "alias n°1": "Resource type 1",
-                "alias n°2": "Resource type 2",
-                "alias n°3": "Resource type 3",
+                "alias_1": "Resource type 1",
+                "alias_2": "Resource type 2",
+                "alias_3": "Resource type 3",
                 ...
             },
             "select": {
-                "alias n°1": [
+                "alias_1": [
                     "searchparam/fhirpath of attribute a of resource type 1",
                     "searchparam/fhirpath of attribute b of resource type 1",
                     "searchparam/fhirpath of attribute c of resource type 1"
                 ],
-                "alias n°2": [
+                "alias_2": [
                     "searchparam of attribute a of resource type 2",
                     ...
                 ],
@@ -40,27 +40,24 @@ class Query:
             },
             "join": {
                 "inner": {
-                    "alias n°1": {
-                        "searchparam of attribute d, which is of type Reference, of resource type 1": "alias n°2"
+                    "alias_1": {
+                        "searchparam of attribute d, which is of type Reference, of resource type 1": "alias_2"
                     },
                     ...
                 },
-                "child": {
-                    "alias n°2": {
-                        "searchparam of attribute b, which is of type Reference, of resource type 2": "alias n°3"
+                "inner": {
+                    "alias_2": {
+                        "searchparam of attribute b, which is of type Reference, of resource type 2": "alias_3"
                     },
-                    ...
-                },
-                "parent": {
                     ...
                 }
             },
             "where": {
-                "alias n°2": {
+                "alias_2": {
                     "searchparam of attribute c of resource type 2": "value 1",
                     "searchparam of attribute d of resource type 2": "value 2"
                 },
-                "alias n°3": {
+                "alias_3": {
                     "searchparam of attribute a of resource type 2": "value 3",
                     "searchparam of attribute b of resource type 2": "value 4"
                 },
@@ -70,14 +67,15 @@ class Query:
         ```
         for the next associated SQL query:
         ```
-        SELECT (alias n°1).a, (alias n°1).b, (alias n°1).c, (alias n°2).a FROM (Resource type 1) as (alias n°1)
-        INNER JOIN (Resource type 2) as (alias n°2)
-        ON (alias n°1).d = (alias n°2)
-        INNER JOIN (Resource type 3) as (alias n°3)
-        ON (alias n°2).b = (alias n°3) WHERE (alias n°2).c = "value 1"
-        AND (alias n°2).d = "value 2"
-        AND (alias n°3).a = "value 3"
-        AND (alias n°3).b = "value 4"
+        SELECT alias_1.a, alias_1.b, alias_1.c, alias_2.a FROM (Resource type 1) as alias_1
+        INNER JOIN (Resource type 2) as alias_2
+        ON alias_1.d = alias_2.id
+        INNER JOIN (Resource type 3) as alias_3
+        ON alias_2.b = alias_3.id
+        WHERE alias_2.c = "value 1"
+        AND alias_2.d = "value 2"
+        AND alias_3.a = "value 3"
+        AND alias_3.b = "value 4"
         ```
 
     Attributes:
@@ -194,7 +192,7 @@ class Query:
         Returns:
             pd.DataFrame: dataframe containing all joined resources
         """
-        list_join = join_path(self.graph_query.resources_alias_graph)
+        list_join = join_path(self.graph_query.resources_graph)
         main_alias_join = list_join[0][0]
         main_df = self.dataframes[main_alias_join]
         for alias_1, alias_2 in list_join:
@@ -227,7 +225,7 @@ class Query:
             pd.DataFrame: dataframe containing the elements of the 2 resources according to
                 an inner join
         """  # noqa
-        edge_info = self.graph_query.resources_alias_graph.edges[alias_1, alias_2]["info"]
+        edge_info = self.graph_query.resources_graph.edges[alias_1, alias_2]["info"]
         alias_parent = edge_info.parent
         alias_child = edge_info.child
 
