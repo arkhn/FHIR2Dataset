@@ -4,6 +4,10 @@ on:
   release:
     types: [created]
 
+  push:
+    tags:
+      - v*
+
 jobs:
   build:
     runs-on: ubuntu-18.04
