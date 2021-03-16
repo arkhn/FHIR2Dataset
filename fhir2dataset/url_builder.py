@@ -1,5 +1,4 @@
 import logging
-import random
 from collections import defaultdict
 from posixpath import join as urljoin
 from typing import Type
@@ -77,16 +76,14 @@ class URLBuilder:
             resource = self.graph_query.resources_by_alias[resource_alias]
             elements = resource.elements.where(goal="where")
 
-            # check if there are "where conditions" on resource_alias
-            if elements:
-                # select a random "where condition" on resource_alias
-                element = random.choice(list(elements))
+            # Update url for each condition in "where conditions" on resource_alias
+            for element in elements:
                 search_param = element.search_parameter
                 searchparam_prefix = edge_info.searchparam_prefix[self.main_resource_alias]
 
                 self._update_params_dict(search_param, searchparam_prefix=searchparam_prefix)
 
-                logger.debug(f"the part of the url for the params is: {self._params}")
+            logger.debug(f"the part of the url for the params is: {self._params}")
 
         # "where condition" on the resource itself
         resource_alias_info = self.graph_query.resources_by_alias[self.main_resource_alias]
