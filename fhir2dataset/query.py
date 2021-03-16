@@ -243,10 +243,14 @@ class Query:
             how = "inner"
 
         if alias_1 == alias_parent:
+            df_1 = df_1.explode(parent_on)
+            df_2 = df_2.explode(child_on)
             df_merged_inner = pd.merge(
                 left=df_1, right=df_2, left_on=parent_on, right_on=child_on, how=how
             )
         else:
+            df_1 = df_1.explode(child_on)
+            df_2 = df_2.explode(parent_on)
             df_merged_inner = pd.merge(
                 left=df_2, right=df_1, left_on=parent_on, right_on=child_on, how=how
             )
