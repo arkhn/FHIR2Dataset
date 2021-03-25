@@ -3,3 +3,4 @@ matplotlib
 networkx
 requests
 dacite
+tqdm
