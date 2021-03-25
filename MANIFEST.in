@@ -1,1 +1,1 @@
-recursive-include fhir2dataset/metadata *
+recursive-include fhir2dataset/tools/metadata *
