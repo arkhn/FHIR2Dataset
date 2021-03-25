@@ -17,13 +17,13 @@ def read(fname):
 
 class MyBuildCommand(build_py):
     def run(self):
-        call(["npm", "install", "--prefix", "fhir2dataset/metadata"])
+        call(["npm", "install", "--prefix", "fhir2dataset/tools/metadata"])
         build_py.run(self)
 
 
 class MySdistCommand(sdist):
     def run(self):
-        call(["npm", "install", "--prefix", "fhir2dataset/metadata"])
+        call(["npm", "install", "--prefix", "fhir2dataset/tools/metadata"])
         sdist.run(self)
 
 
