@@ -68,14 +68,10 @@ class Response:
 
 class BearerAuth(requests.auth.AuthBase):
     def __init__(self, token):
-        if token is not None and "Bearer" not in token:
-            token = "Bearer " + token
-
         self.token = token
 
     def __call__(self, r):
         if self.token:
-
             r.headers["Authorization"] = self.token
         return r
 
