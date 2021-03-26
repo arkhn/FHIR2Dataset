@@ -8,12 +8,6 @@ from fhir2dataset.api import ApiCall, ApiRequest, BearerAuth, Response
 from fhir2dataset.data_class import Element, Elements
 
 
-def test_bearer_auth():
-    token_string = "lol"
-    token = BearerAuth(token_string)
-    assert token.token == "Bearer lol"
-
-
 def test_api_call_get_response():
     url = "http://hapi.fhir.org/baseR4/Patient"
     api_call = ApiCall(url=url)

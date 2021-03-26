@@ -1,7 +1,6 @@
 import logging
 import multiprocessing
 import pprint
-import re
 from json import JSONDecodeError
 from typing import List, Optional
 
@@ -69,14 +68,10 @@ class Response:
 
 class BearerAuth(requests.auth.AuthBase):
     def __init__(self, token):
-        if token is not None and "Bearer" not in token:
-            token = "Bearer " + token
-
         self.token = token
 
     def __call__(self, r):
         if self.token:
-
             r.headers["Authorization"] = self.token
         return r
 
@@ -139,14 +134,16 @@ class ApiCall:
 
     def _fix_next_url(self, next_url: str) -> str:
         """Apply a set of fixes for the next_url of the Arkhn Api"""
-        if "arkhn" in next_url:
-            # Enforce that the base URL is not changed
-            if self.url not in next_url:
-                next_url = re.sub(
-                    r"^(?:http:\/\/|www\.|https:\/\/)([^\/]+)",
-                    self.url,
-                    next_url,  # hackalert
-                )
+        # FIXME: Not needed anymore now that we use hapi.
+        # FIXME: Remove this function
+        # if "arkhn" in next_url:
+        #     # Enforce that the base URL is not changed
+        #     if self.url not in next_url:
+        #         next_url = re.sub(
+        #             r"^(?:http:\/\/|www\.|https:\/\/)([^\/]+)",
+        #             self.url,
+        #             next_url,  # hackalert
+        #         )
 
         if "_count" not in next_url:
             # Append _count info
