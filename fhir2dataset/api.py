@@ -1,7 +1,6 @@
 import logging
 import multiprocessing
 import pprint
-import re
 from json import JSONDecodeError
 from typing import List, Optional
 
@@ -139,14 +138,16 @@ class ApiCall:
 
     def _fix_next_url(self, next_url: str) -> str:
         """Apply a set of fixes for the next_url of the Arkhn Api"""
-        if "arkhn" in next_url:
-            # Enforce that the base URL is not changed
-            if self.url not in next_url:
-                next_url = re.sub(
-                    r"^(?:http:\/\/|www\.|https:\/\/)([^\/]+)",
-                    self.url,
-                    next_url,  # hackalert
-                )
+        # FIXME: Not needed anymore now that we use hapi.
+        # FIXME: Remove this function
+        # if "arkhn" in next_url:
+        #     # Enforce that the base URL is not changed
+        #     if self.url not in next_url:
+        #         next_url = re.sub(
+        #             r"^(?:http:\/\/|www\.|https:\/\/)([^\/]+)",
+        #             self.url,
+        #             next_url,  # hackalert
+        #         )
 
         if "_count" not in next_url:
             # Append _count info
