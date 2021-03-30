@@ -1,47 +1,34 @@
 {
-    "select": {
-        "patient": [
-            "gender",
-            "given",
-            "birthdate",
-            "id"
-        ],
-        "condition": [
-            "verification-status",
-            "id"
-        ],
-        "practitioner": [
-            "name",
-            "id"
-        ],
-        "encounter": [
-            "id"
-        ]
-    },
-    "from": {
-        "patient": "Patient",
-        "practitioner": "Practitioner",
-        "condition": "Condition",
-        "encounter": "Encounter"
-    },
-    "join": {
-        "inner": {
-            "condition": {
-                "asserter": "practitioner",
-                "subject": "patient",
-                "encounter": "encounter"
-            }
-        }
-    },
-    "where": {
-        "practitioner": {
-            "family": "van den broek"
-        },
-        "patient": {
-            "family": "Smith"
-        },
-        "condition": {
-            "verification-status": "confirmed"
-        }
+  "select": {
+    "patient": ["gender", "given", "birthdate", "_id"],
+    "condition": ["verification-status", "_id"],
+    "practitioner": ["name", "_id"],
+    "encounter": ["_id"]
+  },
+  "from": {
+    "patient": "Patient",
+    "practitioner": "Practitioner",
+    "condition": "Condition",
+    "encounter": "Encounter"
+  },
+  "join": {
+    "inner": {
+      "condition": {
+        "asserter": "practitioner",
+        "subject": "patient",
+        "encounter": "encounter"
+      }
     }
+  },
+  "where": {
+    "practitioner": {
+      "family": "van den broek"
+    },
+    "patient": {
+      "family": "Smith"
+    },
+    "condition": {
+      "verification-status": "confirmed"
+    }
+  }
 }

@@ -157,7 +157,7 @@ You should join as such:
 SELECT ...
 FROM Resource_1
 INNER JOIN Resource_2
-ON Resource_1.<ref_attribute> = Resource_2.id
+ON Resource_1.<ref_attribute> = Resource_2._id
 WHERE ...
         """
 
@@ -183,7 +183,7 @@ WHERE ...
                     "referenced behind a FROM, INNER JOIN, PARENT JOIN or CHILD JOIN. "
                     f"The only aliases referenced are here: {self.__from}"
                 )
-            if join_rule.strip() == "id":
+            if join_rule.strip() == "_id":
                 if alias_child:
                     raise ValueError(helper)
                 alias_child = alias

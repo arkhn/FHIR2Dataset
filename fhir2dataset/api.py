@@ -282,7 +282,7 @@ class ApiRequest(ApiCall):
                         data_item = ApiRequest._rgetattr(resource, sub_paths[1:])
                     except KeyError:
                         data_item = None
-                elif fhirpath == "id":
+                elif fhirpath == "_id":
                     data_item = resource["id"]
                 else:
                     raise ValueError(f"Invalid fhirpath {fhirpath}")

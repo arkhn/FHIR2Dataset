@@ -82,7 +82,7 @@ class GraphQuery:
                 [
                     Element(
                         col_name="from_id",
-                        fhirpath="id",
+                        fhirpath="_id",
                         concat_type="row",
                     )
                 ]

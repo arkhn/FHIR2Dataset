@@ -11,7 +11,7 @@ def test_graphquery():
     Patient.birthDate
     FROM Patient
     INNER JOIN Practitioner
-    ON Patient.general-practitioner = Practitioner.id
+    ON Patient.general-practitioner = Practitioner._id
     WHERE Patient.birthdate=ge2001-01-01
     """
 
