@@ -1,49 +1,57 @@
 {
-    "select": {
-        "patient": ["Patient.name.family", "Patient.name.given", "Patient.birthDate", "Patient.id"],
-        "practitioner": [
-            "Practitioner.name.family",
-            "Practitioner.address.use",
-            "Practitioner.address.line",
-            "Practitioner.address.city",
-            "Practitioner.id"
-        ],
-        "allergy": ["AllergyIntolerance.code.coding.display", "AllergyIntolerance.id"],
-        "condition": [
-            "Condition.code.coding.display",
-            "Condition.severity.coding.display",
-            "Condition.id"
-        ]
-    },
-    "from": {
-        "allergy": "AllergyIntolerance",
-        "patient": "Patient",
-        "practitioner": "Practitioner",
-        "condition": "Condition"
-    },
-    "join": {
-        "inner": {
-            "condition": {
-                "subject": "patient"
-            },
-            "allergy": {
-                "patient": "patient",
-                "asserter": "practitioner"
-            }
-        }
-    },
-    "where": {
-        "patient": {
-            "birthdate": "1976"
-        },
-        "allergy": {
-            "code": "http://snomed.info/sct|22749300"
-        },
-        "practitioner": {
-            "address-city": "paris"
-        },
-        "condition": {
-            "code": "http://snomed.info/sct|386661006"
-        }
+  "select": {
+    "patient": [
+      "Patient.name.family",
+      "Patient.name.given",
+      "Patient.birthDate",
+      "Patient._id"
+    ],
+    "practitioner": [
+      "Practitioner.name.family",
+      "Practitioner.address.use",
+      "Practitioner.address.line",
+      "Practitioner.address.city",
+      "Practitioner._id"
+    ],
+    "allergy": [
+      "AllergyIntolerance.code.coding.display",
+      "AllergyIntolerance._id"
+    ],
+    "condition": [
+      "Condition.code.coding.display",
+      "Condition.severity.coding.display",
+      "Condition._id"
+    ]
+  },
+  "from": {
+    "allergy": "AllergyIntolerance",
+    "patient": "Patient",
+    "practitioner": "Practitioner",
+    "condition": "Condition"
+  },
+  "join": {
+    "inner": {
+      "condition": {
+        "subject": "patient"
+      },
+      "allergy": {
+        "patient": "patient",
+        "asserter": "practitioner"
+      }
     }
+  },
+  "where": {
+    "patient": {
+      "birthdate": "1976"
+    },
+    "allergy": {
+      "code": "http://snomed.info/sct|22749300"
+    },
+    "practitioner": {
+      "address-city": "paris"
+    },
+    "condition": {
+      "code": "http://snomed.info/sct|386661006"
+    }
+  }
 }

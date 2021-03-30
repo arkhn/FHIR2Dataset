@@ -1,27 +1,27 @@
 {
-    "select": {
-        "observation": ["code-value-quantity", "id"],
-        "patient": ["birthdate", "gender", "id"]
-    },
-    "from": {
-        "patient": "Patient",
-        "observation": "Observation"
-    },
-    "join": {
-        "inner": {
-            "observation": {
-                "subject": "patient"
-            }
-        }
-    },
-    "where": {
-        "patient": {
-            "birthdate": {
-                "gt": "1970"
-            }
-        },
-        "observation": {
-            "code": "http://loinc.org|85354-9"
-        }
+  "select": {
+    "observation": ["code-value-quantity", "_id"],
+    "patient": ["birthdate", "gender", "_id"]
+  },
+  "from": {
+    "patient": "Patient",
+    "observation": "Observation"
+  },
+  "join": {
+    "inner": {
+      "observation": {
+        "subject": "patient"
+      }
     }
+  },
+  "where": {
+    "patient": {
+      "birthdate": {
+        "gt": "1970"
+      }
+    },
+    "observation": {
+      "code": "http://loinc.org|85354-9"
+    }
+  }
 }
