@@ -72,6 +72,8 @@ class URLBuilder:
             edge_info = self.graph_query.resources_graph.edges[
                 self.main_resource_alias, resource_alias
             ]["info"]
+            if edge_info.join_how == "child":
+                continue
 
             resource = self.graph_query.resources_by_alias[resource_alias]
             elements = resource.elements.where(goal="where")
