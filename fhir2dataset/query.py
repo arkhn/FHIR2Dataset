@@ -6,6 +6,7 @@ import tqdm
 from fhir2dataset.api import ApiRequest
 from fhir2dataset.fhirrules import FHIRRules
 from fhir2dataset.graphquery import GraphQuery
+from fhir2dataset.parser import Parser
 from fhir2dataset.tools.graph import join_path
 from fhir2dataset.url_builder import URLBuilder
 
@@ -112,6 +113,11 @@ class Query:
         self.graph_query = None
         self.dataframes = {}
         self.main_dataframe = None
+
+    def from_sql(self, sql_query: str):
+        config = Parser().from_sql(sql_query)
+        self.from_config(config)
+        return self
 
     def from_config(self, config: dict):
         """Executes the query from a dictionary in the format of a configuration file
