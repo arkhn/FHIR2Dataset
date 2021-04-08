@@ -1,3 +1,5 @@
+"""FHIR2Dataset allows to query FHIR apis with SQL-like queries and return tabular data"""
+
 import re
 
 import pandas as pd
@@ -19,8 +21,7 @@ def sql(sql_query: str, fhir_api_url: str = None, token: str = None) -> pd.DataF
         pd.Dataframe: the result of the query in a tabular format
     """
     config = Parser().from_sql(sql_query)
-    query = Query(fhir_api_url=fhir_api_url, token=token).from_config(config)
-    df = query.execute()
+    df = Query(fhir_api_url=fhir_api_url, token=token).from_config(config)
     # rename the columns to match the sql syntax
     # patient:Patient.name.given -> patient.name.given
     df = df.rename(lambda x: re.sub("\:\w+\.", ".", x), axis="columns")  # noqa

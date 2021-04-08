@@ -21,7 +21,7 @@ def test_dataframe_empty(dirname, fhir_api_url):
         config = json.load(json_file)
 
     query = Query(fhir_api_url)
-    query.from_config(config)
+    query.from_config(config, execute=False)
     query.execute(debug=True)
     df = query.main_dataframe
 

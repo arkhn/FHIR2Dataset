@@ -6,6 +6,7 @@ import tqdm
 from fhir2dataset.api import ApiRequest
 from fhir2dataset.fhirrules import FHIRRules
 from fhir2dataset.graphquery import GraphQuery
+from fhir2dataset.parser import Parser
 from fhir2dataset.tools.graph import join_path
 from fhir2dataset.url_builder import URLBuilder
 
@@ -113,11 +114,12 @@ class Query:
         self.dataframes = {}
         self.main_dataframe = None
 
-    def from_config(self, config: dict):
-        """Executes the query from a dictionary in the format of a configuration file
+    def from_config(self, config: dict, execute: bool = True):
+        """Executes the query from a dictionary in the format of a configuration file.
 
         Arguments:
             config (dict): dictionary in the format of a configuration file
+            execute (bool): if false, the query is not executed directly
         """
         self.config = {
             "from_dict": config.get("from", None),
@@ -125,7 +127,19 @@ class Query:
             "where_dict": config.get("where", None),
             "join_dict": config.get("join", None),
         }
-        return self
+        if execute:
+            return self.execute()
+        else:
+            return self
+
+    def from_sql(self, sql_query: str):
+        """Execute the query from a SQL-like query that is parsed into a configuration.
+
+        Arguments:
+            sql_query (str): SQL-like query
+        """
+        config = Parser().from_sql(sql_query)
+        return self.from_config(config)
 
     def execute(self, debug: bool = False):
         """Executes the complete query

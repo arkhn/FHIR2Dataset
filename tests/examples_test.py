@@ -31,7 +31,7 @@ def test_resources_in_dataframe(dirname, fhir_api_url):
         info_hapi = json.load(json_file)
 
     query = Query(fhir_api_url)
-    query.from_config(config)
+    query.from_config(config, execute=False)
     query.execute(debug=True)
     df = query.main_dataframe
 

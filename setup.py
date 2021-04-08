@@ -1,5 +1,5 @@
 import os
-from subprocess import call
+from subprocess import call  # nosec
 
 from setuptools import find_packages, setup
 from setuptools.command.build_py import build_py
@@ -15,22 +15,22 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-class MyBuildCommand(build_py):
+class BuildCommand(build_py):
     def run(self):
-        call(["npm", "install", "--prefix", "fhir2dataset/tools/metadata"])
+        call(["npm", "install", "--prefix", "fhir2dataset/tools/metadata"])  # nosec
         build_py.run(self)
 
 
-class MySdistCommand(sdist):
+class SdistCommand(sdist):
     def run(self):
-        call(["npm", "install", "--prefix", "fhir2dataset/tools/metadata"])
+        call(["npm", "install", "--prefix", "fhir2dataset/tools/metadata"])  # nosec
         sdist.run(self)
 
 
 requirements = read("requirements.txt").split()
 
 setup(
-    cmdclass={"build_py": MyBuildCommand, "sdist": MySdistCommand},
+    cmdclass={"build_py": BuildCommand, "sdist": SdistCommand},
     name="fhir2dataset",
     packages=find_packages(),
     include_package_data=True,
@@ -39,8 +39,8 @@ setup(
     description="Transform FHIR to Dataset",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author="Lucile Saulnier",
-    author_email="contact@arkhn.com",
+    author="Arkhn's Data Team",
+    author_email="data@arkhn.com",
     url="https://github.com/arkhn/FHIR2Dataset",
     keywords=["arkhn", "medical", "fhir", "FHIR", "Dataset", "API"],
     install_requires=requirements,

@@ -16,7 +16,7 @@ def test_graphquery():
     """
 
     config = Parser().from_sql(sql_query)
-    query = Query().from_config(config)
+    query = Query().from_config(config, execute=False)
     graph_query = GraphQuery(fhir_api_url=query.fhir_api_url, fhir_rules=query.fhir_rules)
     graph_query.build(**query.config)
     graph = graph_query.resources_by_alias
