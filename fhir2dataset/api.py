@@ -246,9 +246,9 @@ class ApiRequest(ApiCall):
             while next_url:
                 next_url = self._fix_next_url(next_url)
                 response = self._get_response(next_url)
-                page_results = self._get_data(response.results)
-
-                results.append(page_results)
+                if response.results:
+                    page_results = self._get_data(response.results)
+                    results.append(page_results)
                 next_url = response.next_url
 
         self._concat(results)
